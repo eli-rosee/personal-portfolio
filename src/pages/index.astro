@@ -1,0 +1,29 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+	<!-- Phase 0 check: colors and fonts. Replaced by the hero in Phase 1. -->
+	<main>
+		<p class="label">Station Home-01 · Phase 0</p>
+		<h1>ELI ROSE</h1>
+		<p>Body text in IBM Plex Mono. Placeholder, replaced in Phase 1.</p>
+		<p><a href="#">An accent-colored link</a></p>
+	</main>
+</Layout>
+
+<style>
+	main {
+		max-width: var(--page-max);
+		margin: 0 auto;
+		padding: var(--space-12) var(--gutter);
+		display: grid;
+		gap: var(--space-3);
+	}
+
+	h1 {
+		font-size: 3rem;
+		letter-spacing: var(--tracking-title);
+		color: var(--accent);
+	}
+</style>
