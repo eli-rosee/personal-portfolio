@@ -129,6 +129,11 @@ a:hover {
 
 /* Utilities */
 
+/* Keeps `hidden` working on elements that set their own display */
+[hidden] {
+	display: none !important;
+}
+
 /* Uppercase, widely spaced console label: "MISSION 03 · IN ORBIT" */
 .label {
 	font-family: var(--font-label);

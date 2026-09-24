@@ -1,74 +1,354 @@
 ---
-// Ground station status. The uptime, ISS, and Voyager readouts are static
-// placeholders until Phase 5 wires them up (each hides itself if it fails).
+// Telemetry readouts + copyright. Each readout is its own script and stays hidden
+// until it has real data, so a failure (or no JavaScript) just leaves it out.
 ---
 
 <footer>
-	<div class="inner label">
-		<p class="status">
-			<span class="dot" aria-hidden="true"></span>
-			<span>Ground station online</span>
-			<span class="sep" aria-hidden="true">·</span>
-			<span class="tabular" data-uptime>Uptime —</span>
-			<span class="sep" aria-hidden="true">·</span>
-			<span>
-				Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a>
-			</span>
-		</p>
-		<p class="tabular" data-iss>ISS: acquiring signal</p>
-		<p class="tabular" data-voyager>Voyager 1: acquiring signal</p>
-		<p class="copyright">© {new Date().getFullYear()} Eli Rose</p>
+	<div class="inner">
+		<section class="telemetry" aria-labelledby="telemetry-heading">
+			<h2 id="telemetry-heading" class="section-title">// Telemetry</h2>
+			<dl class="grid">
+				<div class="cell wide" data-iss hidden>
+					<dt class="label">ISS position</dt>
+					<dd class="value tabular" data-iss-coords></dd>
+					<dd class="sub" data-iss-place></dd>
+				</div>
+				<div class="cell wide" data-voyager hidden>
+					<dt class="label">Voyager&nbsp;1</dt>
+					<dd class="value tabular"><span data-voyager-total></span> km</dd>
+					<dd class="sub">from the Sun</dd>
+				</div>
+				<div class="cell" data-voyager hidden>
+					<dt class="label">Since you arrived</dt>
+					<dd class="value tabular">+<span data-voyager-session>0</span> km</dd>
+					<dd class="sub">traveled by Voyager&nbsp;1</dd>
+				</div>
+				<div class="cell" data-uptime hidden>
+					<dt class="label">Uptime</dt>
+					<dd class="value tabular" data-uptime-value></dd>
+					<dd class="sub">self-hosted at home</dd>
+				</div>
+			</dl>
+		</section>
+
+		<div class="meta label">
+			<p>© {new Date().getFullYear()} Eli Rose</p>
+			<p>Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a></p>
+		</div>
 	</div>
 </footer>
+
+<script>
+	// Uptime: the container writes /status.json when it starts (see PLAN.md, "Note: status.json")
+	type Status = { started: string };
+
+	const formatUptime = (ms: number) => {
+		const hours = Math.floor(ms / 3_600_000);
+		if (hours >= 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+		if (hours >= 1) return `${hours}h`;
+		return `${Math.max(1, Math.floor(ms / 60_000))}m`;
+	};
+
+	const showUptime = async () => {
+		try {
+			const response = await fetch("/status.json", { cache: "no-store" });
+			const { started } = (await response.json()) as Status;
+			const elapsed = Date.now() - Date.parse(started);
+			if (!response.ok || !(elapsed >= 0)) throw new Error("bad status.json");
+
+			document.querySelector("[data-uptime-value]")!.textContent = formatUptime(elapsed);
+			document.querySelector<HTMLElement>("[data-uptime]")!.hidden = false;
+		} catch {
+			// Missing or malformed: the uptime stays hidden
+		}
+	};
+
+	showUptime();
+</script>
+
+<script>
+	// Voyager 1: distance from the Sun, extrapolated from a JPL Horizons reference point.
+	// Its speed away from the Sun is nearly constant, so a straight line is accurate to
+	// well under 0.001% for years. Refresh the reference now and then anyway.
+	const REFERENCE_TIME = Date.UTC(2026, 8, 24); // 2026-09-24 00:00 UTC
+	const REFERENCE_KM = 25_706_772_400; // distance from the Sun at REFERENCE_TIME
+	const KM_PER_SECOND = 16.8817;
+
+	const cells = document.querySelectorAll<HTMLElement>("[data-voyager]");
+	const total = document.querySelector<HTMLElement>("[data-voyager-total]");
+	const session = document.querySelector<HTMLElement>("[data-voyager-session]");
+
+	if (cells.length && total && session) {
+		const format = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+		const render = () => {
+			const secondsSinceReference = (Date.now() - REFERENCE_TIME) / 1000;
+			total.textContent = format.format(REFERENCE_KM + secondsSinceReference * KM_PER_SECOND);
+			session.textContent = format.format((performance.now() / 1000) * KM_PER_SECOND);
+		};
+		render();
+		cells.forEach((cell) => (cell.hidden = false));
+
+		// Ticks every frame (the last digits roll like an odometer) while the footer is on
+		// screen. With reduced motion, or off screen, it only updates once a second.
+		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		let onScreen = false;
+		let frame = 0;
+		const loop = () => {
+			render();
+			frame = requestAnimationFrame(loop);
+		};
+		const update = () => {
+			cancelAnimationFrame(frame);
+			if (onScreen && !reducedMotion.matches) loop();
+		};
+		setInterval(render, 1000);
+		reducedMotion.addEventListener("change", update);
+		new IntersectionObserver(([entry]) => {
+			onScreen = entry.isIntersecting;
+			update();
+		}).observe(cells[0].closest("footer")!);
+	}
+</script>
+
+<script>
+	// ISS position. Each poll asks wheretheiss.at for where the ISS is now and where it
+	// will be 10 seconds from now; in between polls the display glides from one to the
+	// other, so the coordinates tick continuously. The place below them (country, or a
+	// rough ocean guess) comes from the coordinates endpoint.
+	const API = "https://api.wheretheiss.at/v1";
+	const POLL_MS = 5000; // the API allows 350 requests per 5 minutes; this uses 120
+	const LOOKAHEAD_S = 10;
+
+	type Position = { latitude: number; longitude: number; timestamp: number };
+	type Coordinates = { country_code: string };
+
+	const cell = document.querySelector<HTMLElement>("[data-iss]");
+	const coords = document.querySelector<HTMLElement>("[data-iss-coords]");
+	const place = document.querySelector<HTMLElement>("[data-iss-place]");
+	const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+	const getJson = async <T,>(url: string): Promise<T> => {
+		const response = await fetch(url);
+		if (!response.ok) throw new Error(`${response.status} ${url}`);
+		return response.json();
+	};
+
+	// Rough ocean boundaries. Good enough to say which ocean the ISS is over.
+	// (Its orbit stays between 51.6°N and 51.6°S, so no Arctic or Southern Ocean.)
+	const oceanAt = (lat: number, lon: number) => {
+		const half = lat >= 0 ? "North" : "South";
+		if (lat > 30 && lat < 46 && lon > -6 && lon < 36) return "the Mediterranean";
+		if (lon > 20 && lon < 147 && lat < 25 && !(lon > 100 && lat > -10)) return "the Indian Ocean";
+		if (lon > -70 && lon <= 20) return `the ${half} Atlantic`;
+		if (lat > 8 && lon > -100 && lon <= -70) return "the North Atlantic"; // Caribbean, Gulf
+		return `the ${half} Pacific`;
+	};
+
+	// Countries that read as "over the ___"
+	const takesThe = new Set(["US", "GB", "NL", "PH", "AE", "CZ", "DO", "CD", "CG", "CF", "BS", "GM"]);
+
+	const placeAt = async ({ latitude, longitude }: Position) => {
+		try {
+			const { country_code } = await getJson<Coordinates>(
+				`${API}/coordinates/${latitude},${longitude}`,
+			);
+			const name = /^[A-Z]{2}$/.test(country_code) && countryNames.of(country_code);
+			if (name) return takesThe.has(country_code) ? `the ${name}` : name;
+		} catch {
+			// Lookup failed: fall back to the ocean guess
+		}
+		return oceanAt(latitude, longitude);
+	};
+
+	const formatCoords = (lat: number, lon: number) =>
+		`${Math.abs(lat).toFixed(2)}°${lat >= 0 ? "N" : "S"} ` +
+		`${Math.abs(lon).toFixed(2)}°${lon >= 0 ? "E" : "W"}`;
+
+	// Where the ISS is at `ms`, on the line between two known positions.
+	// Longitude wraps at ±180°, so the step between them is taken the short way round.
+	let from: Position | undefined;
+	let to: Position | undefined;
+
+	const positionAt = (ms: number) => {
+		if (!from || !to) return;
+		const t = (ms / 1000 - from.timestamp) / (to.timestamp - from.timestamp);
+		const dLon = ((to.longitude - from.longitude + 540) % 360) - 180;
+		const lon = ((from.longitude + dLon * t + 540) % 360) - 180;
+		return { lat: from.latitude + (to.latitude - from.latitude) * t, lon };
+	};
+
+	const render = () => {
+		const position = positionAt(Date.now());
+		if (position) coords!.textContent = formatCoords(position.lat, position.lon);
+	};
+
+	// A new place name flashes briefly so the change gets noticed
+	const setPlace = (name: string) => {
+		const text = `over ${name}`;
+		if (place!.textContent === text) return;
+		const isFirst = place!.textContent === "";
+		place!.textContent = text;
+		if (!isFirst) {
+			place!.classList.remove("changed");
+			void place!.offsetWidth; // restart the animation
+			place!.classList.add("changed");
+		}
+	};
+
+	let failures = 0;
+	let timer: number | undefined;
+	let polling = false;
+
+	const poll = async () => {
+		polling = true;
+		try {
+			const now = Math.floor(Date.now() / 1000);
+			[from, to] = await getJson<Position[]>(
+				`${API}/satellites/25544/positions?timestamps=${now},${now + LOOKAHEAD_S}`,
+			);
+			render();
+			setPlace(await placeAt(from));
+			cell!.hidden = false;
+			failures = 0;
+		} catch {
+			// One miss keeps gliding on the last reading; repeated misses hide the cell
+			if (++failures >= 3) cell!.hidden = true;
+		}
+		polling = false;
+		if (!document.hidden) timer = window.setTimeout(poll, POLL_MS);
+	};
+
+	if (cell && coords && place) {
+		poll();
+		// Stop polling in background tabs, resume when the tab is visible again
+		document.addEventListener("visibilitychange", () => {
+			clearTimeout(timer);
+			if (!document.hidden && !polling) poll();
+		});
+
+		// Same pacing as the Voyager counter: every frame while visible, else once a second
+		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		let onScreen = false;
+		let frame = 0;
+		const loop = () => {
+			render();
+			frame = requestAnimationFrame(loop);
+		};
+		const update = () => {
+			cancelAnimationFrame(frame);
+			if (onScreen && !reducedMotion.matches) loop();
+		};
+		setInterval(render, 1000);
+		reducedMotion.addEventListener("change", update);
+		new IntersectionObserver(([entry]) => {
+			onScreen = entry.isIntersecting;
+			update();
+		}).observe(cell.closest("footer")!);
+	}
+</script>
 
 <style>
 	footer {
 		margin-top: var(--space-8);
-		border-top: var(--border-width) solid var(--border);
 	}
 
 	.inner {
-		display: grid;
-		gap: var(--space-1);
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-6) var(--gutter) var(--space-8);
-		line-height: 1.8;
+		padding: 0 var(--gutter) var(--space-6);
 	}
 
-	.status {
+	/* Hide the heading too when no readout has data */
+	.telemetry:not(:has(.cell:not([hidden]))) {
+		display: none;
+	}
+
+	/* Each column is as wide as its content (equal-width columns squeezed the long
+	   numbers against the next divider). 2×2 on tablets, 4 across on wide screens. */
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(2, max-content);
+		gap: var(--space-4) var(--space-8);
+		margin: 0;
+	}
+
+	@media (min-width: 64rem) {
+		.grid {
+			grid-template-columns: repeat(4, max-content);
+			justify-content: space-between; /* leftover space goes between readouts */
+			column-gap: var(--space-4);
+		}
+	}
+
+	/* Console-style readout: a thin rule on the left, label / value / note */
+	.cell {
+		display: grid;
+		align-content: start;
+		gap: 0.35rem;
+		padding-left: var(--space-2);
+		border-left: var(--border-width) solid var(--border);
+		white-space: nowrap;
+	}
+
+	/* Phones: the long readouts get full rows, the two short ones share a row */
+	@media (max-width: 36rem) {
+		.grid {
+			grid-template-columns: 1fr 1fr;
+			gap: var(--space-3) var(--space-2);
+		}
+
+		.cell {
+			white-space: normal;
+		}
+
+		.cell.wide {
+			grid-column: 1 / -1;
+		}
+	}
+
+	/* Small phones: too narrow for two readouts side by side without wrapping */
+	@media (max-width: 28rem) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	dd {
+		margin: 0;
+	}
+
+	.value {
+		color: var(--text);
+		font-family: var(--font-label);
+		font-size: var(--text-lg);
+		line-height: 1.3;
+		white-space: nowrap; /* numbers never break */
+	}
+
+	.sub {
+		color: var(--muted);
+		font-size: var(--text-sm);
+		line-height: 1.5;
+	}
+
+	.sub.changed {
+		animation: flash 1.5s ease-out;
+	}
+
+	@keyframes flash {
+		from {
+			color: var(--accent);
+		}
+	}
+
+	.meta {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: center;
-		gap: 0 1em;
-	}
-
-	/* The rows under the status line align with its text, not the dot */
-	.inner > p:not(.status) {
-		padding-left: calc(0.5rem + 1em);
-	}
-
-	.dot {
-		width: 0.5rem;
-		height: 0.5rem;
-		border-radius: 50%;
-		background: var(--status);
-		box-shadow: 0 0 0.5rem var(--status);
-	}
-
-	@media (max-width: 40rem) {
-		.status {
-			display: grid;
-			grid-template-columns: 0.5rem 1fr;
-		}
-
-		.status > :not(.dot) {
-			grid-column: 2;
-		}
-
-		.sep {
-			display: none;
-		}
+		justify-content: space-between;
+		gap: var(--space-1) var(--space-4);
+		margin-top: var(--space-8);
+		padding-top: var(--space-3);
+		border-top: var(--border-width) solid var(--border);
 	}
 
 	a {
@@ -80,9 +360,5 @@
 
 	a:hover {
 		text-decoration-color: var(--accent);
-	}
-
-	.copyright {
-		margin-top: var(--space-3);
 	}
 </style>

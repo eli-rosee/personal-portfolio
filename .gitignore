@@ -31,3 +31,6 @@ design/fonts/
 
 # resume is mounted into the container at deploy time, never committed
 public/resume.pdf
+
+# written by the container at startup; the local copy is a fake for development
+public/status.json
