@@ -1,0 +1,109 @@
+---
+// Faint stars fixed behind the whole page, drifting slowly to the left.
+// Decorative only: without JavaScript or canvas support the sky is just empty.
+// With reduced motion the stars are drawn once and never move.
+---
+
+<canvas class="starfield" aria-hidden="true"></canvas>
+
+<script>
+	const canvas = document.querySelector<HTMLCanvasElement>(".starfield");
+	const ctx = canvas?.getContext("2d");
+
+	type Star = { x: number; y: number; r: number; alpha: number; speed: number };
+
+	const DENSITY = 1 / 5000; // stars per square CSS pixel
+	const MIN_STARS = 150; // small screens would otherwise get only ~70
+	const MAX_SPEED = 4; // px per second for the nearest (largest) stars
+
+	if (!canvas || !ctx) {
+		canvas?.remove();
+	} else {
+		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		let stars: Star[] = [];
+		let width = 0;
+		let height = 0;
+		let frame = 0;
+		let last = 0;
+
+		// Bigger stars are brighter and drift faster, a cheap parallax effect
+		const makeStar = (x: number): Star => {
+			const depth = Math.random() ** 2; // most stars are small and far away
+			return {
+				x,
+				y: Math.random() * height,
+				r: 0.3 + depth * 0.9,
+				alpha: 0.2 + depth * 0.5,
+				speed: MAX_SPEED * (0.15 + depth * 0.85),
+			};
+		};
+
+		const resize = () => {
+			const dpr = window.devicePixelRatio || 1;
+			width = canvas.clientWidth;
+			height = canvas.clientHeight;
+			if (width === canvas.width / dpr && height === canvas.height / dpr) return;
+			canvas.width = Math.round(width * dpr);
+			canvas.height = Math.round(height * dpr);
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+			const count = Math.max(MIN_STARS, Math.round(width * height * DENSITY));
+			stars = Array.from({ length: count }, () => makeStar(Math.random() * width));
+			draw();
+		};
+
+		const draw = () => {
+			ctx.clearRect(0, 0, width, height);
+			ctx.fillStyle = "#e6e1d6"; // --text
+			for (const star of stars) {
+				ctx.globalAlpha = star.alpha;
+				ctx.beginPath();
+				ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+				ctx.fill();
+			}
+		};
+
+		const tick = (now: number) => {
+			const dt = Math.min((now - last) / 1000, 0.1); // cap the jump after a long pause
+			last = now;
+			for (const star of stars) {
+				star.x -= star.speed * dt;
+				// A star leaving on the left is replaced by a new one on the right
+				if (star.x < -star.r) Object.assign(star, makeStar(width + star.r));
+			}
+			draw();
+			frame = requestAnimationFrame(tick);
+		};
+
+		const update = () => {
+			cancelAnimationFrame(frame);
+			if (!reducedMotion.matches) {
+				last = performance.now();
+				frame = requestAnimationFrame(tick);
+			}
+		};
+
+		new ResizeObserver(resize).observe(canvas);
+		reducedMotion.addEventListener("change", update);
+		update(); // the browser pauses the animation in background tabs
+	}
+</script>
+
+<style>
+	.starfield {
+		/* No negative z-index: Firefox on Android paints the page background over it.
+		   Instead the canvas comes first in the page, and the sections after it are
+		   positioned (below), so they paint on top of it. */
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100vh;
+		height: 100lvh; /* phones: doesn't resize when the address bar shows or hides */
+		pointer-events: none;
+	}
+
+	:global(body > :is(header, main, footer)) {
+		position: relative;
+	}
+</style>
