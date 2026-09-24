@@ -1,0 +1,62 @@
+---
+import { site } from "../data/site";
+import ExternalIcon from "./ExternalIcon.astro";
+---
+
+<header>
+	<nav aria-label="Main">
+		<a class="home" href="/">{site.name}</a>
+		<ul>
+			<li><a href="#missions">Projects</a></li>
+			<li>
+				<a class="resume" href={site.resume} target="_blank" rel="noopener">
+					Resume <ExternalIcon />
+				</a>
+			</li>
+		</ul>
+	</nav>
+</header>
+
+<style>
+	nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		max-width: var(--page-max);
+		margin: 0 auto;
+		padding: var(--space-4) var(--gutter);
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+	}
+
+	.home {
+		color: var(--text);
+		font-weight: 700;
+	}
+
+	ul {
+		display: flex;
+		gap: var(--space-4);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	ul a {
+		color: var(--muted);
+	}
+
+	ul a:hover {
+		color: var(--text);
+	}
+
+	ul a.resume {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		color: var(--accent);
+	}
+</style>

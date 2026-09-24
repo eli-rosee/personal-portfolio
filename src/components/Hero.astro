@@ -1,0 +1,94 @@
+---
+import { Image } from "astro:assets";
+import { site } from "../data/site";
+import wordmark from "../assets/wordmark.png";
+---
+
+<section class="hero">
+	<p class="label callsign">
+		{site.callsign}
+		<span aria-hidden="true">·</span>
+		<span class="tabular">T+ 00:00:00</span>
+	</p>
+
+	<h1>
+		<Image
+			src={wordmark}
+			alt={site.name}
+			width={700}
+			densities={[1, 2]}
+			loading="eager"
+			fetchpriority="high"
+		/>
+	</h1>
+
+	<p class="tagline">{site.tagline}</p>
+
+	<div class="actions">
+		<a class="button primary" href={site.resume} target="_blank" rel="noopener">
+			Resume (PDF)
+		</a>
+		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub</a>
+		<a class="button" href={`mailto:${site.email}`}>Email</a>
+	</div>
+</section>
+
+<style>
+	.hero {
+		max-width: var(--page-max);
+		margin: 0 auto;
+		padding: var(--space-12) var(--gutter) var(--space-8);
+	}
+
+	.callsign {
+		display: flex;
+		gap: 1.5em;
+		margin-bottom: var(--space-2);
+	}
+
+	h1 img {
+		width: min(700px, 100%);
+	}
+
+	.tagline {
+		max-width: 38rem;
+		margin-top: var(--space-4);
+		font-size: var(--text-lg);
+		line-height: 1.8;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-6);
+	}
+
+	.button {
+		display: inline-block;
+		padding: 0.9rem 1.75rem;
+		border: var(--border-width) solid var(--border);
+		color: var(--text);
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		font-weight: 700;
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+	}
+
+	.button:hover {
+		border-color: var(--muted);
+		text-decoration: none;
+	}
+
+	.button.primary {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--bg);
+	}
+
+	.button.primary:hover {
+		background: var(--text);
+		border-color: var(--text);
+	}
+</style>
