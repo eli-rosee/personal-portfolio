@@ -26,8 +26,23 @@ const facts: { label: string; value: string }[] = frontmatter.facts ?? [];
 <style>
 	.layout {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
-		gap: var(--space-6);
+		gap: var(--space-4);
+	}
+
+	/* Single column (phones): quick facts come first */
+	.facts {
+		order: -1;
+	}
+
+	@media (min-width: 48rem) {
+		.layout {
+			grid-template-columns: 1fr 1fr;
+			gap: var(--space-6);
+		}
+
+		.facts {
+			order: 0;
+		}
 	}
 
 	.prose {

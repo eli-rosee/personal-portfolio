@@ -10,14 +10,11 @@ const { number, title, status, summary, stack, links } = Astro.props.project.dat
 const statusLabel = status.replace("-", " ");
 
 // Plain-English meaning, shown on hover, keyboard focus, or tap
-const meanings = {
+const statusMeaning = {
 	launched: "In active development",
-	"in-orbit": "Complete and running",
+	"in-orbit": "Completed",
 	decommissioned: "No longer maintained",
-};
-const statusMeaning = meanings[status];
-// Every tooltip is sized to the longest meaning so they all match
-const tipChars = Math.max(...Object.values(meanings).map((m) => m.length));
+}[status];
 const tipId = `status-tip-${number}`;
 const href = links?.demo ?? links?.repo;
 
@@ -32,11 +29,10 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		<span class="tabular">Mission {String(number).padStart(2, "0")}</span>
 		<span class="status-wrap">
 			<span class={`status ${status}`} tabindex="0" aria-describedby={tipId}>
+				<span class="light" aria-hidden="true"></span>
 				{statusLabel}
 			</span>
-			<span class="tip" id={tipId} role="tooltip" style={`--tip-chars: ${tipChars}`}>
-				{statusMeaning}
-			</span>
+			<span class="tip" id={tipId} role="tooltip">{statusMeaning}</span>
 		</span>
 	</header>
 
@@ -76,6 +72,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 
 	header {
 		display: flex;
+		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-1) var(--space-2);
 	}
@@ -84,12 +81,48 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		position: relative; /* anchors the tooltip to the status */
 	}
 
+	/* Indicator chip: a faint frame hints that it can be hovered or tapped */
 	.status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		padding: 0.15rem 0.5rem;
+		border: var(--border-width) solid var(--border);
+		color: var(--muted);
 		cursor: help;
+		transition: border-color 0.15s;
+	}
+
+	.status:hover,
+	.status:focus-visible {
+		border-color: currentColor;
 	}
 
 	.status:focus-visible {
-		outline-offset: 4px;
+		outline-offset: 3px;
+	}
+
+	.light {
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 50%;
+		background: currentColor;
+	}
+
+	/* Active development: the light pulses slowly, like a live signal */
+	.launched .light {
+		box-shadow: 0 0 0.4rem currentColor;
+		animation: pulse 2.4s ease-in-out infinite;
+	}
+
+	.in-orbit .light {
+		box-shadow: 0 0 0.4rem currentColor;
+	}
+
+	@keyframes pulse {
+		50% {
+			opacity: 0.25;
+		}
 	}
 
 	.tip {
@@ -97,8 +130,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		top: calc(100% + var(--space-1));
 		right: 0;
 		z-index: 1;
-		/* Monospace: each character is 1ch plus the letter-spacing */
-		width: calc(var(--tip-chars) * (1ch + 0.1em) + 1.2rem + 2px);
+		width: max-content; /* sized to its own text */
 		max-width: 100cqi; /* card content width */
 		padding: 0.3rem 0.6rem;
 		line-height: 1.5;
@@ -121,9 +153,10 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	}
 
 	/* Narrow cards: status goes under the mission number, tooltip opens to the right */
-	@container (max-width: 16rem) {
+	@container (max-width: 17.5rem) {
 		header {
 			flex-direction: column;
+			align-items: flex-start;
 		}
 
 		.tip {
