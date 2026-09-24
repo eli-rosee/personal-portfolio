@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # licensed design assets (desktop license: must not be served or redistributed)
 design/fonts/
+
+# editor settings
+.vscode/
