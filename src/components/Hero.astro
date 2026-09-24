@@ -29,9 +29,41 @@ import wordmark from "../assets/wordmark.png";
 			Resume (PDF)
 		</a>
 		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub</a>
-		<a class="button" href={`mailto:${site.email}`}>Email</a>
+		<!-- Copies the address on click. Without JavaScript it falls back to a mailto link. -->
+		<a class="button copy-email" href={`mailto:${site.email}`} data-email={site.email}>
+			<span class="copy-label">Email</span>
+			<span class="copy-label copied" aria-hidden="true">Copied</span>
+		</a>
+		<p class="copy-status sr-only" role="status" aria-live="polite"></p>
 	</div>
 </section>
+
+<script>
+	const button = document.querySelector<HTMLAnchorElement>(".copy-email");
+	const status = document.querySelector<HTMLElement>(".copy-status");
+	let resetTimer: number | undefined;
+
+	button?.addEventListener("click", async (event) => {
+		const email = button.dataset.email;
+		if (!email || !navigator.clipboard) return; // let the mailto link work instead
+
+		event.preventDefault();
+		try {
+			await navigator.clipboard.writeText(email);
+		} catch {
+			window.location.href = button.href; // copy blocked: fall back to mailto
+			return;
+		}
+
+		button.classList.add("is-copied");
+		if (status) status.textContent = `Copied ${email} to clipboard`;
+		clearTimeout(resetTimer);
+		resetTimer = window.setTimeout(() => {
+			button.classList.remove("is-copied");
+			if (status) status.textContent = "";
+		}, 2000);
+	});
+</script>
 
 <style>
 	.hero {
@@ -79,6 +111,30 @@ import wordmark from "../assets/wordmark.png";
 	.button:hover {
 		border-color: var(--muted);
 		text-decoration: none;
+	}
+
+	/* Both labels share one grid cell so the button keeps its width when swapping */
+	.copy-email {
+		display: inline-grid;
+	}
+
+	.copy-label {
+		grid-area: 1 / 1;
+		text-align: center;
+	}
+
+	.copy-label.copied,
+	.copy-email.is-copied .copy-label:not(.copied) {
+		visibility: hidden;
+	}
+
+	.copy-email.is-copied {
+		border-color: var(--status);
+	}
+
+	.copy-email.is-copied .copied {
+		visibility: visible;
+		color: var(--status);
 	}
 
 	.button.primary {

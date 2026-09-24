@@ -1,0 +1,106 @@
+---
+import type { CollectionEntry } from "astro:content";
+import ExternalIcon from "./ExternalIcon.astro";
+
+interface Props {
+	project: CollectionEntry<"projects">;
+}
+
+const { number, title, status, summary, stack, links } = Astro.props.project.data;
+const statusLabel = status.replace("-", " ");
+const href = links?.demo ?? links?.repo;
+---
+
+<article class="card">
+	<header class="label">
+		<span class="tabular">Mission {String(number).padStart(2, "0")}</span>
+		<span class={`status ${status}`}>{statusLabel}</span>
+	</header>
+
+	<h3>
+		{
+			href ? (
+				<a href={href} target="_blank" rel="noopener">
+					{title} <ExternalIcon />
+				</a>
+			) : (
+				title
+			)
+		}
+	</h3>
+
+	<p class="summary">{summary}</p>
+
+	<ul class="stack label" aria-label="Tech stack">
+		{stack.map((tech) => <li>{tech}</li>)}
+	</ul>
+</article>
+
+<style>
+	.card {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		padding: var(--space-4);
+		background: var(--surface);
+		border: var(--border-width) solid var(--border);
+	}
+
+	header {
+		display: flex;
+		flex-wrap: wrap; /* status drops to its own line when the card is narrow */
+		justify-content: space-between;
+		gap: var(--space-1) var(--space-2);
+	}
+
+	.status.in-orbit {
+		color: var(--status);
+	}
+
+	.status.launched {
+		color: var(--accent);
+	}
+
+	h3 {
+		font-size: var(--text-lg);
+		letter-spacing: var(--tracking-title);
+		text-transform: uppercase;
+	}
+
+	h3 a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5em;
+		color: var(--text);
+	}
+
+	h3 a :global(svg) {
+		color: var(--muted);
+		flex-shrink: 0;
+	}
+
+	h3 a:hover :global(svg) {
+		color: var(--accent);
+	}
+
+	.summary {
+		flex-grow: 1; /* keeps stack tags aligned at the bottom across cards */
+		color: var(--muted);
+		font-size: 0.95rem;
+		line-height: 1.8;
+	}
+
+	.stack {
+		display: flex;
+		flex-wrap: wrap;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		color: var(--accent);
+	}
+
+	.stack li:not(:last-child)::after {
+		content: "·";
+		margin: 0 1em;
+	}
+</style>
