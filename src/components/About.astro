@@ -1,0 +1,52 @@
+---
+import { Content, frontmatter } from "../data/about.md";
+
+const facts: { label: string; value: string }[] = frontmatter.facts ?? [];
+---
+
+<section id="about" class="section" aria-labelledby="about-heading">
+	<h2 id="about-heading" class="section-title">// About</h2>
+	<div class="layout">
+		<div class="prose">
+			<Content />
+		</div>
+		<dl class="facts">
+			{
+				facts.map(({ label, value }) => (
+					<div>
+						<dt class="label">{label}</dt>
+						<dd>{value}</dd>
+					</div>
+				))
+			}
+		</dl>
+	</div>
+</section>
+
+<style>
+	.layout {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+		gap: var(--space-6);
+	}
+
+	.prose {
+		display: grid;
+		gap: var(--space-3);
+		max-width: 38rem;
+		line-height: 1.9;
+	}
+
+	.facts {
+		display: grid;
+		gap: var(--space-3);
+		align-content: start;
+		margin: 0;
+		padding: var(--space-4);
+		border: var(--border-width) solid var(--border);
+	}
+
+	dd {
+		margin: 0.25rem 0 0;
+	}
+</style>

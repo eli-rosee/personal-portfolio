@@ -1,0 +1,66 @@
+---
+// Ground station status. The uptime, ISS, and Voyager readouts are static
+// placeholders until Phase 5 wires them up (each hides itself if it fails).
+---
+
+<footer>
+	<div class="inner label">
+		<p class="status">
+			<span class="dot" aria-hidden="true"></span>
+			<span>Ground station online</span>
+			<span class="sep" aria-hidden="true">·</span>
+			<span class="tabular" data-uptime>Uptime —</span>
+			<span class="sep" aria-hidden="true">·</span>
+			<span>
+				Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a>
+			</span>
+		</p>
+		<p class="tabular" data-iss>ISS: acquiring signal</p>
+		<p class="tabular" data-voyager>Voyager 1: acquiring signal</p>
+		<p class="copyright">© {new Date().getFullYear()} Eli Rose</p>
+	</div>
+</footer>
+
+<style>
+	footer {
+		margin-top: var(--space-8);
+		border-top: var(--border-width) solid var(--border);
+	}
+
+	.inner {
+		display: grid;
+		gap: var(--space-1);
+		max-width: var(--page-max);
+		margin: 0 auto;
+		padding: var(--space-6) var(--gutter) var(--space-8);
+		line-height: 1.8;
+	}
+
+	.status {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0 1em;
+	}
+
+	/* The rows under the status line align with its text, not the dot */
+	.inner > p:not(.status) {
+		padding-left: calc(0.5rem + 1em);
+	}
+
+	.dot {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background: var(--status);
+		box-shadow: 0 0 0.5rem var(--status);
+	}
+
+	a {
+		color: var(--text);
+	}
+
+	.copyright {
+		margin-top: var(--space-3);
+	}
+</style>
