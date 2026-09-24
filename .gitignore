@@ -28,3 +28,6 @@ design/fonts/
 
 # editor settings
 .vscode/
+
+# resume is mounted into the container at deploy time, never committed
+public/resume.pdf

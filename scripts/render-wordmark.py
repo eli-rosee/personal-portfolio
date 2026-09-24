@@ -4,14 +4,14 @@ The font's desktop license allows rasterized images for web use but not
 embedding the font itself, so the site only ever ships this PNG.
 
 Usage (from the repo root, needs Pillow):
-    python3 design/scripts/render_wordmark.py
+    python3 scripts/render-wordmark.py
 """
 
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 FONT = ROOT / "design/fonts/mission-control-dcu/Mission Control.otf"
 OUT = ROOT / "src/assets/wordmark.png"
 

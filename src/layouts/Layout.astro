@@ -10,10 +10,11 @@ interface Props {
 	description?: string;
 }
 
-const {
-	title = "Eli Rose",
-	description = "Portfolio of Eli Rose.", // placeholder, to be written by Eli
-} = Astro.props;
+const { title = "Eli Rose", description = "Developer Portfolio of Eli Rose." } =
+	Astro.props;
+
+// Link previews need an absolute URL, which requires `site` in astro.config.mjs.
+const ogImage = new URL("/og-image.png", Astro.site ?? Astro.url).href;
 ---
 
 <!doctype html>
@@ -28,6 +29,12 @@ const {
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={ogImage} />
+		<meta name="twitter:card" content="summary_large_image" />
 	</head>
 	<body>
 		<slot />
