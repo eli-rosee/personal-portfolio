@@ -110,7 +110,7 @@ a:hover {
 .section {
 	max-width: var(--page-max);
 	margin: 0 auto;
-	padding: var(--space-8) var(--gutter);
+	padding: clamp(var(--space-4), 6vw, var(--space-8)) var(--gutter);
 	scroll-margin-top: var(--space-2);
 }
 

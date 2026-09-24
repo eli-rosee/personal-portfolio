@@ -6,7 +6,7 @@ import wordmark from "../assets/wordmark.png";
 
 <section class="hero">
 	<p class="label callsign">
-		{site.callsign}
+		<span>{site.callsign}</span>
 		<span aria-hidden="true">·</span>
 		<span class="tabular">T+ 00:00:00</span>
 	</p>
@@ -29,7 +29,7 @@ import wordmark from "../assets/wordmark.png";
 			Resume (PDF)
 		</a>
 		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub</a>
-		<!-- Copies the address on click. Without JavaScript it falls back to a mailto link. -->
+		<!-- Copies the address on desktop. On phones, or without JavaScript, it opens the mail app. -->
 		<a class="button copy-email" href={`mailto:${site.email}`} data-email={site.email}>
 			<span class="copy-label">Email</span>
 			<span class="copy-label copied" aria-hidden="true">Copied</span>
@@ -45,7 +45,9 @@ import wordmark from "../assets/wordmark.png";
 
 	button?.addEventListener("click", async (event) => {
 		const email = button.dataset.email;
-		if (!email || !navigator.clipboard) return; // let the mailto link work instead
+		// Touch devices (no hover) keep the normal mailto link and open the mail app
+		const isTouch = window.matchMedia("(hover: none)").matches;
+		if (!email || !navigator.clipboard || isTouch) return;
 
 		event.preventDefault();
 		try {
@@ -69,12 +71,15 @@ import wordmark from "../assets/wordmark.png";
 	.hero {
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-12) var(--gutter) var(--space-8);
+		padding: clamp(var(--space-4), 8vw, var(--space-12)) var(--gutter)
+			clamp(var(--space-3), 6vw, var(--space-8));
 	}
 
 	.callsign {
 		display: flex;
-		gap: 1.5em;
+		flex-wrap: wrap;
+		gap: 0 1.5em;
+		white-space: nowrap;
 		margin-bottom: var(--space-2);
 	}
 
@@ -135,6 +140,30 @@ import wordmark from "../assets/wordmark.png";
 	.copy-email.is-copied .copied {
 		visibility: visible;
 		color: var(--status);
+	}
+
+	/* Phones: Resume full width, GitHub and Email side by side */
+	@media (max-width: 30rem) {
+		.actions {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: var(--space-1);
+			margin-top: var(--space-4);
+		}
+
+		.button {
+			padding-inline: var(--space-1);
+			text-align: center;
+		}
+
+		.button.primary {
+			grid-column: 1 / -1;
+		}
+
+		.tagline {
+			margin-top: var(--space-3);
+			font-size: var(--text-base);
+		}
 	}
 
 	.button.primary {

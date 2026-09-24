@@ -56,8 +56,30 @@
 		box-shadow: 0 0 0.5rem var(--status);
 	}
 
+	@media (max-width: 40rem) {
+		.status {
+			display: grid;
+			grid-template-columns: 0.5rem 1fr;
+		}
+
+		.status > :not(.dot) {
+			grid-column: 2;
+		}
+
+		.sep {
+			display: none;
+		}
+	}
+
 	a {
 		color: var(--text);
+		text-decoration: underline;
+		text-decoration-color: var(--muted);
+		text-underline-offset: 0.3em;
+	}
+
+	a:hover {
+		text-decoration-color: var(--accent);
 	}
 
 	.copyright {

@@ -50,6 +50,22 @@ import ExternalIcon from "./ExternalIcon.astro";
 		color: var(--muted);
 	}
 
+	@media (max-width: 30rem) {
+		nav {
+			padding-block: var(--space-3);
+			font-size: var(--text-xs);
+		}
+
+		.home {
+			display: none;
+		}
+
+		ul {
+			flex: 1;
+			justify-content: space-between;
+		}
+	}
+
 	ul a:hover {
 		color: var(--text);
 	}
