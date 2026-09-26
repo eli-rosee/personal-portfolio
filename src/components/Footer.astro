@@ -53,10 +53,16 @@
 		try {
 			const response = await fetch("/status.json", { cache: "no-store" });
 			const { started } = (await response.json()) as Status;
-			const elapsed = Date.now() - Date.parse(started);
-			if (!response.ok || !(elapsed >= 0)) throw new Error("bad status.json");
+			const startedAt = Date.parse(started);
+			if (!response.ok || !(Date.now() - startedAt >= 0)) throw new Error("bad status.json");
 
-			document.querySelector("[data-uptime-value]")!.textContent = formatUptime(elapsed);
+			// Recount every minute (the finest unit shown), and right away when the tab comes
+			// back, since background tabs and sleeping laptops pause timers
+			const value = document.querySelector("[data-uptime-value]")!;
+			const render = () => (value.textContent = formatUptime(Date.now() - startedAt));
+			render();
+			setInterval(render, 60_000);
+			document.addEventListener("visibilitychange", () => document.hidden || render());
 			document.querySelector<HTMLElement>("[data-uptime]")!.hidden = false;
 		} catch {
 			// Missing or malformed: the uptime stays hidden
