@@ -34,3 +34,7 @@ public/resume.pdf
 
 # written by the container at startup; the local copy is a fake for development
 public/status.json
+
+# demo videos and slide decks are mounted into the container at deploy time, never committed
+public/videos/
+public/slides/

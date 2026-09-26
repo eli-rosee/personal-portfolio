@@ -1,10 +1,8 @@
 ---
-import { getCollection } from "astro:content";
+import { getProjects } from "../data/projects";
 import MissionCard from "./MissionCard.astro";
 
-const projects = (await getCollection("projects", ({ data }) => !data.draft)).sort(
-	(a, b) => a.data.number - b.data.number,
-);
+const projects = await getProjects();
 ---
 
 <section id="missions" class="section" aria-labelledby="missions-heading">

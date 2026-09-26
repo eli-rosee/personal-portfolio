@@ -1,12 +1,14 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import ExternalIcon from "./ExternalIcon.astro";
+import { hasPage, pageUrl } from "../data/projects";
 
 interface Props {
 	project: CollectionEntry<"projects">;
 }
 
-const { number, title, status, summary, stack, links } = Astro.props.project.data;
+const { project } = Astro.props;
+const { number, title, status, summary, stack, links } = project.data;
 const statusLabel = status.replace("-", " ");
 
 // Plain-English meaning, shown on hover, keyboard focus, or tap
@@ -16,7 +18,10 @@ const statusMeaning = {
 	decommissioned: "No longer maintained",
 }[status];
 const tipId = `status-tip-${number}`;
-const href = links?.demo ?? links?.repo;
+// The title opens the project page if there is one, otherwise the demo or repo in a new tab
+const internal = hasPage(project);
+const href = internal ? pageUrl(project) : (links?.demo ?? links?.repo);
+const target = internal ? {} : { target: "_blank", rel: "noopener" };
 
 // The last word and the link arrow never wrap apart
 const words = title.split(" ");
@@ -39,7 +44,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	<h3>
 		{
 			href ? (
-				<a href={href} target="_blank" rel="noopener">
+				<a href={href} {...target}>
 					{leadingWords}
 					<span class="nowrap">
 						{lastWord}

@@ -1,0 +1,418 @@
+---
+// Project detail page (PLAN.md, "Project pages"). Only projects with a Markdown body get
+// one; the body is the Overview. Every other section appears only when its data exists.
+import { Image } from "astro:assets";
+import { render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import Footer from "../../components/Footer.astro";
+import Starfield from "../../components/Starfield.astro";
+import ExternalIcon from "../../components/ExternalIcon.astro";
+import CopyEmail from "../../components/CopyEmail.astro";
+import { getProjects, hasPage } from "../../data/projects";
+
+export async function getStaticPaths() {
+	return (await getProjects()).filter(hasPage).map((project) => ({
+		params: { slug: project.id },
+		props: { project },
+	}));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { number, title, status, summary, stack, links, recognition, role, demo, slides, parts } =
+	project.data;
+const statusLabel = status.replace("-", " ");
+---
+
+<Layout title={`${title} · Eli Rose`} description={summary}>
+	<Starfield />
+	<!-- Project pages swap the site nav for a single way back -->
+	<header class="topbar">
+		<nav aria-label="Back">
+			<a class="back" href="/#missions">
+				<svg
+					width="0.9em"
+					height="0.9em"
+					viewBox="0 0 12 12"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="square"
+					aria-hidden="true"><path d="M10 6H2M5 3 2 6l3 3"></path></svg
+				>
+				All missions
+			</a>
+		</nav>
+	</header>
+
+	<main>
+		<article class="section page">
+			<!-- Unboxed, like the home page hero. Same facts as the card, larger. -->
+			<header class="head">
+				<p class="meta label">
+					<span class="tabular">Mission {String(number).padStart(2, "0")}</span>
+					<span class={`status ${status}`}><span class="light" aria-hidden="true"></span>{statusLabel}</span>
+				</p>
+				<h1>{title}</h1>
+				<p class="summary">{summary}</p>
+				<ul class="stack label" aria-label="Tech stack">
+					{stack.map((tech) => <li>{tech}</li>)}
+				</ul>
+				{
+					(links?.demo || links?.repo || project.data.private) && (
+						<div class="actions">
+							{links?.demo && (
+								<a class="button primary" href={links.demo} target="_blank" rel="noopener">
+									Live site <ExternalIcon />
+								</a>
+							)}
+							{links?.repo && (
+								<a class="button" href={links.repo} target="_blank" rel="noopener">
+									Repo <ExternalIcon />
+								</a>
+							)}
+							{project.data.private && (
+								<CopyEmail class="button" label="Request code by email" copiedLabel="Email copied" />
+							)}
+						</div>
+					)
+				}
+			</header>
+
+			<section aria-labelledby="overview">
+				<h2 id="overview" class="section-title">// Overview</h2>
+				<div class="prose overview">
+					<Content />
+				</div>
+			</section>
+
+			{
+				recognition && (
+					<section aria-labelledby="recognition">
+						<h2 id="recognition" class="section-title">// Recognition</h2>
+						<ul class="awards">
+							{recognition.map(({ title, detail }) => (
+								<li>
+									<p class="award">{title}</p>
+									{detail && <p class="label">{detail}</p>}
+								</li>
+							))}
+						</ul>
+					</section>
+				)
+			}
+
+			{
+				role && (
+					<section aria-labelledby="role">
+						<h2 id="role" class="section-title">// {role.solo ? "My part" : "My role"}</h2>
+						<p class="label">{role.context}</p>
+						<ul class="prose bullets">
+							{role.points.map((point) => <li>{point}</li>)}
+						</ul>
+					</section>
+				)
+			}
+
+			{
+				demo && (
+					<section aria-labelledby="demo">
+						<h2 id="demo" class="section-title">// Demo</h2>
+						<figure>
+							<video controls preload="none" poster={demo.poster} src={demo.src} />
+							{(demo.caption || demo.presentation) && (
+								<figcaption class="label">
+									{demo.caption}
+									{demo.presentation && (
+										<>
+											{" "}The full final presentation is{" "}
+											<a href={demo.presentation} target="_blank" rel="noopener">
+												on YouTube <ExternalIcon />
+											</a>
+										</>
+									)}
+								</figcaption>
+							)}
+						</figure>
+					</section>
+				)
+			}
+
+			{
+				slides && (
+					<section aria-labelledby="slides">
+						<h2 id="slides" class="section-title">// Slides</h2>
+						<div class="slides">
+							{slides.images.map(({ src, alt }) => (
+								<Image src={src} alt={alt} width={800} class="slide" />
+							))}
+						</div>
+						{slides.pdf && (
+							<p class="label more">
+								{slides.images.length} picked from the final deck ·{" "}
+								<a href={slides.pdf} target="_blank" rel="noopener">
+									Full deck (PDF) <ExternalIcon />
+								</a>
+							</p>
+						)}
+					</section>
+				)
+			}
+
+			{
+				parts?.map((part, i) => (
+					<section aria-labelledby={`part-${i + 1}`}>
+						<h2 id={`part-${i + 1}`} class="section-title">
+							// Part {i + 1} · {part.title}
+						</h2>
+						<p class="prose">{part.text}</p>
+						{part.loop && (
+							<figure>
+								<video
+									data-loop
+									autoplay
+									muted
+									loop
+									playsinline
+									poster={part.loop.poster}
+									src={part.loop.src}
+								/>
+								{part.loop.caption && <figcaption class="label">{part.loop.caption}</figcaption>}
+							</figure>
+						)}
+					</section>
+				))
+			}
+		</article>
+	</main>
+	<Footer telemetry={false} />
+</Layout>
+
+<script>
+	// Silent loops autoplay like GIFs, except with reduced motion: then they stay paused
+	// and get controls, so they only play if asked to
+	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		document.querySelectorAll<HTMLVideoElement>("video[data-loop]").forEach((video) => {
+			video.pause();
+			video.controls = true;
+		});
+	}
+</script>
+
+<style>
+	main,
+	.topbar {
+		position: relative; /* paints over the starfield */
+	}
+
+	/* Same box as the site nav, so "All missions" sits where the name usually is */
+	.topbar nav {
+		max-width: var(--page-max);
+		margin: 0 auto;
+		padding: var(--space-4) var(--gutter);
+	}
+
+	.back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		color: var(--muted);
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+	}
+
+	.back:hover {
+		color: var(--text);
+		text-decoration: none;
+	}
+
+	.page {
+		display: grid;
+		gap: clamp(var(--space-8), 8vw, var(--space-12)); /* 64px on phones, 96px on desktop */
+		padding-top: var(--space-2); /* the title starts right under the top bar */
+	}
+
+	/* Every section's contents are evenly spaced, and nothing adds extra space at the
+	   bottom, so the gap between sections is always the same */
+	.page > section {
+		display: grid;
+		gap: var(--space-4);
+	}
+
+	.page > section > * {
+		margin-block: 0;
+	}
+
+	.page > section > .section-title {
+		margin-bottom: 0;
+	}
+
+	.head {
+		display: grid;
+		gap: var(--space-3);
+	}
+
+	.meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		padding: 0.15rem 0.5rem;
+		border: var(--border-width) solid var(--border);
+		color: var(--muted);
+	}
+
+	.status.in-orbit {
+		color: var(--status);
+	}
+
+	.status.launched {
+		color: var(--accent);
+	}
+
+	.light {
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 50%;
+		background: currentColor;
+	}
+
+	.in-orbit .light,
+	.launched .light {
+		box-shadow: 0 0 0.4rem currentColor;
+	}
+
+	h1 {
+		font-size: clamp(1.5rem, 4vw, 2rem);
+		letter-spacing: var(--tracking-title);
+		text-transform: uppercase;
+	}
+
+	/* The page is as wide as the home page; text stays at a readable line length */
+	.summary,
+	.prose {
+		max-width: 65ch;
+		color: var(--muted);
+		line-height: 1.8;
+	}
+
+	.overview > :global(* + *) {
+		margin-top: var(--space-2); /* paragraphs in the Markdown overview */
+	}
+
+	.stack {
+		display: flex;
+		flex-wrap: wrap;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		color: var(--accent);
+	}
+
+	.stack li:not(:last-child)::after {
+		content: "·";
+		margin: 0 1em;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+
+	.button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5em;
+		padding: 0.6rem 1rem;
+		border: var(--border-width) solid var(--border);
+		color: var(--text);
+		font-family: var(--font-label);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+	}
+
+	.button:hover {
+		border-color: var(--accent);
+		text-decoration: none;
+	}
+
+	.button.primary {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--bg);
+	}
+
+	.awards {
+		display: grid;
+		gap: var(--space-3);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.awards li {
+		display: grid;
+		gap: 0.35rem;
+		padding-left: var(--space-2);
+		border-left: var(--border-width) solid var(--accent);
+	}
+
+	.award {
+		font-family: var(--font-label);
+		font-size: var(--text-lg);
+		line-height: 1.4;
+	}
+
+	.bullets {
+		display: grid;
+		gap: var(--space-1);
+		margin: 0;
+		padding-left: 1.2em;
+		list-style: square;
+	}
+
+	.bullets li::marker {
+		color: var(--accent);
+	}
+
+	figure {
+		display: grid;
+		gap: var(--space-1);
+		margin: 0;
+	}
+
+	video,
+	.slide {
+		display: block;
+		width: 100%;
+		background: var(--surface);
+		border: var(--border-width) solid var(--border);
+	}
+
+	video {
+		aspect-ratio: 16 / 9; /* reserves space before the poster loads */
+	}
+
+	.slides {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--space-2);
+	}
+
+	figcaption a,
+	.more a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+	}
+</style>

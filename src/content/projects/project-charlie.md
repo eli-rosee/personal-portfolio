@@ -1,11 +1,9 @@
 ---
 number: 3
-title: Project Charlie
+title: Project 3
 status: decommissioned
-summary: Placeholder. One sentence about what it does and why it's interesting.
-stack: [Python, Redis]
+summary: Placeholder.
+stack: [Placeholder, Placeholder]
 links:
   repo: https://github.com/eli-rosee
 ---
-
-Placeholder project. Longer write-up goes here (used later for project detail pages).

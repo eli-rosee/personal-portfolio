@@ -1,35 +1,43 @@
 ---
 // Telemetry readouts + copyright. Each readout is its own script and stays hidden
 // until it has real data, so a failure (or no JavaScript) just leaves it out.
+// Project pages pass `telemetry={false}` to show only the copyright row.
+interface Props {
+	telemetry?: boolean;
+}
+
+const { telemetry = true } = Astro.props;
 ---
 
 <footer>
 	<div class="inner">
-		<section class="telemetry" aria-labelledby="telemetry-heading">
-			<h2 id="telemetry-heading" class="section-title">// Telemetry</h2>
-			<dl class="grid">
-				<div class="cell wide" data-iss hidden>
-					<dt class="label">ISS position</dt>
-					<dd class="value tabular" data-iss-coords></dd>
-					<dd class="sub" data-iss-place></dd>
-				</div>
-				<div class="cell wide" data-voyager hidden>
-					<dt class="label">Voyager&nbsp;1</dt>
-					<dd class="value tabular"><span data-voyager-total></span> km</dd>
-					<dd class="sub">from the Sun</dd>
-				</div>
-				<div class="cell" data-voyager hidden>
-					<dt class="label">Since you arrived</dt>
-					<dd class="value tabular">+<span data-voyager-session>0</span> km</dd>
-					<dd class="sub">traveled by Voyager&nbsp;1</dd>
-				</div>
-				<div class="cell" data-uptime hidden>
-					<dt class="label">Uptime</dt>
-					<dd class="value tabular" data-uptime-value></dd>
-					<dd class="sub">self-hosted at home</dd>
-				</div>
-			</dl>
-		</section>
+		{telemetry && (
+			<section class="telemetry" aria-labelledby="telemetry-heading">
+				<h2 id="telemetry-heading" class="section-title">// Telemetry</h2>
+				<dl class="grid">
+					<div class="cell wide" data-iss hidden>
+						<dt class="label">ISS position</dt>
+						<dd class="value tabular" data-iss-coords></dd>
+						<dd class="sub" data-iss-place></dd>
+					</div>
+					<div class="cell wide" data-voyager hidden>
+						<dt class="label">Voyager&nbsp;1</dt>
+						<dd class="value tabular"><span data-voyager-total></span> km</dd>
+						<dd class="sub">from the Sun</dd>
+					</div>
+					<div class="cell" data-voyager hidden>
+						<dt class="label">Since you arrived</dt>
+						<dd class="value tabular">+<span data-voyager-session>0</span> km</dd>
+						<dd class="sub">traveled by Voyager&nbsp;1</dd>
+					</div>
+					<div class="cell" data-uptime hidden>
+						<dt class="label">Uptime</dt>
+						<dd class="value tabular" data-uptime-value></dd>
+						<dd class="sub">self-hosted at home</dd>
+					</div>
+				</dl>
+			</section>
+		)}
 
 		<div class="meta label">
 			<p>© {new Date().getFullYear()} Eli Rose</p>
