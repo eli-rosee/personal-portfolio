@@ -25,6 +25,15 @@ import CopyEmail from "./CopyEmail.astro";
 
 	<p class="tagline">{site.tagline}</p>
 
+	<div class="actions">
+		<a class="button primary" href={site.resume} target="_blank" rel="noopener">
+			Resume (PDF)
+		</a>
+		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub</a>
+		<a class="button" href={site.linkedin} target="_blank" rel="noopener">LinkedIn</a>
+		<CopyEmail class="button" label="Email" />
+	</div>
+
 	<p class="label availability">
 		<span class="light" aria-hidden="true"></span>
 		<span class="parts">
@@ -38,15 +47,6 @@ import CopyEmail from "./CopyEmail.astro";
 			}
 		</span>
 	</p>
-
-	<div class="actions">
-		<a class="button primary" href={site.resume} target="_blank" rel="noopener">
-			Resume (PDF)
-		</a>
-		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub</a>
-		<a class="button" href={site.linkedin} target="_blank" rel="noopener">LinkedIn</a>
-		<CopyEmail class="button" label="Email" />
-	</div>
 </section>
 
 <script>
@@ -84,7 +84,6 @@ import CopyEmail from "./CopyEmail.astro";
 	}
 
 	.tagline {
-		max-width: 38rem;
 		margin-top: var(--space-4);
 		font-size: var(--text-lg);
 		line-height: 1.8;

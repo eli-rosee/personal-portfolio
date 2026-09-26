@@ -3,7 +3,7 @@ export const site = {
 	callsign: "Station Home-01",
 	tagline:
 		"Robotics Software Engineer. M.S. in CS @ Georgia Tech.",
-	// Availability line under the tagline; the parts stack on phones
+	// Availability line under the hero buttons; the parts stack on phones
 	availability: ["Open to embedded & robotics roles", "Willing to relocate"],
 	resume: "/resume.pdf",
 	github: "https://github.com/eli-rosee",
