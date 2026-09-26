@@ -4,6 +4,7 @@
 import { Image } from "astro:assets";
 import { render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Starfield from "../../components/Starfield.astro";
 import ExternalIcon from "../../components/ExternalIcon.astro";
@@ -26,24 +27,7 @@ const statusLabel = status.replace("-", " ");
 
 <Layout title={`${title} · Eli Rose`} description={summary}>
 	<Starfield />
-	<!-- Project pages swap the site nav for a single way back -->
-	<header class="topbar">
-		<nav aria-label="Back">
-			<a class="back" href="/#missions">
-				<svg
-					width="0.9em"
-					height="0.9em"
-					viewBox="0 0 12 12"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-					stroke-linecap="square"
-					aria-hidden="true"><path d="M10 6H2M5 3 2 6l3 3"></path></svg
-				>
-				All missions
-			</a>
-		</nav>
-	</header>
+	<Nav back />
 
 	<main>
 		<article class="section page">
@@ -200,34 +184,6 @@ const statusLabel = status.replace("-", " ");
 </script>
 
 <style>
-	main,
-	.topbar {
-		position: relative; /* paints over the starfield */
-	}
-
-	/* Same box as the site nav, so "All missions" sits where the name usually is */
-	.topbar nav {
-		max-width: var(--page-max);
-		margin: 0 auto;
-		padding: var(--space-4) var(--gutter);
-	}
-
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6em;
-		color: var(--muted);
-		font-family: var(--font-label);
-		font-size: var(--text-sm);
-		letter-spacing: var(--tracking-label);
-		text-transform: uppercase;
-	}
-
-	.back:hover {
-		color: var(--text);
-		text-decoration: none;
-	}
-
 	.page {
 		display: grid;
 		gap: clamp(var(--space-8), 8vw, var(--space-12)); /* 64px on phones, 96px on desktop */

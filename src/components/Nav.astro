@@ -1,20 +1,46 @@
 ---
 import { site } from "../data/site";
 import ExternalIcon from "./ExternalIcon.astro";
+
+interface Props {
+	back?: boolean; // project pages: a single link back to the missions instead of the menu
+}
+
+const { back = false } = Astro.props;
 ---
 
 <header>
-	<nav aria-label="Main">
+	<nav aria-label="Main" class:list={{ back }}>
 		<a class="home" href="/">{site.name}</a>
-		<ul>
-			<li><a href="#missions">Projects</a></li>
-			<li><a href="#about">About</a></li>
-			<li>
-				<a class="resume" href={site.resume} target="_blank" rel="noopener">
-					Resume <ExternalIcon />
+		{
+			back ? (
+				<a class="back-link" href="/#missions">
+					<svg
+						width="0.9em"
+						height="0.9em"
+						viewBox="0 0 12 12"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="square"
+						aria-hidden="true"
+					>
+						<path d="M10 6H2M5 3 2 6l3 3" />
+					</svg>
+					All missions
 				</a>
-			</li>
-		</ul>
+			) : (
+				<ul>
+					<li><a href="#missions">Projects</a></li>
+					<li><a href="#about">About</a></li>
+					<li>
+						<a class="resume" href={site.resume} target="_blank" rel="noopener">
+							Resume <ExternalIcon />
+						</a>
+					</li>
+				</ul>
+			)
+		}
 	</nav>
 </header>
 
@@ -56,7 +82,8 @@ import ExternalIcon from "./ExternalIcon.astro";
 			font-size: var(--text-xs);
 		}
 
-		.home {
+		/* The big wordmark is right below on the home page; project pages keep the name */
+		nav:not(.back) .home {
 			display: none;
 		}
 
@@ -68,6 +95,18 @@ import ExternalIcon from "./ExternalIcon.astro";
 
 	ul a:hover {
 		color: var(--text);
+	}
+
+	.back-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		color: var(--muted);
+	}
+
+	.back-link:hover {
+		color: var(--text);
+		text-decoration: none;
 	}
 
 	ul a.resume {
