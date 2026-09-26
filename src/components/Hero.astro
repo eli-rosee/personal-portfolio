@@ -25,11 +25,26 @@ import CopyEmail from "./CopyEmail.astro";
 
 	<p class="tagline">{site.tagline}</p>
 
+	<p class="label availability">
+		<span class="light" aria-hidden="true"></span>
+		<span class="parts">
+			{
+				site.availability.map((part, i) => (
+					<>
+						{i > 0 && <span class="sep" aria-hidden="true"> · </span>}
+						<span class="part">{part}</span>
+					</>
+				))
+			}
+		</span>
+	</p>
+
 	<div class="actions">
 		<a class="button primary" href={site.resume} target="_blank" rel="noopener">
 			Resume (PDF)
 		</a>
 		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub</a>
+		<a class="button" href={site.linkedin} target="_blank" rel="noopener">LinkedIn</a>
 		<CopyEmail class="button" label="Email" />
 	</div>
 </section>
@@ -75,6 +90,45 @@ import CopyEmail from "./CopyEmail.astro";
 		line-height: 1.8;
 	}
 
+	/* Green light + availability: steady, like the "in orbit" chips */
+	.availability {
+		display: flex;
+		align-items: baseline;
+		gap: 1em;
+		margin-top: var(--space-4);
+		color: var(--text);
+	}
+
+	.availability .light {
+		flex: none;
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 50%;
+		background: var(--status);
+		box-shadow: 0 0 0.4rem var(--status);
+		transform: translateY(-0.1em);
+	}
+
+	.sep {
+		margin-inline: 0.75em;
+	}
+
+	/* Phones: one part per line, no separator */
+	@media (max-width: 30rem) {
+		.availability {
+			margin-top: var(--space-3);
+			line-height: 1.8;
+		}
+
+		.part {
+			display: block;
+		}
+
+		.sep {
+			display: none;
+		}
+	}
+
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
@@ -99,11 +153,11 @@ import CopyEmail from "./CopyEmail.astro";
 		text-decoration: none;
 	}
 
-	/* Phones: Resume full width, GitHub and Email side by side */
+	/* Phones: Resume full width, the other links side by side below it */
 	@media (max-width: 30rem) {
 		.actions {
 			display: grid;
-			grid-template-columns: 1fr 1fr;
+			grid-template-columns: repeat(3, 1fr);
 			gap: var(--space-1);
 			margin-top: var(--space-4);
 		}
