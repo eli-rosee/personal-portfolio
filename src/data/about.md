@@ -2,15 +2,17 @@
 # Quick facts shown beside the About text. Placeholders: replace with your own.
 facts:
   - label: Based in
-    value: City, State
+    value: Fayetteville, AR
   - label: Studying
     value: M.S. Computer Science
   - label: Focus
     value: Machine learning, embedded software
-  - label: Currently
-    value: Open to internships / full-time roles
+  - label: Open to
+    value: Internships / full-time roles
 ---
 
-Placeholder. A short paragraph about who you are and what you like building. Written by you.
+Hi, my name is Eli Rose, and I love building software that interacts with the physical world.
 
-Placeholder. A second paragraph: what you're working on now, or what you're looking for next.
+I am currently completeing my M.S. in CS, and looking to dive deeper into ML and robotics.
+
+Third paragraph, yada yada yappage. major yappage. unbelievable yappage.
