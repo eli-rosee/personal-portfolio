@@ -30,7 +30,7 @@ const { telemetry = true } = Astro.props;
 						<dd class="value tabular">+<span data-voyager-session>0</span> km</dd>
 						<dd class="sub">traveled by Voyager&nbsp;1</dd>
 					</div>
-					<div class="cell" data-uptime hidden>
+					<div class="cell" id="uptime" data-uptime hidden>
 						<dt class="label">Uptime</dt>
 						<dd class="value tabular" data-uptime-value></dd>
 						<dd class="sub">self-hosted at home</dd>
@@ -78,6 +78,30 @@ const { telemetry = true } = Astro.props;
 	};
 
 	showUptime();
+
+	// "self-hosted" in the About text links here: once the readout is in view, it flashes amber
+	document.querySelectorAll<HTMLAnchorElement>('a[href="#uptime"]').forEach((link) =>
+		link.addEventListener("click", (event) => {
+			const cell = document.querySelector<HTMLElement>("[data-uptime]")!;
+			if (cell.hidden) {
+				// No uptime (status.json missing): go to the telemetry instead
+				event.preventDefault();
+				document.querySelector("footer")!.scrollIntoView();
+				return;
+			}
+			const observer = new IntersectionObserver(
+				([entry]) => {
+					if (!entry.isIntersecting) return;
+					observer.disconnect();
+					cell.classList.remove("pinged");
+					void cell.offsetWidth; // restart the animation
+					cell.classList.add("pinged");
+				},
+				{ threshold: 1 },
+			);
+			observer.observe(cell);
+		}),
+	);
 </script>
 
 <script>
@@ -356,6 +380,11 @@ const { telemetry = true } = Astro.props;
 
 	.sub.changed {
 		animation: flash 1.5s ease-out;
+	}
+
+	/* Reached from the "self-hosted" link in About */
+	.pinged :is(.value, .sub) {
+		animation: flash 2s ease-out;
 	}
 
 	@keyframes flash {

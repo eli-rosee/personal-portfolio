@@ -1,68 +1,86 @@
 ---
 import { Content, frontmatter } from "../data/about.md";
 
-const facts: { label: string; value: string }[] = frontmatter.facts ?? [];
+const clip: { src: string; poster?: string; label: string; caption?: string } | undefined =
+	frontmatter.clip;
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">
 	<h2 id="about-heading" class="section-title">// About</h2>
-	<div class="layout">
+	<div class:list={["layout", { "has-clip": clip }]}>
 		<div class="prose">
 			<Content />
 		</div>
-		<dl class="facts">
-			{
-				facts.map(({ label, value }) => (
-					<div>
-						<dt class="label">{label}</dt>
-						<dd>{value}</dd>
-					</div>
-				))
-			}
-		</dl>
+		{
+			clip && (
+				<figure>
+					{/* Controls without JavaScript; the script swaps them for GIF-like autoplay */}
+					<video
+						data-about-clip
+						controls
+						muted
+						loop
+						playsinline
+						preload="none"
+						poster={clip.poster}
+						src={clip.src}
+						aria-label={clip.label}
+					/>
+					{clip.caption && <figcaption class="label">{clip.caption}</figcaption>}
+				</figure>
+			)
+		}
 	</div>
 </section>
+
+<script>
+	// The clip loops silently like a GIF, but only loads once it's near the screen.
+	// With reduced motion it keeps its controls and only plays if asked to.
+	const video = document.querySelector<HTMLVideoElement>("video[data-about-clip]");
+	if (video && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		video.controls = false;
+		new IntersectionObserver(
+			([entry]) => (entry.isIntersecting ? video.play().catch(() => {}) : video.pause()),
+			{ rootMargin: "200px" },
+		).observe(video);
+	}
+</script>
 
 <style>
 	.layout {
 		display: grid;
-		gap: var(--space-4);
+		gap: var(--space-6);
 	}
 
-	/* Single column (phones): quick facts come first */
-	.facts {
-		order: -1;
-	}
-
+	/* Text on the left, the clip on the right (below the text on phones) */
 	@media (min-width: 48rem) {
-		.layout {
-			grid-template-columns: 1fr 1fr;
-			gap: var(--space-6);
-		}
-
-		.facts {
-			order: 0;
+		.layout.has-clip {
+			grid-template-columns: minmax(0, 38rem) minmax(0, 18rem);
+			justify-content: space-between;
+			align-items: start;
 		}
 	}
 
 	.prose {
 		display: grid;
 		gap: var(--space-3);
-		align-content: start;
 		max-width: 38rem;
 		line-height: 1.9;
 	}
 
-	.facts {
+	figure {
 		display: grid;
-		gap: var(--space-3);
-		align-content: start;
+		gap: var(--space-1);
+		max-width: 18rem;
 		margin: 0;
-		padding: var(--space-4);
-		border: var(--border-width) solid var(--border);
 	}
 
-	dd {
-		margin: 0.25rem 0 0;
+	video {
+		display: block;
+		width: 100%;
+		aspect-ratio: 9 / 16; /* reserves space before the poster loads */
+		object-fit: cover;
+		background: var(--surface);
+		border: var(--border-width) solid var(--border);
 	}
 </style>
