@@ -1,14 +1,14 @@
 ---
-number: 1
+number: 2
 title: F1 Capstone
 status: in-orbit
-summary: Placeholder.
-stack: [Placeholder, Placeholder]
+summary: Award winning senior year capstone project.
+stack: [Python, Clustering, Nginx, Scikit-Learn, PostgreSQL]
 links:
-  repo: https://github.com/eli-rosee
+  repo: https://github.com/eli-rosee/f1-style-analysis-capstone-project
   # demo: live data exploration site, once it's self-hosted
 recognition:
-  - title: Top CS team, Engineering Expo
+  - title: Top CS team, Engineering Expo 
     detail: $1,000 award
   - title: Invited to present at the Alumni Conference
     detail: Placeholder

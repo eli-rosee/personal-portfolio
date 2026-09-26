@@ -1,9 +1,9 @@
 ---
-number: 2
+number: 1
 title: Kalman Filter
 status: in-orbit
-summary: Placeholder.
-stack: [Placeholder, Placeholder]
+summary: Built a Kalman Filter from scratch for simulated asteroid field tracking.
+stack: [Robotics, Tracking, Python, Pathfinding]
 private: true
 role:
   solo: true
