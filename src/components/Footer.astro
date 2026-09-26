@@ -282,8 +282,17 @@
 		.grid {
 			grid-template-columns: repeat(4, max-content);
 			justify-content: space-between; /* leftover space goes between readouts */
-			column-gap: var(--space-4);
+			/* Only a minimum: on wide screens the gutters grow and the content gets narrower,
+			   and a bigger gap pushed the last readout past the right edge */
+			column-gap: var(--space-1);
 		}
+	}
+
+	/* The place name wraps under the coordinates instead of widening the readout
+	   ("over the Democratic Republic of the Congo" would push the row off the edge) */
+	[data-iss-place] {
+		contain: inline-size;
+		white-space: normal;
 	}
 
 	/* Console-style readout: a thin rule on the left, label / value / note */
