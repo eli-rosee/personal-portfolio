@@ -1,118 +1,85 @@
 ---
+import { Image } from "astro:assets";
 import { site } from "../data/site";
-import ExternalIcon from "./ExternalIcon.astro";
-
-interface Props {
-	back?: boolean; // project pages: a single link back to the missions instead of the menu
-}
-
-const { back = false } = Astro.props;
+import logo from "../assets/logo.png";
 ---
 
+{/* Pinned bar: the [ER] + rocket logo on the left, a ringed planet on the right */}
 <header>
-	<nav aria-label="Main" class:list={{ back }}>
-		<a class="home" href="/">{site.name}</a>
-		{
-			back ? (
-				<a class="back-link" href="/#missions">
-					<svg
-						width="0.9em"
-						height="0.9em"
-						viewBox="0 0 12 12"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="square"
-						aria-hidden="true"
-					>
-						<path d="M10 6H2M5 3 2 6l3 3" />
-					</svg>
-					All missions
-				</a>
-			) : (
-				<ul>
-					<li><a href="#missions">Projects</a></li>
-					<li><a href="#about">About</a></li>
-					<li>
-						<a class="resume" href={site.resume} target="_blank" rel="noopener">
-							Resume <ExternalIcon />
-						</a>
-					</li>
-				</ul>
-			)
-		}
+	<nav aria-label="Main">
+		<a class="home" href="/">
+			<Image src={logo} alt={site.name} width={125} densities={[1, 2]} loading="eager" />
+		</a>
+		<svg class="planet" viewBox="0 0 48 48" aria-hidden="true">
+			<g transform="rotate(-20 24 24)">
+				<path class="ring" d="M4 24a20 6 0 0 1 40 0"></path>
+				<circle class="globe" cx="24" cy="24" r="11"></circle>
+				<path class="band" d="M14 21.5q10 3 20 0"></path>
+				<path class="ring" d="M44 24a20 6 0 0 1-40 0"></path>
+			</g>
+		</svg>
 	</nav>
 </header>
 
 <style>
+	/* Full-width bar on the page background, with a 1px rule under it */
+	header {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		background: var(--bg);
+		border-bottom: var(--border-width) solid var(--border);
+	}
+
 	nav {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--space-2);
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: var(--space-4) var(--gutter);
-		font-family: var(--font-label);
-		font-size: var(--text-sm);
-		letter-spacing: var(--tracking-label);
-		text-transform: uppercase;
+		padding: var(--space-3) var(--gutter);
 	}
 
-	.home {
-		color: var(--text);
-		font-weight: 700;
+	.home img {
+		display: block;
+		width: 125px;
 	}
 
-	ul {
-		display: flex;
-		gap: var(--space-4);
-		margin: 0;
-		padding: 0;
-		list-style: none;
+	.planet {
+		width: 44px;
+		height: 44px;
+		overflow: visible;
 	}
 
-	ul a {
-		color: var(--muted);
+	.planet .globe {
+		fill: var(--surface);
+		stroke: var(--muted);
+		stroke-width: 1.5;
+	}
+
+	.planet .ring,
+	.planet .band {
+		fill: none;
+		stroke: var(--muted);
+		stroke-width: 1.5;
+	}
+
+	.planet .band {
+		stroke: var(--border);
 	}
 
 	@media (max-width: 30rem) {
 		nav {
-			padding-block: var(--space-3);
-			font-size: var(--text-xs);
+			padding-block: var(--space-2);
 		}
 
-		/* The big wordmark is right below on the home page; project pages keep the name */
-		nav:not(.back) .home {
-			display: none;
+		.home img {
+			width: 95px;
 		}
 
-		ul {
-			flex: 1;
-			justify-content: space-between;
+		.planet {
+			width: 34px;
+			height: 34px;
 		}
-	}
-
-	ul a:hover {
-		color: var(--text);
-	}
-
-	.back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6em;
-		color: var(--muted);
-	}
-
-	.back-link:hover {
-		color: var(--text);
-		text-decoration: none;
-	}
-
-	ul a.resume {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4em;
-		color: var(--accent);
 	}
 </style>
