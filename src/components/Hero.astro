@@ -2,16 +2,10 @@
 import { Image } from "astro:assets";
 import { site } from "../data/site";
 import wordmark from "../assets/wordmark.png";
-import CopyEmail from "./CopyEmail.astro";
+import ExternalIcon from "./ExternalIcon.astro";
 ---
 
 <section class="hero">
-	<p class="label callsign">
-		<span>{site.callsign}</span>
-		<span aria-hidden="true">·</span>
-		<span class="tabular" data-mission-clock>T+ 00:00:00</span>
-	</p>
-
 	<h1>
 		<Image
 			src={wordmark}
@@ -30,41 +24,18 @@ import CopyEmail from "./CopyEmail.astro";
 
 	<div class="actions">
 		<a class="button primary" href={site.resume} target="_blank" rel="noopener">
-			Resume (PDF)
+			Resume (PDF) <ExternalIcon />
 		</a>
-		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub</a>
-		<a class="button" href={site.linkedin} target="_blank" rel="noopener">LinkedIn</a>
-		<CopyEmail class="button" label="Email" />
+		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub <ExternalIcon /></a>
+		<a class="button" href={site.linkedin} target="_blank" rel="noopener">LinkedIn <ExternalIcon /></a>
 	</div>
 </section>
-
-<script>
-	// T+ mission clock: time since the page opened. Without JavaScript it stays at 00:00:00.
-	const clock = document.querySelector<HTMLElement>("[data-mission-clock]");
-	if (clock) {
-		const pad = (n: number) => String(n).padStart(2, "0");
-		const tick = () => {
-			const s = Math.floor(performance.now() / 1000);
-			clock.textContent = `T+ ${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
-		};
-		tick();
-		setInterval(tick, 250); // checks often so seconds never visibly skip
-	}
-</script>
 
 <style>
 	.hero {
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: clamp(var(--space-4), 6vw, var(--space-8)) var(--gutter) var(--section-seam);
-	}
-
-	.callsign {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0 1.5em;
-		white-space: nowrap;
-		margin-bottom: var(--space-2);
+		padding: clamp(var(--space-6), 8vw, var(--space-12)) var(--gutter) var(--section-seam); /* clear room under the nav */
 	}
 
 	h1 img {
@@ -100,6 +71,13 @@ import CopyEmail from "./CopyEmail.astro";
 		font-weight: 700;
 		letter-spacing: var(--tracking-label);
 		text-transform: uppercase;
+		white-space: nowrap; /* keeps the new-tab arrow beside its label */
+	}
+
+	/* New-tab arrow, like the nav's Resume link */
+	.button :global(svg) {
+		margin-left: 0.2em;
+		vertical-align: 0.05em;
 	}
 
 	.button:hover {
@@ -111,7 +89,7 @@ import CopyEmail from "./CopyEmail.astro";
 	@media (max-width: 30rem) {
 		.actions {
 			display: grid;
-			grid-template-columns: repeat(3, 1fr);
+			grid-template-columns: repeat(2, 1fr);
 			gap: var(--space-1);
 		}
 

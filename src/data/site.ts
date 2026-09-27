@@ -1,10 +1,8 @@
 export const site = {
 	name: "Eli Rose",
-	callsign: "Station Home-01",
-	tagline:
-		"Robotics Software Engineer. M.S. in CS @ Georgia Tech.",
-	availability: "Open to robotics & embedded internships.",
-	resume: "/resume.pdf",
+	tagline: "M.S. in CS at Georgia Tech, focused on robotics software.",
+	availability: "Seeking Summer 2027 robotics & embedded internships.",
+	resume: "/Eli-Rose-Resume.pdf", // named so a downloaded copy is identifiable
 	github: "https://github.com/eli-rosee",
 	linkedin: "https://www.linkedin.com/in/eli-rose-ua/",
 	email: "eli.j.rose.04@gmail.com",
