@@ -2,6 +2,9 @@
 // Faint stars fixed behind the whole page, drifting slowly to the left.
 // Decorative only: without JavaScript or canvas support the sky is just empty.
 // With reduced motion the stars are drawn once and never move.
+// Kept cheap for phones, where repainting a full-screen canvas behind the page made scrolling
+// stutter: it pauses while the page scrolls, redraws at most 30 times a second, and renders at no
+// more than 2x pixel density (the stars are smaller than a pixel, so more buys nothing).
 ---
 
 <canvas class="starfield" aria-hidden="true"></canvas>
@@ -15,6 +18,8 @@
 	const DENSITY = 1 / 5000; // stars per square CSS pixel
 	const MIN_STARS = 150; // small screens would otherwise get only ~70
 	const MAX_SPEED = 4; // px per second for the nearest (largest) stars
+	const FRAME_MS = 1000 / 30; // the drift is so slow that 30 fps looks the same as 60
+	const SCROLL_REST_MS = 200; // resume this long after the last scroll event
 
 	if (!canvas || !ctx) {
 		canvas?.remove();
@@ -25,6 +30,7 @@
 		let height = 0;
 		let frame = 0;
 		let last = 0;
+		let scrollTimer = 0;
 
 		// Bigger stars are brighter and drift faster, a cheap parallax effect
 		const makeStar = (x: number): Star => {
@@ -39,7 +45,7 @@
 		};
 
 		const resize = () => {
-			const dpr = window.devicePixelRatio || 1;
+			const dpr = Math.min(window.devicePixelRatio || 1, 2);
 			width = canvas.clientWidth;
 			height = canvas.clientHeight;
 			if (width === canvas.width / dpr && height === canvas.height / dpr) return;
@@ -64,6 +70,8 @@
 		};
 
 		const tick = (now: number) => {
+			frame = requestAnimationFrame(tick);
+			if (now - last < FRAME_MS) return;
 			const dt = Math.min((now - last) / 1000, 0.1); // cap the jump after a long pause
 			last = now;
 			for (const star of stars) {
@@ -72,10 +80,9 @@
 				if (star.x < -star.r) Object.assign(star, makeStar(width + star.r));
 			}
 			draw();
-			frame = requestAnimationFrame(tick);
 		};
 
-		const update = () => {
+		const start = () => {
 			cancelAnimationFrame(frame);
 			if (!reducedMotion.matches) {
 				last = performance.now();
@@ -83,9 +90,17 @@
 			}
 		};
 
+		// Nothing redraws behind the page while it's scrolling
+		const onScroll = () => {
+			cancelAnimationFrame(frame);
+			clearTimeout(scrollTimer);
+			scrollTimer = window.setTimeout(start, SCROLL_REST_MS);
+		};
+
 		new ResizeObserver(resize).observe(canvas);
-		reducedMotion.addEventListener("change", update);
-		update(); // the browser pauses the animation in background tabs
+		reducedMotion.addEventListener("change", start);
+		addEventListener("scroll", onScroll, { passive: true });
+		start(); // the browser pauses the animation in background tabs
 	}
 </script>
 
