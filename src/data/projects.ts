@@ -1,6 +1,4 @@
-import { getCollection, type CollectionEntry } from "astro:content";
-
-type Project = CollectionEntry<"projects">;
+import { getCollection } from "astro:content";
 
 // Published projects in mission order
 export const getProjects = async () =>
@@ -8,7 +6,3 @@ export const getProjects = async () =>
 		(a, b) => a.data.number - b.data.number,
 	);
 
-// Opt-in: only projects with a Markdown body get a page at /projects/<slug>/
-export const hasPage = (project: Project) => Boolean(project.body?.trim());
-
-export const pageUrl = (project: Project) => `/projects/${project.id}/`;

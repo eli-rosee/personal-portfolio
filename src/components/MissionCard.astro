@@ -1,7 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import ExternalIcon from "./ExternalIcon.astro";
-import { hasPage, pageUrl } from "../data/projects";
 
 interface Props {
 	project: CollectionEntry<"projects">;
@@ -18,10 +17,8 @@ const statusMeaning = {
 	decommissioned: "No longer maintained",
 }[status];
 const tipId = `status-tip-${number}`;
-// The title opens the project page if there is one, otherwise the demo or repo in a new tab
-const internal = hasPage(project);
-const href = internal ? pageUrl(project) : (links?.demo ?? links?.repo);
-const target = internal ? {} : { target: "_blank", rel: "noopener" };
+// The title opens the demo or repo in a new tab (no link if neither exists)
+const href = links?.demo ?? links?.repo;
 
 // The last word and the link arrow never wrap apart
 const words = title.split(" ");
@@ -44,7 +41,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	<h3>
 		{
 			href ? (
-				<a href={href} {...target}>
+				<a href={href} target="_blank" rel="noopener">
 					{leadingWords}
 					<span class="nowrap">
 						{lastWord}
@@ -75,15 +72,18 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		container-type: inline-size;
 	}
 
+	/* Mission number on the left, status on the right; if they don't fit, the status wraps
+	   to its own line and stays right-aligned */
 	header {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-1) var(--space-2);
 	}
 
 	.status-wrap {
 		position: relative; /* anchors the tooltip to the status */
+		margin-left: auto;
 	}
 
 	/* Indicator chip: a faint frame hints that it can be hovered or tapped */
@@ -155,19 +155,6 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	.status:focus + .tip {
 		opacity: 1;
 		visibility: visible;
-	}
-
-	/* Narrow cards: status goes under the mission number, tooltip opens to the right */
-	@container (max-width: 17.5rem) {
-		header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-
-		.tip {
-			right: auto;
-			left: 0;
-		}
 	}
 
 	.status.in-orbit {
