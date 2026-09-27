@@ -4,12 +4,60 @@ import { site } from "../data/site";
 import logo from "../assets/logo.png";
 ---
 
-{/* Pinned bar: the [ER] + rocket logo on the left, a ringed planet on the right */}
+{/*
+	Pinned bar: the [ER] + rocket logo on the left, a ringed planet on the right. Every 18 seconds a
+	space invader crosses the bar toward the planet; when it gets close, the planet flashes amber and
+	shoots it down. Pure CSS animation on its own loop (no JavaScript, nothing tied to scrolling);
+	off with reduced motion.
+*/}
 <header>
 	<nav aria-label="Main">
 		<a class="home" href="/">
 			<Image src={logo} alt={site.name} width={125} densities={[1, 2]} loading="eager" />
 		</a>
+		<div class="sky" aria-hidden="true">
+			{/* A bar-wide box that slides right, carrying the invader at its right edge */}
+			{/* A bar-wide box that slides right, carrying the invader at its right edge. The script picks
+				a different kind for each pass; without JavaScript it's always the crab. */}
+			<span class="run" data-kind="crab" data-run>
+				<svg class="invader" data-kind="squid" viewBox="0 0 8 8" style="--w: 8; --h: 8" shape-rendering="crispEdges">
+					<path
+						class="legs-a"
+						d="M3 0h2v1h-2zM2 1h4v1h-4zM1 2h6v1h-6zM0 3h2v1h-2zM3 3h2v1h-2zM6 3h2v1h-2zM0 4h8v1h-8zM2 5h1v1h-1zM5 5h1v1h-1zM1 6h1v1h-1zM3 6h2v1h-2zM6 6h1v1h-1zM0 7h1v1h-1zM2 7h1v1h-1zM5 7h1v1h-1zM7 7h1v1h-1z"
+					></path>
+					<path
+						class="legs-b"
+						d="M3 0h2v1h-2zM2 1h4v1h-4zM1 2h6v1h-6zM0 3h2v1h-2zM3 3h2v1h-2zM6 3h2v1h-2zM0 4h8v1h-8zM1 5h1v1h-1zM3 5h2v1h-2zM6 5h1v1h-1zM0 6h1v1h-1zM7 6h1v1h-1zM1 7h1v1h-1zM6 7h1v1h-1z"
+					></path>
+				</svg>
+				<svg class="invader" data-kind="crab" viewBox="0 0 11 8" style="--w: 11; --h: 8" shape-rendering="crispEdges">
+					<path
+						class="legs-a"
+						d="M2 0h1v1h-1zM8 0h1v1h-1zM3 1h1v1h-1zM7 1h1v1h-1zM2 2h7v1h-7zM1 3h2v1h-2zM4 3h3v1h-3zM8 3h2v1h-2zM0 4h11v1h-11zM0 5h1v1h-1zM2 5h7v1h-7zM10 5h1v1h-1zM0 6h1v1h-1zM2 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM3 7h2v1h-2zM6 7h2v1h-2z"
+					></path>
+					<path
+						class="legs-b"
+						d="M2 0h1v1h-1zM8 0h1v1h-1zM0 1h1v1h-1zM3 1h1v1h-1zM7 1h1v1h-1zM10 1h1v1h-1zM0 2h1v1h-1zM2 2h7v1h-7zM10 2h1v1h-1zM0 3h3v1h-3zM4 3h3v1h-3zM8 3h3v1h-3zM0 4h11v1h-11zM1 5h9v1h-9zM2 6h1v1h-1zM8 6h1v1h-1zM1 7h1v1h-1zM9 7h1v1h-1z"
+					></path>
+				</svg>
+				<svg class="invader" data-kind="octopus" viewBox="0 0 12 8" style="--w: 12; --h: 8" shape-rendering="crispEdges">
+					<path
+						class="legs-a"
+						d="M4 0h4v1h-4zM1 1h10v1h-10zM0 2h12v1h-12zM0 3h3v1h-3zM5 3h2v1h-2zM9 3h3v1h-3zM0 4h12v1h-12zM3 5h2v1h-2zM7 5h2v1h-2zM2 6h2v1h-2zM5 6h2v1h-2zM8 6h2v1h-2zM0 7h2v1h-2zM10 7h2v1h-2z"
+					></path>
+					<path
+						class="legs-b"
+						d="M4 0h4v1h-4zM1 1h10v1h-10zM0 2h12v1h-12zM0 3h3v1h-3zM5 3h2v1h-2zM9 3h3v1h-3zM0 4h12v1h-12zM2 5h3v1h-3zM7 5h3v1h-3zM1 6h2v1h-2zM5 6h2v1h-2zM9 6h2v1h-2zM2 7h2v1h-2zM8 7h2v1h-2z"
+					></path>
+				</svg>
+			</span>
+			<span class="bolt"></span>
+			<svg class="boom" viewBox="0 0 9 7" shape-rendering="crispEdges">
+				<path
+					d="M0 0h1v1h-1zM4 0h1v1h-1zM8 0h1v1h-1zM1 1h1v1h-1zM4 1h1v1h-1zM7 1h1v1h-1zM2 2h1v1h-1zM6 2h1v1h-1zM0 3h2v1h-2zM7 3h2v1h-2zM2 4h1v1h-1zM6 4h1v1h-1zM1 5h1v1h-1zM4 5h1v1h-1zM7 5h1v1h-1zM0 6h1v1h-1zM4 6h1v1h-1zM8 6h1v1h-1z"
+				></path>
+			</svg>
+		</div>
 		<svg class="planet" viewBox="0 0 48 48" aria-hidden="true">
 			<g transform="rotate(-20 24 24)">
 				<path class="ring" d="M4 24a20 6 0 0 1 40 0"></path>
@@ -21,6 +69,24 @@ import logo from "../assets/logo.png";
 	</nav>
 </header>
 
+<script>
+	// The first pass is always the classic crab, so it's recognizable. After that, a different kind on
+	// each pass: the squid, crab, or octopus, never the same one twice in a row. It switches between
+	// passes, while the invader is invisible.
+	const run = document.querySelector<HTMLElement>("[data-run]");
+	if (run) {
+		const aliens = ["squid", "crab", "octopus"];
+		const pick = (last?: string) => {
+			const options = aliens.filter((kind) => kind !== last);
+			return options[Math.floor(Math.random() * options.length)];
+		};
+		run.dataset.kind = "crab";
+		run.addEventListener("animationiteration", (event) => {
+			if (event.target === run) run.dataset.kind = pick(run.dataset.kind);
+		});
+	}
+</script>
+
 <style>
 	/* Full-width bar on the page background, with a 1px rule under it */
 	header {
@@ -31,13 +97,20 @@ import logo from "../assets/logo.png";
 		border-bottom: var(--border-width) solid var(--border);
 	}
 
+	/* Keyframe names are global across the page (the footer has its own "flash"), hence the prefixes */
 	nav {
+		/* Skirmish timing, shared by the invader's lane and the planet's flash so they stay in step */
+		--cycle: 10s;
+		--delay: 2s; /* first pass shortly after the page loads */
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		max-width: var(--page-max);
 		margin: 0 auto;
 		padding: var(--space-3) var(--gutter);
+	}
+
+	.home {
+		flex: none;
 	}
 
 	.home img {
@@ -45,9 +118,169 @@ import logo from "../assets/logo.png";
 		width: 125px;
 	}
 
+	/*
+	 * The skirmish. One 10s cycle, shared by every part so they stay in step (times in seconds):
+	 *   0.3-0.9  the invader fades in as it sets off (the lane starts well clear of the logo)
+	 *   4.3      it reaches firing range (--range short of the planet)
+	 *   3.9-4.3  the planet flashes and its bolt crosses the gap
+	 *   4.3      hit: the invader becomes an explosion, which fades by 4.8
+	 * About 6s later (10.3, the next cycle's 0.3) the next invader appears.
+	 */
+	.sky {
+		--range: 2.75rem; /* how close the invader gets before it's shot */
+		--px: 2px; /* one pixel of the pixel art: a whole number keeps the edges sharp */
+		position: relative;
+		flex: 1;
+		align-self: center;
+		height: 0;
+		margin: 0 0.5rem 0 7rem; /* the invader sets off well clear of the logo */
+		pointer-events: none;
+	}
+
+	.sky > *,
+	.planet :is(.globe, .ring) {
+		animation-duration: var(--cycle);
+		animation-delay: var(--delay);
+		animation-iteration-count: infinite;
+	}
+
+	.run {
+		position: absolute;
+		top: 0;
+		right: 100%;
+		width: 100%;
+		opacity: 0;
+		animation-name: invader-advance;
+		animation-timing-function: linear;
+	}
+
+	/* Only the kind picked for this pass shows; each sprite sizes itself from its pixel grid */
+	.invader {
+		display: none;
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: calc(var(--w) * var(--px));
+		height: calc(var(--h) * var(--px));
+		translate: 0 -50%;
+		fill: var(--text);
+	}
+
+	.run[data-kind="squid"] [data-kind="squid"],
+	.run[data-kind="crab"] [data-kind="crab"],
+	.run[data-kind="octopus"] [data-kind="octopus"] {
+		display: block;
+	}
+
+	/* The squid is the smallest alien in the arcade; a little extra size keeps it easy to see */
+	.invader[data-kind="squid"] {
+		--px-scale: 1.25;
+		width: calc(var(--w) * var(--px) * var(--px-scale));
+		height: calc(var(--h) * var(--px) * var(--px-scale));
+	}
+
+	/* Two leg poses, swapping like the arcade original */
+	.invader :is(.legs-a, .legs-b) {
+		animation: invader-legs 0.8s steps(1) infinite;
+	}
+
+	.invader .legs-b {
+		animation-delay: -0.4s;
+	}
+
+	.bolt {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 0.5rem;
+		height: 2px;
+		translate: 0 -50%;
+		background: var(--accent);
+		box-shadow: 0 0 6px var(--accent);
+		opacity: 0;
+		animation-name: invader-fire;
+		animation-timing-function: linear;
+	}
+
+	.boom {
+		position: absolute;
+		top: 0;
+		right: var(--range);
+		width: calc(9 * var(--px));
+		height: calc(7 * var(--px));
+		translate: 0 -50%;
+		fill: var(--accent);
+		opacity: 0;
+		animation-name: invader-burst;
+	}
+
+	@keyframes invader-advance {
+		0%,
+		3% {
+			translate: 0 0;
+			opacity: 0;
+		}
+		9% {
+			opacity: 1;
+		}
+		43% {
+			translate: calc(100% - var(--range)) 0;
+			opacity: 1;
+		}
+		43.01%,
+		100% {
+			translate: calc(100% - var(--range)) 0;
+			opacity: 0;
+		}
+	}
+
+	@keyframes invader-fire {
+		0%,
+		40% {
+			translate: 0 -50%;
+			opacity: 0;
+		}
+		40.01% {
+			opacity: 1;
+		}
+		43% {
+			translate: calc(-1 * var(--range)) -50%;
+			opacity: 1;
+		}
+		43.01%,
+		100% {
+			translate: calc(-1 * var(--range)) -50%;
+			opacity: 0;
+		}
+	}
+
+	@keyframes invader-burst {
+		0%,
+		43% {
+			opacity: 0;
+			scale: 0.7;
+		}
+		43.01% {
+			opacity: 1;
+			scale: 1;
+		}
+		48%,
+		100% {
+			opacity: 0;
+			scale: 1.3;
+		}
+	}
+
+	@keyframes invader-legs {
+		50% {
+			opacity: 0;
+		}
+	}
+
 	.planet {
-		width: 44px;
-		height: 44px;
+		flex: none;
+		width: 60px;
+		height: 60px;
 		overflow: visible;
 	}
 
@@ -68,6 +301,36 @@ import logo from "../assets/logo.png";
 		stroke: var(--border);
 	}
 
+	/* The planet lights up amber as it fires */
+	.planet :is(.globe, .ring) {
+		animation-name: planet-flash;
+	}
+
+	@keyframes planet-flash {
+		0%,
+		39.3% {
+			stroke: var(--muted);
+		}
+		40.2%,
+		47.4% {
+			stroke: var(--accent);
+		}
+		52.8%,
+		100% {
+			stroke: var(--muted);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sky {
+			display: none;
+		}
+
+		.planet :is(.globe, .ring) {
+			animation: none;
+		}
+	}
+
 	@media (max-width: 30rem) {
 		nav {
 			padding-block: var(--space-2);
@@ -77,9 +340,15 @@ import logo from "../assets/logo.png";
 			width: 95px;
 		}
 
+		.sky {
+			--range: 2rem;
+			--px: 1.5px; /* whole device pixels on 2x phone screens */
+			margin-left: 2.5rem;
+		}
+
 		.planet {
-			width: 34px;
-			height: 34px;
+			width: 44px;
+			height: 44px;
 		}
 	}
 </style>
