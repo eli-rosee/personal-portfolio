@@ -122,6 +122,13 @@ const clip:
 		margin: 0;
 	}
 
+	/* One column: the clip sits centered under the text instead of hugging the left edge */
+	@media (max-width: 47.99rem) {
+		figure {
+			justify-self: center;
+		}
+	}
+
 	/*
 	 * Viewport: nested layers, each clipped to the same chamfered shape.
 	 * A layer inset by p needs a cut about 0.41p smaller to keep the diagonal edges even.
