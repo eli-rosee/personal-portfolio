@@ -3,6 +3,7 @@ export const site = {
 	callsign: "Station Home-01",
 	tagline:
 		"Robotics Software Engineer. M.S. in CS @ Georgia Tech.",
+	availability: "Open to robotics & embedded internships.",
 	resume: "/resume.pdf",
 	github: "https://github.com/eli-rosee",
 	linkedin: "https://www.linkedin.com/in/eli-rose-ua/",

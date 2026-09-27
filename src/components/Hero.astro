@@ -23,7 +23,10 @@ import CopyEmail from "./CopyEmail.astro";
 		/>
 	</h1>
 
-	<p class="tagline">{site.tagline}</p>
+	<p class="tagline">
+		{site.tagline}
+		<span class="availability">{site.availability}</span>
+	</p>
 
 	<div class="actions">
 		<a class="button primary" href={site.resume} target="_blank" rel="noopener">
@@ -53,8 +56,8 @@ import CopyEmail from "./CopyEmail.astro";
 	.hero {
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: clamp(var(--space-4), 8vw, var(--space-12)) var(--gutter)
-			clamp(var(--space-3), 6vw, var(--space-8));
+		padding: clamp(var(--space-4), 6vw, var(--space-8)) var(--gutter)
+			clamp(var(--space-1), 2vw, var(--space-3));
 	}
 
 	.callsign {
@@ -73,6 +76,12 @@ import CopyEmail from "./CopyEmail.astro";
 		margin-top: var(--space-4);
 		font-size: var(--text-lg);
 		line-height: 1.8;
+	}
+
+	/* Its own line, quieter than the tagline */
+	.availability {
+		display: block;
+		color: var(--muted);
 	}
 
 	.actions {
