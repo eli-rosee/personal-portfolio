@@ -91,24 +91,6 @@ const clip:
 		video.addEventListener("play", track);
 		video.addEventListener("seeked", track);
 	}
-
-	// Parallax: on hover the video drifts a few pixels behind the frame, like looking through glass.
-	// Mouse or trackpad only, and off with reduced motion.
-	const viewport = video?.closest<HTMLElement>(".viewport");
-	if (video && viewport && !reducedMotion && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-		viewport.classList.add("parallax");
-		viewport.addEventListener("pointermove", (e) => {
-			const box = viewport.getBoundingClientRect();
-			const x = (e.clientX - box.left) / box.width - 0.5; // -0.5 to 0.5
-			const y = (e.clientY - box.top) / box.height - 0.5;
-			video.style.setProperty("--shift-x", `${-x * 12}px`);
-			video.style.setProperty("--shift-y", `${-y * 12}px`);
-		});
-		viewport.addEventListener("pointerleave", () => {
-			video.style.removeProperty("--shift-x");
-			video.style.removeProperty("--shift-y");
-		});
-	}
 </script>
 
 <style>
@@ -183,7 +165,6 @@ const clip:
 	.glass {
 		--cut: calc(2rem - 0.41px - 0.26rem);
 		position: relative;
-		overflow: hidden; /* crops the parallax overscan */
 		padding: var(--border-width);
 		background: var(--border);
 	}
@@ -207,12 +188,6 @@ const clip:
 		background: var(--bg);
 		/* Cool, muted grade so the footage sits in the navy/amber palette like a spacecraft camera feed */
 		filter: saturate(0.6) contrast(1.1) brightness(0.9);
-	}
-
-	/* Scaled up slightly so the edges never show while it drifts */
-	.parallax video {
-		transform: scale(1.06) translate(var(--shift-x, 0), var(--shift-y, 0));
-		transition: transform 0.4s ease-out;
 	}
 
 	.hud {
