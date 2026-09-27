@@ -13,12 +13,10 @@ clip:
     Grade: V5
 ---
 
-I'm fascinated by software that interacts with the physical world.
+I'm fascinated by software that interacts with the physical world. I came at it through data: my [senior capstone](https://github.com/eli-rosee/f1-style-analysis-capstone-project) was ML work alongside a General Motors data science team. I liked the analysis, but I wanted to build things that move.
 
-In my undergrad, I focused on data analysis and ML, which culminated with my [senior capstone](/projects/f1-capstone/). While I really enjoyed the exploratory nature of data analysis and ML, I still wasn't scratching that engineering itch.
+At Georgia Tech, I'm doing that. My Robotics: AI Techniques class had me write a Kalman filter from scratch, and outside of class I'm writing the C controller for a friend's compressed-air engine, my first real embedded project.
 
-Now, at Georgia Tech, I am finding that itch being scratched by my [Robotics: AI Techniques](/projects/kalman-filter/) class. Because of this, I have taken on helping a friend build a [compressed-air engine](/projects/pid-controller/) and writing its controller for a trial by fire in embedded systems and fabrication.
+This site, along with my capstone's, is [self-hosted](#uptime) on a Lenovo mini PC in my bedroom running Linux, Docker, and Nginx behind a Cloudflare Tunnel.
 
-On the weekends, you can find me bouldering outdoors with friends at one of the local crags. I love dedicating time to figuring out puzzle like climbs.
-
-This site (as well as my capstone site) is [self-hosted](#uptime) on a mini computer in my bedroom, running Docker and Nginx with Linux. I find home servers fun to tinker with.
+On the weekends, you can find me out climbing at one of the local crags. I love bouldering outdoors, and have been doing it for over four years.
