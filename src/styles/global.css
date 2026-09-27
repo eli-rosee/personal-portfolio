@@ -143,6 +143,27 @@ a:hover {
 	color: var(--muted);
 }
 
+/* Tech stack tags: "PYTHON · C · NGINX". Each separator sits before its tag, and the list
+   is shifted one separator-width left with that strip clipped off, so a separator that
+   would begin a wrapped line is hidden instead of dangling. */
+.stack {
+	--sep: 2.75em;
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0 0 0 calc(-1 * var(--sep));
+	padding: 0;
+	list-style: none;
+	color: var(--accent);
+	clip-path: inset(0 0 0 var(--sep));
+}
+
+.stack li::before {
+	content: "·";
+	display: inline-block;
+	width: var(--sep);
+	text-align: center;
+}
+
 /* Fixed-width digits so ticking counters don't jitter */
 .tabular {
 	font-variant-numeric: tabular-nums;
