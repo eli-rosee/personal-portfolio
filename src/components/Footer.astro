@@ -1,46 +1,42 @@
 ---
-// Telemetry readouts + copyright. Each readout is its own script and stays hidden
-// until it has real data, so a failure (or no JavaScript) just leaves it out.
-// Project pages pass `telemetry={false}` to show only the copyright row.
-interface Props {
-	telemetry?: boolean;
-}
-
-const { telemetry = true } = Astro.props;
+// Telemetry readouts, then copyright + email. Each readout is its own script and stays
+// hidden until it has real data, so a failure (or no JavaScript) just leaves it out.
+import { site } from "../data/site";
+import CopyEmail from "./CopyEmail.astro";
 ---
 
 <footer>
 	<div class="inner">
-		{telemetry && (
-			<section class="telemetry" aria-labelledby="telemetry-heading">
-				<h2 id="telemetry-heading" class="section-title">// Telemetry</h2>
-				<dl class="grid">
-					<div class="cell" data-iss hidden>
-						<dt class="label">ISS position</dt>
-						<dd class="value tabular" data-iss-coords></dd>
-						<dd class="sub" data-iss-place></dd>
-					</div>
-					<div class="cell" data-voyager hidden>
-						<dt class="label">Voyager&nbsp;1</dt>
-						<dd class="value tabular"><span data-voyager-total></span> km</dd>
-						<dd class="sub">from the Sun</dd>
-					</div>
-					<div class="cell" data-voyager hidden>
-						<dt class="label">Since you arrived</dt>
-						<dd class="value tabular">+<span data-voyager-session>0</span> km</dd>
-						<dd class="sub">traveled by Voyager&nbsp;1</dd>
-					</div>
-					<div class="cell" id="uptime" data-uptime hidden>
-						<dt class="label">Uptime</dt>
-						<dd class="value tabular" data-uptime-value></dd>
-						<dd class="sub">self-hosted at home</dd>
-					</div>
-				</dl>
-			</section>
-		)}
+		<section class="telemetry" aria-labelledby="telemetry-heading">
+			<h2 id="telemetry-heading" class="section-title">// Telemetry</h2>
+			<dl class="grid">
+				<div class="cell" data-iss hidden>
+					<dt class="label">ISS position</dt>
+					<dd class="value tabular" data-iss-coords></dd>
+					<dd class="sub" data-iss-place></dd>
+				</div>
+				<div class="cell" data-voyager hidden>
+					<dt class="label">Voyager&nbsp;1</dt>
+					<dd class="value tabular"><span data-voyager-total></span> km</dd>
+					<dd class="sub">from the Sun</dd>
+				</div>
+				<div class="cell" data-voyager hidden>
+					<dt class="label">Since you arrived</dt>
+					<dd class="value tabular">+<span data-voyager-session>0</span> km</dd>
+					<dd class="sub">traveled by Voyager&nbsp;1</dd>
+				</div>
+				<div class="cell" id="uptime" data-uptime hidden>
+					<dt class="label">Uptime</dt>
+					<dd class="value tabular" data-uptime-value></dd>
+					<dd class="sub">self-hosted at home</dd>
+				</div>
+			</dl>
+		</section>
 
 		<div class="meta label">
 			<p>© {new Date().getFullYear()} Eli Rose</p>
+			{/* A div, since the email component brings its own status <p> */}
+			<div><CopyEmail class="email" label={site.email} copiedLabel="Copied to clipboard" /></div>
 			<p>Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a></p>
 		</div>
 	</div>
@@ -118,21 +114,29 @@ const { telemetry = true } = Astro.props;
 
 	if (cells.length && total && session) {
 		const format = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+		// Only touches the page when the digits actually change (each write re-lays out the text)
+		const setText = (el: HTMLElement, text: string) => {
+			if (el.textContent !== text) el.textContent = text;
+		};
 		const render = () => {
 			const secondsSinceReference = (Date.now() - REFERENCE_TIME) / 1000;
-			total.textContent = format.format(REFERENCE_KM + secondsSinceReference * KM_PER_SECOND);
-			session.textContent = format.format((performance.now() / 1000) * KM_PER_SECOND);
+			setText(total, format.format(REFERENCE_KM + secondsSinceReference * KM_PER_SECOND));
+			setText(session, format.format((performance.now() / 1000) * KM_PER_SECOND));
 		};
 		render();
 		cells.forEach((cell) => (cell.hidden = false));
 
-		// Ticks every frame (the last digits roll like an odometer) while the footer is on
-		// screen. With reduced motion, or off screen, it only updates once a second.
+		// Ticks up to 20 times a second (the last digits roll like an odometer; Voyager covers ~17 km
+		// a second) while the footer is on screen. With reduced motion, or off screen, once a second.
 		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 		let onScreen = false;
 		let frame = 0;
-		const loop = () => {
-			render();
+		let lastRender = 0;
+		const loop = (now = performance.now()) => {
+			if (now - lastRender >= 50) {
+				lastRender = now;
+				render();
+			}
 			frame = requestAnimationFrame(loop);
 		};
 		const update = () => {
@@ -215,9 +219,12 @@ const { telemetry = true } = Astro.props;
 		return { lat: from.latitude + (to.latitude - from.latitude) * t, lon };
 	};
 
+	// Only touches the page when the coordinates actually change (each write re-lays out the text)
 	const render = () => {
 		const position = positionAt(Date.now());
-		if (position) coords!.textContent = formatCoords(position.lat, position.lon);
+		if (!position) return;
+		const text = formatCoords(position.lat, position.lon);
+		if (coords!.textContent !== text) coords!.textContent = text;
 	};
 
 	// A new place name flashes briefly so the change gets noticed
@@ -264,12 +271,17 @@ const { telemetry = true } = Astro.props;
 			if (!document.hidden && !polling) poll();
 		});
 
-		// Same pacing as the Voyager counter: every frame while visible, else once a second
+		// Same pacing as the Voyager counter: up to 20 times a second while visible (the hundredths
+		// change a few times a second), else once a second
 		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 		let onScreen = false;
 		let frame = 0;
-		const loop = () => {
-			render();
+		let lastRender = 0;
+		const loop = (now = performance.now()) => {
+			if (now - lastRender >= 50) {
+				lastRender = now;
+				render();
+			}
 			frame = requestAnimationFrame(loop);
 		};
 		const update = () => {
@@ -373,6 +385,7 @@ const { telemetry = true } = Astro.props;
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-between;
+		align-items: center;
 		gap: var(--space-1) var(--space-4);
 		margin-top: var(--space-8);
 		padding-top: var(--space-3);
@@ -388,5 +401,21 @@ const { telemetry = true } = Astro.props;
 
 	a:hover {
 		text-decoration-color: var(--accent);
+	}
+
+	/* The address matches the row's labels; it brightens and underlines on hover to show it's clickable */
+	a.email {
+		color: inherit;
+		text-decoration-color: transparent;
+	}
+
+	a.email:hover {
+		color: var(--text);
+		text-decoration-color: var(--muted);
+	}
+
+	/* "Copied to clipboard" is a confirmation, not a link */
+	a.email.is-copied {
+		text-decoration-color: transparent;
 	}
 </style>
