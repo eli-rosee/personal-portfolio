@@ -35,6 +35,9 @@
 	/* Layout */
 	--page-max: 1060px;
 	--gutter: clamp(1rem, 5vw, 6.5rem);
+	/* Short space that joins two blocks on the home page: under the hero, and above a section
+	   that follows another, so the gaps above and below the mission cards match */
+	--section-seam: clamp(var(--space-1), 2vw, var(--space-3));
 	--border-width: 1px;
 }
 
@@ -112,6 +115,10 @@ a:hover {
 	margin: 0 auto;
 	padding: clamp(var(--space-4), 6vw, var(--space-8)) var(--gutter);
 	scroll-margin-top: var(--space-2);
+}
+
+.section + .section {
+	padding-top: var(--section-seam);
 }
 
 /* "// MISSIONS" style heading with a rule underneath */
