@@ -1,8 +1,9 @@
 ---
 import { Content, frontmatter } from "../data/about.md";
 
-const clip: { src: string; poster?: string; label: string; caption?: string } | undefined =
-	frontmatter.clip;
+const clip:
+	| { src: string; poster?: string; label: string; cam?: string; sent?: boolean; log?: Record<string, string> }
+	| undefined = frontmatter.clip;
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">
@@ -14,19 +15,53 @@ const clip: { src: string; poster?: string; label: string; caption?: string } | 
 		{
 			clip && (
 				<figure>
-					{/* Controls without JavaScript; the script swaps them for GIF-like autoplay */}
-					<video
-						data-about-clip
-						controls
-						muted
-						loop
-						playsinline
-						preload="none"
-						poster={clip.poster}
-						src={clip.src}
-						aria-label={clip.label}
-					/>
-					{clip.caption && <figcaption class="label">{clip.caption}</figcaption>}
+					{/* Spaceship viewport: hull edge > bezel with bolts > glass edge > video + glare */}
+					<div class="viewport">
+						<div class="bezel">
+							<div class="glass">
+								{/* Controls without JavaScript; the script swaps them for GIF-like autoplay */}
+								<video
+									data-about-clip
+									controls
+									muted
+									loop
+									playsinline
+									preload="none"
+									poster={clip.poster}
+									src={clip.src}
+									aria-label={clip.label}
+								/>
+								{/* Camera label + altimeter (its marker climbs with the video, set by the script) */}
+								<div class="hud" aria-hidden="true">
+									{clip.cam && <span class="label cam">{clip.cam}</span>}
+									<span class="altimeter">
+										<span class="marker" />
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					{clip.log && (
+						<figcaption class="log">
+							<div class="log-head">
+								<p class="label">// Mission log</p>
+								{clip.sent && (
+									<span class="label sent">
+										<span class="light" aria-hidden="true" />
+										Sent
+									</span>
+								)}
+							</div>
+							<dl>
+								{Object.entries(clip.log).map(([key, value]) => (
+									<div>
+										<dt class="label">{key}</dt>
+										<dd>{value}</dd>
+									</div>
+								))}
+							</dl>
+						</figcaption>
+					)}
 				</figure>
 			)
 		}
@@ -37,12 +72,42 @@ const clip: { src: string; poster?: string; label: string; caption?: string } | 
 	// The clip loops silently like a GIF, but only loads once it's near the screen.
 	// With reduced motion it keeps its controls and only plays if asked to.
 	const video = document.querySelector<HTMLVideoElement>("video[data-about-clip]");
-	if (video && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+	const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	if (video && !reducedMotion) {
 		video.controls = false;
 		new IntersectionObserver(
 			([entry]) => (entry.isIntersecting ? video.play().catch(() => {}) : video.pause()),
 			{ rootMargin: "200px" },
 		).observe(video);
+	}
+
+	// Altimeter: the marker tracks how far through the clip it is, every frame while playing
+	const glass = video?.closest<HTMLElement>(".glass");
+	if (video && glass) {
+		const track = () => {
+			if (video.duration) glass.style.setProperty("--alt", String(video.currentTime / video.duration));
+			if (!video.paused) requestAnimationFrame(track);
+		};
+		video.addEventListener("play", track);
+		video.addEventListener("seeked", track);
+	}
+
+	// Parallax: on hover the video drifts a few pixels behind the frame, like looking through glass.
+	// Mouse or trackpad only, and off with reduced motion.
+	const viewport = video?.closest<HTMLElement>(".viewport");
+	if (video && viewport && !reducedMotion && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+		viewport.classList.add("parallax");
+		viewport.addEventListener("pointermove", (e) => {
+			const box = viewport.getBoundingClientRect();
+			const x = (e.clientX - box.left) / box.width - 0.5; // -0.5 to 0.5
+			const y = (e.clientY - box.top) / box.height - 0.5;
+			video.style.setProperty("--shift-x", `${-x * 12}px`);
+			video.style.setProperty("--shift-y", `${-y * 12}px`);
+		});
+		viewport.addEventListener("pointerleave", () => {
+			video.style.removeProperty("--shift-x");
+			video.style.removeProperty("--shift-y");
+		});
 	}
 </script>
 
@@ -70,9 +135,68 @@ const clip: { src: string; poster?: string; label: string; caption?: string } | 
 
 	figure {
 		display: grid;
-		gap: var(--space-1);
+		gap: var(--space-3);
 		max-width: 18rem;
 		margin: 0;
+	}
+
+	/*
+	 * Viewport: nested layers, each clipped to the same chamfered shape.
+	 * A layer inset by p needs a cut about 0.41p smaller to keep the diagonal edges even.
+	 */
+	.viewport,
+	.bezel,
+	.glass {
+		clip-path: polygon(
+			var(--cut) 0,
+			calc(100% - var(--cut)) 0,
+			100% var(--cut),
+			100% calc(100% - var(--cut)),
+			calc(100% - var(--cut)) 100%,
+			var(--cut) 100%,
+			0 calc(100% - var(--cut)),
+			0 var(--cut)
+		);
+	}
+
+	/* Hull edge */
+	.viewport {
+		--cut: 2rem;
+		padding: var(--border-width);
+		background: var(--border);
+	}
+
+	/* Bezel with four bolts along the top and bottom */
+	.bezel {
+		--cut: calc(2rem - 0.41px);
+		--bolt: radial-gradient(circle, color-mix(in srgb, var(--muted) 55%, transparent) 1.75px, transparent 2.25px);
+		padding: 0.625rem;
+		background:
+			var(--bolt) 30% 0 / 0.625rem 0.625rem no-repeat,
+			var(--bolt) 70% 0 / 0.625rem 0.625rem no-repeat,
+			var(--bolt) 30% 100% / 0.625rem 0.625rem no-repeat,
+			var(--bolt) 70% 100% / 0.625rem 0.625rem no-repeat,
+			var(--surface);
+	}
+
+	/* Glass edge, with glare across the top and a darker rim (over the video) */
+	.glass {
+		--cut: calc(2rem - 0.41px - 0.26rem);
+		position: relative;
+		overflow: hidden; /* crops the parallax overscan */
+		padding: var(--border-width);
+		background: var(--border);
+	}
+
+	.glass::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background:
+			linear-gradient(135deg, rgb(255 255 255 / 0.1), transparent 30%),
+			rgb(40 70 130 / 0.14); /* cool cast over the footage, part of the grade */
+		box-shadow: inset 0 0 2.5rem rgb(0 0 0 / 0.55);
+		pointer-events: none; /* keeps the no-JS controls clickable */
 	}
 
 	video {
@@ -80,7 +204,115 @@ const clip: { src: string; poster?: string; label: string; caption?: string } | 
 		width: 100%;
 		aspect-ratio: 9 / 16; /* reserves space before the poster loads */
 		object-fit: cover;
-		background: var(--surface);
+		background: var(--bg);
+		/* Cool, muted grade so the footage sits in the navy/amber palette like a spacecraft camera feed */
+		filter: saturate(0.6) contrast(1.1) brightness(0.9);
+	}
+
+	/* Scaled up slightly so the edges never show while it drifts */
+	.parallax video {
+		transform: scale(1.06) translate(var(--shift-x, 0), var(--shift-y, 0));
+		transition: transform 0.4s ease-out;
+	}
+
+	.hud {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	/* Dark backing keeps the label readable over whatever the footage shows */
+	.cam {
+		position: absolute;
+		bottom: 0.75rem;
+		left: 50%;
+		translate: -50%;
+		padding: 0.1rem 0.45rem;
+		background: rgb(11 14 20 / 0.6);
+		color: var(--text);
+		white-space: nowrap;
+	}
+
+	/* Tick scale on the right edge, clear of the cut corners; a major tick every fifth */
+	.altimeter {
+		position: absolute;
+		top: 3rem;
+		bottom: 3rem;
+		right: 0.6rem;
+		width: 0.6rem;
+		background:
+			repeating-linear-gradient(to top, rgb(230 225 214 / 0.8) 0 1px, transparent 1px 20%) right / 100% 100%
+				no-repeat,
+			repeating-linear-gradient(to top, rgb(230 225 214 / 0.5) 0 1px, transparent 1px 4%) right / 50% 100%
+				no-repeat;
+		border-top: 1px solid rgb(230 225 214 / 0.8); /* the repeat stops short of the top tick */
+		filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.8));
+	}
+
+	/* Amber pointer riding up the scale */
+	.marker {
+		position: absolute;
+		right: calc(100% + 0.2rem);
+		bottom: calc(var(--alt, 0) * 100%);
+		width: 0;
+		height: 0;
+		border-block: 0.3rem solid transparent;
+		border-left: 0.45rem solid var(--accent);
+		translate: 0 50%;
+	}
+
+	/* Mission log: console-style rows under the viewport */
+	.log {
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.log-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	/* Like the mission cards' "in orbit" chip, but steady, not interactive, and trimmed to the heading's height */
+	.sent {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5em;
+		padding: 0 0.4rem;
+		line-height: 1.6;
 		border: var(--border-width) solid var(--border);
+		color: var(--status);
+	}
+
+	.sent .light {
+		width: 0.3rem;
+		height: 0.3rem;
+		border-radius: 50%;
+		background: currentColor;
+	}
+
+	dl {
+		display: grid;
+		gap: 0.25rem;
+		margin: 0;
+	}
+
+	dl div {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--space-2);
+		padding-block: 0.25rem;
+		border-bottom: var(--border-width) solid var(--border);
+	}
+
+	dt {
+		line-height: inherit;
+	}
+
+	dd {
+		margin: 0;
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		text-align: right;
 	}
 </style>
