@@ -15,7 +15,7 @@ const clip:
 		{
 			clip && (
 				<figure>
-					{/* Spaceship viewport: hull edge > bezel with bolts > glass edge > video + glare */}
+					{/* Spaceship viewport: hull edge > bezel > glass edge > video + glare */}
 					<div class="viewport">
 						<div class="bezel">
 							<div class="glass">
@@ -155,17 +155,11 @@ const clip:
 		background: var(--border);
 	}
 
-	/* Bezel with four bolts along the top and bottom */
+	/* Bezel */
 	.bezel {
 		--cut: calc(2rem - 0.41px);
-		--bolt: radial-gradient(circle, color-mix(in srgb, var(--muted) 55%, transparent) 1.75px, transparent 2.25px);
 		padding: 0.625rem;
-		background:
-			var(--bolt) 30% 0 / 0.625rem 0.625rem no-repeat,
-			var(--bolt) 70% 0 / 0.625rem 0.625rem no-repeat,
-			var(--bolt) 30% 100% / 0.625rem 0.625rem no-repeat,
-			var(--bolt) 70% 100% / 0.625rem 0.625rem no-repeat,
-			var(--surface);
+		background: var(--surface);
 	}
 
 	/* Glass edge, with glare across the top and a darker rim (over the video) */
