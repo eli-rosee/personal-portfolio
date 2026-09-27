@@ -3,7 +3,7 @@ number: 1
 title: Kalman Filter
 status: in-orbit
 summary: Built a Kalman Filter from scratch for simulated asteroid field tracking.
-stack: [Robotics, Tracking, Python, Pathfinding]
+stack: [Python, Linear Algebra, State Estimation, Pathfinding]
 private: true
 role:
   solo: true
