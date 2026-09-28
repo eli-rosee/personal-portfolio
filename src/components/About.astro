@@ -31,6 +31,8 @@ const clip:
 									src={clip.src}
 									aria-label={clip.label}
 								/>
+								{/* Light static drifting over the footage, like a camera feed from orbit */}
+								<span class="static" aria-hidden="true" />
 								{/* Camera label + altimeter (its marker climbs with the video, set by the script) */}
 								<div class="hud" aria-hidden="true">
 									{clip.cam && <span class="label cam">{clip.cam}</span>}
@@ -221,11 +223,11 @@ const clip:
 		background: var(--border);
 	}
 
-	/* Bezel */
+	/* Bezel: the same color as the project screens' bezels */
 	.bezel {
 		--cut: calc(2rem - 0.41px);
 		padding: 0.625rem;
-		background: var(--surface);
+		background: var(--bezel);
 	}
 
 	/* Glass edge, with glare across the top and a darker rim (over the video) */
@@ -242,6 +244,7 @@ const clip:
 		inset: 0;
 		background:
 			linear-gradient(135deg, rgb(255 255 255 / 0.1), transparent 30%),
+			repeating-linear-gradient(transparent 0 2px, rgb(0 0 0 / 0.16) 2px 3px), /* faint scanlines */
 			rgb(40 70 130 / 0.14); /* cool cast over the footage, part of the grade */
 		box-shadow: inset 0 0 2.5rem rgb(0 0 0 / 0.55);
 		pointer-events: none; /* keeps the no-JS controls clickable */
@@ -256,6 +259,49 @@ const clip:
 		/* Cool, muted grade so the footage sits in the navy/amber palette like a spacecraft camera feed */
 		filter: saturate(0.6) contrast(1.1) brightness(0.9);
 		cursor: pointer; /* click to play or pause */
+	}
+
+	/*
+	 * Space-cam static: a tile of fine noise over the footage, jumping between offsets a few times a
+	 * second so it shimmers like a weak signal. It only moves itself (a transform), so it's cheap
+	 * even over playing video. Still with reduced motion.
+	 */
+	.static {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+	}
+
+	.static::before {
+		content: "";
+		position: absolute;
+		inset: -50%;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.4 0 0 0 -0.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+		background-size: 180px;
+		opacity: 0.16;
+		animation: about-static 0.5s steps(1) infinite;
+	}
+
+	@keyframes about-static {
+		0% {
+			translate: 0 0;
+		}
+		25% {
+			translate: -37px 23px;
+		}
+		50% {
+			translate: 51px -44px;
+		}
+		75% {
+			translate: -18px 61px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.static::before {
+			animation: none;
+		}
 	}
 
 	.hud {
