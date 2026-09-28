@@ -8,6 +8,7 @@
 	--muted: #8a93a6;
 	--accent: #f2a541;
 	--status: #7bc47f;
+	--bezel: #0f131c; /* viewport bezels (About clip, project screens): between --bg and --surface, so it reads on both */
 
 	/* Font roles */
 	--font-label: "Space Mono", ui-monospace, monospace; /* nav, labels, buttons, titles, counters */

@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
 import ExternalIcon from "./ExternalIcon.astro";
 
 interface Props {
@@ -7,7 +8,7 @@ interface Props {
 }
 
 const { project } = Astro.props;
-const { number, title, status, summary, stack, links } = project.data;
+const { number, title, status, summary, stack, links, display } = project.data;
 const statusLabel = status.replace("-", " ");
 
 // Plain-English meaning, shown on hover, keyboard focus, or tap
@@ -17,6 +18,8 @@ const statusMeaning = {
 	decommissioned: "No longer maintained",
 }[status];
 const tipId = `status-tip-${number}`;
+// Only the last word drops to a second line, so the tooltip wraps to two snug lines
+const tipText = statusMeaning.replace(/ (?=.* )/g, "\u00A0");
 // The title opens the demo or repo in a new tab (no link if neither exists)
 const href = links?.demo ?? links?.repo;
 
@@ -26,81 +29,216 @@ const lastWord = words.pop();
 const leadingWords = words.length ? `${words.join(" ")} ` : "";
 ---
 
-<article class="card">
-	<header class="label">
-		<span class="tabular">Mission {String(number).padStart(2, "0")}</span>
-		<span class="status-wrap">
-			<span class={`status ${status}`} tabindex="0" aria-describedby={tipId}>
-				<span class="light" aria-hidden="true"></span>
-				{statusLabel}
-			</span>
-			<span class="tip" id={tipId} role="tooltip">{statusMeaning}</span>
+{/*
+	A console panel: a tab on top holding the status (its top edge lit in the status color), a
+	viewport screen showing a real image from the project (or "no signal" until there is one),
+	then the title and summary, then the tags, split by separators with a small diamond.
+*/}
+<div class:list={["panel", status]}>
+	<span class="tab label">
+		<span class="status" tabindex="0" aria-describedby={tipId}>
+			<span class="light" aria-hidden="true"></span>
+			{statusLabel}
+			{/* Info mark: says "there's more here" */}
+			<svg class="info" viewBox="0 0 12 12" aria-hidden="true">
+				<circle cx="6" cy="6" r="5.25" fill="none" stroke="currentColor" stroke-width="1"></circle>
+				<path d="M6 5.2v3.6" stroke="currentColor" stroke-width="1.2"></path>
+				<circle cx="6" cy="3.4" r="0.75" fill="currentColor"></circle>
+			</svg>
 		</span>
-	</header>
+	</span>
+	<span class="tip label" id={tipId} role="tooltip">{tipText}</span>
 
-	<h3>
-		{
-			href ? (
-				<a href={href} target="_blank" rel="noopener">
-					{leadingWords}
-					<span class="nowrap">
-						{lastWord}
-						<ExternalIcon />
-					</span>
-				</a>
-			) : (
-				title
-			)
-		}
-	</h3>
+	<article class="card">
+		<div class="viewport">
+			<div class="bezel">
+				<figure class="screen">
+					{
+						display ? (
+							<Image
+								src={display.image}
+								alt={display.alt}
+								widths={[400, 640, 960]}
+								sizes="(max-width: 48rem) 100vw, 22rem"
+								style={`object-position: ${display.position}; scale: ${display.zoom}; transform-origin: ${display.position}`}
+							/>
+						) : (
+							<div class="no-signal" aria-hidden="true">
+								<span class="crosshair" />
+							</div>
+						)
+					}
+					{
+						(display?.readout || !display) && (
+							<figcaption class="readout label" aria-hidden={!display}>
+								{display?.readout ?? "No signal"}
+							</figcaption>
+						)
+					}
+				</figure>
+			</div>
+		</div>
 
-	<p class="summary">{summary}</p>
+		<hr class="separator" />
 
-	<ul class="stack label" aria-label="Tech stack">
-		{stack.map((tech) => <li>{tech}</li>)}
-	</ul>
-</article>
+		<div class="text">
+			<h3>
+				{
+					href ? (
+						<a href={href} target="_blank" rel="noopener">
+							{leadingWords}
+							<span class="nowrap">
+								{lastWord}
+								<ExternalIcon />
+							</span>
+						</a>
+					) : (
+						title
+					)
+				}
+			</h3>
+			<p class="summary">{summary}</p>
+		</div>
+
+		<hr class="separator" />
+
+		<ul class="stack label" aria-label="Tech stack">
+			{stack.map((tech) => <li>{tech}</li>)}
+		</ul>
+	</article>
+</div>
 
 <style>
-	.card {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-		padding: var(--space-4);
+	.panel {
+		--frame: 2px;
+		--line: #2e3649; /* a touch lighter than --border, so the 2px frame reads */
+		--tab-w: 10.5rem;
+		--tab-h: 1.9rem;
+		--slant: 0.75rem;
+		/* How far the inner edge of a 2px slanted line sits from the outer one, along the top and
+		   bottom of the slant (from the tab's proportions); keeps the slants as thick as the rest */
+		--kink: 1.35px;
+		--lit: var(--muted); /* the status color */
+		position: relative;
+		padding-top: var(--tab-h);
+	}
+
+	.panel.in-orbit {
+		--lit: var(--status);
+	}
+
+	.panel.launched {
+		--lit: var(--accent);
+	}
+
+	/*
+	 * The outline, tab and card together, drawn as one shape: the frame color, with the panel color
+	 * inset 2px inside it. One continuous edge, so the tab flows into the frame with the same
+	 * thickness everywhere (two separate shapes rendered their joins unevenly on phones).
+	 */
+	.panel::before,
+	.panel::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+	}
+
+	.panel::before {
+		background: var(--line);
+		clip-path: polygon(
+			0 100%,
+			0 var(--tab-h),
+			var(--slant) 0,
+			calc(var(--tab-w) - var(--slant)) 0,
+			var(--tab-w) var(--tab-h),
+			100% var(--tab-h),
+			100% 100%
+		);
+	}
+
+	.panel::after {
 		background: var(--surface);
-		border: var(--border-width) solid var(--border);
-		container-type: inline-size;
+		clip-path: polygon(
+			var(--frame) calc(100% - var(--frame)),
+			var(--frame) var(--tab-h),
+			calc(var(--slant) + var(--kink)) var(--frame),
+			calc(var(--tab-w) - var(--slant) - var(--kink)) var(--frame),
+			calc(var(--tab-w) - var(--kink)) calc(var(--tab-h) + var(--frame)),
+			calc(100% - var(--frame)) calc(var(--tab-h) + var(--frame)),
+			calc(100% - var(--frame)) calc(100% - var(--frame))
+		);
 	}
 
-	/* Mission number on the left, status on the right; if they don't fit, the status wraps
-	   to its own line and stays right-aligned */
-	header {
+	/* The tab's contents, over the outline */
+	.tab {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 1;
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-1) var(--space-2);
+		justify-content: center;
+		width: var(--tab-w);
+		height: var(--tab-h);
+		padding: var(--frame) var(--slant) 0;
 	}
 
-	.status-wrap {
-		position: relative; /* anchors the tooltip to the status */
-		margin-left: auto;
+	/* The tab's top edge, lit in the status color */
+	.tab::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: var(--slant);
+		right: var(--slant);
+		height: var(--frame);
+		background: var(--lit);
+		box-shadow: 0 0 6px var(--lit);
+		opacity: 0.7; /* dimmed at rest; full brightness on hover */
+		transition:
+			opacity 0.15s,
+			box-shadow 0.15s;
 	}
 
-	/* Indicator chip: a faint frame hints that it can be hovered or tapped */
+	/* Hover/focus: the edge brightens and a wash of its color falls into the tab, like a lamp */
+	.tab::before {
+		content: "";
+		position: absolute;
+		inset: var(--frame) calc(var(--frame) * 1.5) 0;
+		clip-path: polygon(calc(var(--slant) - 1px) 0, calc(100% - var(--slant) + 1px) 0, 100% 100%, 0 100%);
+		background: linear-gradient(to bottom, color-mix(in srgb, var(--lit) 22%, transparent), transparent 90%);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s;
+	}
+
+	.tab:is(:hover, :focus-within)::before {
+		opacity: 1;
+	}
+
+	.tab:is(:hover, :focus-within)::after {
+		opacity: 1;
+		box-shadow: 0 0 10px var(--lit);
+	}
+
 	.status {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.6em;
-		padding: 0.15rem 0.5rem;
-		border: var(--border-width) solid var(--border);
-		color: var(--muted);
-		cursor: help;
-		transition: border-color 0.15s;
+		color: var(--lit);
+		font-size: 0.65rem;
+		white-space: nowrap;
 	}
 
-	.status:hover,
-	.status:focus-visible {
-		border-color: currentColor;
+	.info {
+		width: 0.85em;
+		height: 0.85em;
+		margin-left: 0.1em;
+		color: var(--muted);
+		transition: color 0.15s;
+	}
+
+	.tab:is(:hover, :focus-within) .info {
+		color: var(--text);
 	}
 
 	.status:focus-visible {
@@ -112,57 +250,211 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		height: 0.4rem;
 		border-radius: 50%;
 		background: currentColor;
+		box-shadow: 0 0 0.4rem currentColor;
 	}
 
 	/* Active development: the light pulses slowly, like a live signal */
 	.launched .light {
-		box-shadow: 0 0 0.4rem currentColor;
-		animation: pulse 2.4s ease-in-out infinite;
+		animation: status-pulse 2.4s ease-in-out infinite;
 	}
 
-	.in-orbit .light {
-		box-shadow: 0 0 0.4rem currentColor;
-	}
-
-	@keyframes pulse {
+	@keyframes status-pulse {
 		50% {
 			opacity: 0.25;
 		}
 	}
 
+	/* Hangs centered under the tab, pointing up at the status */
 	.tip {
 		position: absolute;
-		top: calc(100% + var(--space-1));
-		right: 0;
-		z-index: 1;
-		width: max-content; /* sized to its own text */
-		max-width: 100cqi; /* card content width */
-		padding: 0.3rem 0.6rem;
-		line-height: 1.5;
+		top: calc(var(--tab-h) + 0.7rem);
+		left: calc(var(--tab-w) / 2);
+		translate: -50% 0;
+		z-index: 2;
+		width: min-content; /* as wide as its longest line */
+		padding: 0.4rem 0.7rem;
 		text-align: center;
+		line-height: 1.6;
 		background: var(--bg);
-		border: var(--border-width) solid var(--border);
+		border: 1px solid var(--line);
 		color: var(--text);
 		letter-spacing: 0.1em;
 		opacity: 0;
 		visibility: hidden;
+		pointer-events: none;
 		transition:
 			opacity 0.15s,
 			visibility 0.15s;
 	}
 
-	.status:hover + .tip,
-	.status:focus + .tip {
+	/* Pointer: a small outlined notch continuing the tooltip's border */
+	.tip::before {
+		content: "";
+		position: absolute;
+		top: -4px;
+		left: calc(50% - 3.5px);
+		width: 7px;
+		height: 7px;
+		background: var(--bg);
+		border-top: 1px solid var(--line);
+		border-left: 1px solid var(--line);
+		rotate: 45deg;
+	}
+
+	.tab:is(:hover, :focus-within) + .tip {
 		opacity: 1;
 		visibility: visible;
 	}
 
-	.status.in-orbit {
-		color: var(--status);
+	/* Card contents, inside the outline, with a fine machined line just inside the frame */
+	.card {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		padding: var(--frame);
+		outline: 1px solid rgb(230 225 214 / 0.06);
+		outline-offset: -5px;
 	}
 
-	.status.launched {
-		color: var(--accent);
+	/*
+	 * Viewport, built like the About clip's: hull edge > bezel > screen,
+	 * each clipped to the same cut-corner shape
+	 */
+	.viewport,
+	.bezel,
+	.screen {
+		clip-path: polygon(
+			var(--cut) 0,
+			calc(100% - var(--cut)) 0,
+			100% var(--cut),
+			100% calc(100% - var(--cut)),
+			calc(100% - var(--cut)) 100%,
+			var(--cut) 100%,
+			0 calc(100% - var(--cut)),
+			0 var(--cut)
+		);
+	}
+
+	.viewport {
+		--cut: 1rem;
+		margin: var(--space-3);
+		padding: 1px;
+		background: var(--border);
+	}
+
+	.bezel {
+		--cut: calc(1rem - 0.41px);
+		padding: 0.55rem;
+		background: var(--bezel); /* shared with the About clip's bezel */
+	}
+
+	.screen {
+		--cut: calc(1rem - 0.41px - 0.23rem);
+		position: relative;
+		margin: 0;
+		aspect-ratio: 16 / 10;
+		overflow: hidden;
+		background: var(--bg);
+	}
+
+	.screen img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		filter: saturate(0.75) brightness(0.8) contrast(1.1); /* sits in the palette like a console feed */
+	}
+
+	/* Glare across the glass */
+	.screen::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		background: linear-gradient(135deg, rgb(255 255 255 / 0.09), transparent 32%);
+		pointer-events: none;
+	}
+
+	/* Faint scanlines and a dark rim */
+	.screen::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: repeating-linear-gradient(transparent 0 2px, rgb(0 0 0 / 0.18) 2px 3px);
+		box-shadow:
+			inset 0 0 0 1px var(--border),
+			inset 0 0 2.5rem rgb(0 0 0 / 0.65); /* glass edge and dark rim, as on the About clip */
+		pointer-events: none;
+	}
+
+	.readout {
+		position: absolute;
+		right: 0.6rem;
+		bottom: 0.5rem;
+		z-index: 2;
+		padding: 0.1rem 0.4rem;
+		background: rgb(11 14 20 / 0.7);
+		color: var(--muted);
+		font-size: 0.6rem;
+	}
+
+	/* No image yet: faint static bands and a dim crosshair */
+	.no-signal {
+		position: absolute;
+		inset: 0;
+		background:
+			repeating-linear-gradient(transparent 0 7px, rgb(138 147 166 / 0.05) 7px 9px),
+			radial-gradient(circle at 50% 50%, rgb(37 44 59 / 0.9), var(--bg) 70%);
+	}
+
+	.crosshair {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 2.4rem;
+		height: 2.4rem;
+		translate: -50% -50%;
+		border: 1px solid var(--border);
+		border-radius: 50%;
+		background:
+			linear-gradient(var(--muted), var(--muted)) 50% 0 / 1px 30% no-repeat,
+			linear-gradient(var(--muted), var(--muted)) 50% 100% / 1px 30% no-repeat,
+			linear-gradient(var(--muted), var(--muted)) 0 50% / 30% 1px no-repeat,
+			linear-gradient(var(--muted), var(--muted)) 100% 50% / 30% 1px no-repeat;
+		opacity: 0.6;
+	}
+
+	/* Separators: a line with a small outlined diamond in the middle */
+	.separator {
+		position: relative;
+		margin: 0 var(--space-4);
+		border: 0;
+		height: 1px;
+		overflow: visible;
+		background: var(--line);
+	}
+
+	.separator::after {
+		content: "";
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 5px;
+		height: 5px;
+		translate: -50% -50%;
+		rotate: 45deg;
+		background: var(--surface);
+		border: 1px solid var(--muted);
+	}
+
+	.text {
+		display: grid;
+		align-content: start;
+		gap: var(--space-2);
+		flex-grow: 1; /* keeps the tags at the bottom, level across cards */
+		padding: var(--space-3) var(--space-4);
 	}
 
 	h3 {
@@ -191,9 +483,14 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	}
 
 	.summary {
-		flex-grow: 1; /* keeps stack tags aligned at the bottom across cards */
 		color: var(--muted);
 		font-size: 0.95rem;
 		line-height: 1.8;
+	}
+
+	/* The shared tag list hides a leading "·" by shifting left and clipping; keep the card's padding */
+	.stack {
+		margin-left: calc(var(--space-4) - var(--sep));
+		padding: var(--space-3) var(--space-4) var(--space-4) 0;
 	}
 </style>
