@@ -7,4 +7,7 @@ stack: [Python, Clustering, Nginx, Scikit-Learn, PostgreSQL]
 links:
   repo: https://github.com/eli-rosee/f1-style-analysis-capstone-project
   # demo: live data exploration site, once it's self-hosted
+display:
+  image: ../../assets/projects/f1-capstone.png
+  alt: Placeholder. A black Cadillac Formula 1 car under the Cadillac logo.
 ---

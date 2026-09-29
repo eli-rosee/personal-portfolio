@@ -5,45 +5,45 @@ import ExternalIcon from "./ExternalIcon.astro";
 
 interface Props {
 	project: CollectionEntry<"projects">;
+	eager?: boolean; // load the screen image right away (cards on screen at load)
 }
 
-const { project } = Astro.props;
-const { number, title, status, summary, stack, links, display } = project.data;
+const { project, eager = false } = Astro.props;
+const { number, title, status, summary, stack, display } = project.data;
 const statusLabel = status.replace("-", " ");
 
 // Plain-English meaning, shown on hover, keyboard focus, or tap
 const statusMeaning = {
-	launched: "In active development",
+	liftoff: "In active development",
 	"in-orbit": "Completed",
 	decommissioned: "No longer maintained",
 }[status];
 const tipId = `status-tip-${number}`;
 // Only the last word drops to a second line, so the tooltip wraps to two snug lines
 const tipText = statusMeaning.replace(/ (?=.* )/g, "\u00A0");
-// The title opens the demo or repo in a new tab (no link if neither exists)
-const href = links?.demo ?? links?.repo;
+// The title opens the project's own page (those pages are still to be built)
+const href = `/projects/${project.id}/`;
 
-// The last word and the link arrow never wrap apart
-const words = title.split(" ");
-const lastWord = words.pop();
-const leadingWords = words.length ? `${words.join(" ")} ` : "";
 ---
 
 {/*
 	A console panel: a tab on top holding the status (its top edge lit in the status color), a
 	viewport screen showing a real image from the project (or "no signal" until there is one),
-	then the title and summary, then the tags, split by separators with a small diamond.
+	then the title and summary, then a separator line and the tags.
 */}
 <div class:list={["panel", status]}>
 	<span class="tab label">
 		<span class="status" tabindex="0" aria-describedby={tipId}>
 			<span class="light" aria-hidden="true"></span>
-			{statusLabel}
-			{/* Info mark: says "there's more here" */}
-			<svg class="info" viewBox="0 0 12 12" aria-hidden="true">
-				<circle cx="6" cy="6" r="5.25" fill="none" stroke="currentColor" stroke-width="1"></circle>
-				<path d="M6 5.2v3.6" stroke="currentColor" stroke-width="1.2"></path>
-				<circle cx="6" cy="3.4" r="0.75" fill="currentColor"></circle>
+			<span class="status-text">{statusLabel}</span>
+			{/* Info mark: says "there's more here". Drawn on whole pixels (1px ring, the i as 1px
+			    rects) at a fixed 11px, so it stays sharp at this small size */}
+			<svg class="info" width="11" height="11" viewBox="0 0 11 11" aria-hidden="true">
+				<circle cx="5.5" cy="5.5" r="5" fill="none" stroke="currentColor"></circle>
+				<g fill="currentColor" shape-rendering="crispEdges">
+					<rect x="5" y="2.5" width="1" height="1"></rect>
+					<rect x="5" y="4.5" width="1" height="4"></rect>
+				</g>
 			</svg>
 		</span>
 	</span>
@@ -59,7 +59,8 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 								src={display.image}
 								alt={display.alt}
 								widths={[400, 640, 960]}
-								sizes="(max-width: 48rem) 100vw, 22rem"
+								sizes="(max-width: 48rem) 100vw, 20rem"
+								loading={eager ? "eager" : "lazy"}
 								style={`object-position: ${display.position}; scale: ${display.zoom}; transform-origin: ${display.position}`}
 							/>
 						) : (
@@ -79,23 +80,12 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 			</div>
 		</div>
 
-		<hr class="separator" />
-
 		<div class="text">
 			<h3>
-				{
-					href ? (
-						<a href={href} target="_blank" rel="noopener">
-							{leadingWords}
-							<span class="nowrap">
-								{lastWord}
-								<ExternalIcon />
-							</span>
-						</a>
-					) : (
-						title
-					)
-				}
+				<a href={href}>
+					<span>{title}</span>
+					<ExternalIcon />
+				</a>
 			</h3>
 			<p class="summary">{summary}</p>
 		</div>
@@ -112,13 +102,16 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	.panel {
 		--frame: 2px;
 		--line: #2e3649; /* a touch lighter than --border, so the 2px frame reads */
-		--tab-w: 10.5rem;
+		--tab-w: 12rem;
 		--tab-h: 1.9rem;
 		--slant: 0.75rem;
 		/* How far the inner edge of a 2px slanted line sits from the outer one, along the top and
 		   bottom of the slant (from the tab's proportions); keeps the slants as thick as the rest */
 		--kink: 1.35px;
 		--lit: var(--muted); /* the status color */
+		--cut: 14px; /* the card's bevelled corners: top right of the body, both bottom corners */
+		/* How far the inner edge of a 2px 45° line sits from the outer one, along each side */
+		--cut-kink: 0.83px;
 		position: relative;
 		padding-top: var(--tab-h);
 	}
@@ -127,7 +120,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		--lit: var(--status);
 	}
 
-	.panel.launched {
+	.panel.liftoff {
 		--lit: var(--accent);
 	}
 
@@ -135,6 +128,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	 * The outline, tab and card together, drawn as one shape: the frame color, with the panel color
 	 * inset 2px inside it. One continuous edge, so the tab flows into the frame with the same
 	 * thickness everywhere (two separate shapes rendered their joins unevenly on phones).
+	 * The body's corners are bevelled like the screen's (except top left, where the tab is).
 	 */
 	.panel::before,
 	.panel::after {
@@ -146,26 +140,32 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	.panel::before {
 		background: var(--line);
 		clip-path: polygon(
-			0 100%,
+			0 calc(100% - var(--cut)),
 			0 var(--tab-h),
 			var(--slant) 0,
 			calc(var(--tab-w) - var(--slant)) 0,
 			var(--tab-w) var(--tab-h),
-			100% var(--tab-h),
-			100% 100%
+			calc(100% - var(--cut)) var(--tab-h),
+			100% calc(var(--tab-h) + var(--cut)),
+			100% calc(100% - var(--cut)),
+			calc(100% - var(--cut)) 100%,
+			var(--cut) 100%
 		);
 	}
 
 	.panel::after {
 		background: var(--surface);
 		clip-path: polygon(
-			var(--frame) calc(100% - var(--frame)),
+			var(--frame) calc(100% - var(--cut) - var(--cut-kink)),
 			var(--frame) var(--tab-h),
 			calc(var(--slant) + var(--kink)) var(--frame),
 			calc(var(--tab-w) - var(--slant) - var(--kink)) var(--frame),
 			calc(var(--tab-w) - var(--kink)) calc(var(--tab-h) + var(--frame)),
-			calc(100% - var(--frame)) calc(var(--tab-h) + var(--frame)),
-			calc(100% - var(--frame)) calc(100% - var(--frame))
+			calc(100% - var(--cut) - var(--cut-kink)) calc(var(--tab-h) + var(--frame)),
+			calc(100% - var(--frame)) calc(var(--tab-h) + var(--cut) + var(--cut-kink)),
+			calc(100% - var(--frame)) calc(100% - var(--cut) - var(--cut-kink)),
+			calc(100% - var(--cut) - var(--cut-kink)) calc(100% - var(--frame)),
+			calc(var(--cut) + var(--cut-kink)) calc(100% - var(--frame))
 		);
 	}
 
@@ -222,25 +222,29 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		box-shadow: 0 0 10px var(--lit);
 	}
 
+	/* The light anchored left and the ⓘ right, each exactly 32px from the tab's outer edge (the
+	   tab's slant padding plus this), with the word centered between them */
 	.status {
-		display: inline-flex;
+		display: grid;
+		grid-template-columns: auto 1fr auto;
 		align-items: center;
-		gap: 0.6em;
+		justify-items: center;
+		width: 100%;
+		padding-inline: calc(32px - var(--slant));
 		color: var(--lit);
 		font-size: 0.65rem;
 		white-space: nowrap;
 	}
 
-	.info {
-		width: 0.85em;
-		height: 0.85em;
-		margin-left: 0.1em;
-		color: var(--muted);
-		transition: color 0.15s;
+	/* Widely spaced letters; the negative margin drops the last letter's trailing space so the
+	   word sits truly centered */
+	.status-text {
+		letter-spacing: 0.3em;
+		margin-right: -0.3em;
 	}
 
-	.tab:is(:hover, :focus-within) .info {
-		color: var(--text);
+	.info {
+		overflow: visible; /* the ring's soft edge would be clipped at the box */
 	}
 
 	.status:focus-visible {
@@ -248,22 +252,12 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 	}
 
 	.light {
-		width: 0.4rem;
-		height: 0.4rem;
+		/* Whole-pixel size keeps the dot round */
+		width: 6px;
+		height: 6px;
 		border-radius: 50%;
 		background: currentColor;
-		box-shadow: 0 0 0.4rem currentColor;
-	}
-
-	/* Active development: the light pulses slowly, like a live signal */
-	.launched .light {
-		animation: status-pulse 2.4s ease-in-out infinite;
-	}
-
-	@keyframes status-pulse {
-		50% {
-			opacity: 0.25;
-		}
+		box-shadow: 0 0 3px currentColor; /* a tight glow, not a haze */
 	}
 
 	/* Hangs centered under the tab, pointing up at the status */
@@ -274,7 +268,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		translate: -50% 0;
 		z-index: 2;
 		width: min-content; /* as wide as its longest line */
-		padding: 0.4rem 0.7rem;
+		padding: 0.4rem 0.7rem 0.5rem; /* a touch more below: the capitals sit high in the line */
 		text-align: center;
 		line-height: 1.6;
 		background: var(--bg);
@@ -309,16 +303,16 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		visibility: visible;
 	}
 
-	/* Card contents, inside the outline, with a fine machined line just inside the frame */
+	/* Card contents, inside the outline. Text lines up with the inner edge of the screen's frame
+	   (viewport margin + hull edge + bezel) */
 	.card {
+		--inset: calc(var(--space-3) + 1px + 0.55rem);
 		position: relative;
 		z-index: 1;
 		display: flex;
 		flex-direction: column;
 		height: 100%;
 		padding: var(--frame);
-		outline: 1px solid rgb(230 225 214 / 0.06);
-		outline-offset: -5px;
 	}
 
 	/*
@@ -342,7 +336,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 
 	.viewport {
 		--cut: 1rem;
-		margin: var(--space-3);
+		margin: var(--space-3) var(--space-3) 0;
 		padding: 1px;
 		background: var(--border);
 	}
@@ -368,6 +362,7 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		height: 100%;
 		object-fit: cover;
 		filter: saturate(0.75) brightness(0.8) contrast(1.1); /* sits in the palette like a console feed */
+		transition: filter 0.2s;
 	}
 
 	/* Glare across the glass */
@@ -394,8 +389,8 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 
 	.readout {
 		position: absolute;
-		right: 0.6rem;
-		bottom: 0.5rem;
+		right: 0.9rem; /* clear of the cut corner and the dark rim */
+		bottom: 0.75rem;
 		z-index: 2;
 		padding: 0.1rem 0.4rem;
 		background: rgb(11 14 20 / 0.7);
@@ -429,71 +424,105 @@ const leadingWords = words.length ? `${words.join(" ")} ` : "";
 		opacity: 0.6;
 	}
 
-	/* Separators: a line with a small outlined diamond in the middle */
+	/* Separator above the tags: a plain hairline, in the frame's resting color (it doesn't brighten) */
 	.separator {
-		position: relative;
-		margin: 0 var(--space-4);
+		margin: 0 var(--inset);
 		border: 0;
 		height: 1px;
-		overflow: visible;
-		background: var(--line);
-	}
-
-	.separator::after {
-		content: "";
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 5px;
-		height: 5px;
-		translate: -50% -50%;
-		rotate: 45deg;
-		background: var(--surface);
-		border: 1px solid var(--muted);
+		background: #2e3649;
 	}
 
 	.text {
 		display: grid;
 		align-content: start;
-		gap: var(--space-2);
+		gap: 0.75rem;
 		flex-grow: 1; /* keeps the tags at the bottom, level across cards */
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-3) var(--inset) 1.25rem;
 	}
 
 	h3 {
-		font-size: var(--text-lg);
+		font-size: 1.125rem;
 		letter-spacing: var(--tracking-title);
 		text-transform: uppercase;
 	}
 
+	/* The arrow, in proportion to the title, is pinned to the right edge of the text, so it lines up
+	   across cards and never wraps a title */
 	h3 a {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-2);
 		color: var(--text);
 	}
 
-	.nowrap {
-		white-space: nowrap;
-	}
-
 	h3 a :global(svg) {
-		display: inline-block;
-		margin-left: 0.3em;
-		vertical-align: 0.05em;
-		color: var(--muted);
+		flex-shrink: 0;
 	}
 
-	h3 a:hover :global(svg) {
-		color: var(--accent);
+	/* The whole card is the link: the title link's box stretches over it (above the screen's
+	   readout). The status tab sits outside the card, so its tooltip keeps working. */
+	h3 a::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+	}
+
+	/* Keyboard focus rings the whole card, not just the title */
+	h3 a:focus-visible {
+		outline: none;
+	}
+
+	.card:has(h3 a:focus-visible) {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
 	}
 
 	.summary {
 		color: var(--muted);
-		font-size: 0.95rem;
-		line-height: 1.8;
+		font-size: 0.875rem;
+		line-height: 1.75;
+		min-height: 2lh; /* room for two lines, so a one-line summary doesn't shift the cards */
+		text-wrap: pretty; /* no short lines or lone last word in the narrow card */
 	}
 
 	/* The shared tag list hides a leading "·" by shifting left and clipping; keep the card's padding */
+	/* Tighter than the shared tags (narrower separators and tracking) so two long tags share a line */
 	.stack {
-		margin-left: calc(var(--space-4) - var(--sep));
-		padding: var(--space-3) var(--space-4) var(--space-4) 0;
+		--sep: 1.75em;
+		letter-spacing: 0.14em;
+		margin-left: calc(var(--inset) - var(--sep));
+		padding: 1.25rem var(--inset) var(--space-3) 0;
+	}
+
+	/*
+	 * Hover (or keyboard focus) anywhere on the card: the frame brightens slightly and the screen
+	 * brightens a little, like a monitor waking up. The title doesn't underline; the whole card is
+	 * the link.
+	 */
+	.panel {
+		transition: --line 0.15s;
+	}
+
+	.panel:has(.card:hover, h3 a:focus-visible) {
+		--line: #3f4960;
+	}
+
+	.panel:has(.card:hover, h3 a:focus-visible) .screen img {
+		filter: saturate(0.85) brightness(0.9) contrast(1.09);
+	}
+
+	h3 a:hover {
+		text-decoration: none;
+	}
+</style>
+
+<style is:global>
+	/* Registered so the frame color can fade on hover (plain custom properties switch instantly) */
+	@property --line {
+		syntax: "<color>";
+		inherits: true;
+		initial-value: #2e3649;
 	}
 </style>

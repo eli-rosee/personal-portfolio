@@ -8,7 +8,7 @@ const projects = defineCollection({
 		z.object({
 			number: z.number().int().positive(), // mission number, also the display order
 			title: z.string(),
-			status: z.enum(["in-orbit", "launched", "decommissioned"]),
+			status: z.enum(["in-orbit", "liftoff", "decommissioned"]),
 			summary: z.string(), // one sentence, shown on the card
 			stack: z.array(z.string()),
 			links: z
