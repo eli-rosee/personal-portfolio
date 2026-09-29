@@ -298,8 +298,9 @@ import CopyEmail from "./CopyEmail.astro";
 </script>
 
 <style>
+	/* The same gap as between the page's sections (the last section's bottom padding plus this seam) */
 	footer {
-		margin-top: var(--space-8);
+		margin-top: var(--section-seam);
 	}
 
 	.inner {
@@ -403,8 +404,10 @@ import CopyEmail from "./CopyEmail.astro";
 			text-align: center;
 		}
 
+		/* A blank line's worth of space sets the email apart from the two lines below it */
 		.contact {
 			order: -1;
+			margin-bottom: 1lh;
 		}
 
 		.copyright {
