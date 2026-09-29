@@ -14,12 +14,10 @@ clip:
     Grade: V5
 ---
 
-In my undergrad, I mastered CS fundamentals, large scale data infrastructure, and machine learning basics. See my [senior capstone](/projects/f1-capstone/), where I built a large scale data ingestion and analysis pipeline.
+I'm fascinated by software that interacts with the physical world. My undergrad built the foundation: CS fundamentals, data infrastructure, and machine learning, capped by a [senior capstone](/projects/f1-capstone/) where I built a large-scale data ingestion and analysis pipeline.
 
-In my postgrad, I have found a passion for robotics. Through my robotics course taught by [Sebastian Thrun](https://robots.stanford.edu/), I am gaining the knowledge to build real projects, both [inside](/projects/kalman-filter/) and [outside](/projects/pid-controller/) of class. I'm fascinated by software that interacts with the physical world.
+Now I'm pursuing robotics in Georgia Tech's online master's, learning from [Sebastian Thrun](https://robots.stanford.edu/) and building projects [in class](/projects/kalman-filter/) and [on my own](/projects/pid-controller/). Outside school, I work part time at Geek Squad.
 
-I work part time as a Geek Squad agent while attending online college at Georgia Tech. I immensely enjoy helping people, and learning more about technology daily.
+This site and my capstone are [self-hosted](#uptime) on a Lenovo mini PC in my bedroom, running Linux, Docker, and Nginx behind a Cloudflare Tunnel.
 
-This site, along with my capstone's, is [self-hosted](#uptime) on a Lenovo mini PC in my bedroom running Linux, Docker, and Nginx behind a Cloudflare Tunnel.
-
-On the weekends, you can find me out climbing at one of the local crags. I love bouldering outdoors, and have been doing it for over four years.
+On the weekends, you can find me out climbing at one of the local crags. I have been bouldering outdoors for over four years.
