@@ -13,11 +13,11 @@ clip:
     Grade: V5
 ---
 
-I'm fascinated by software that interacts with the physical world. My undergrad was largely focused on data, ML, and software projects. It culminated with my [senior capstone](https://github.com/eli-rosee/f1-style-analysis-capstone-project) working alongside a General Motorsports data science team. I loved the ML work, but I craved an engineering angle.
+In my undergrad, I mastered CS fundamentals, large scale data infastructure, and machine learning basics. See my [senior capstone](/projects/f1-capstone/), where I built a large scale data ingestion and analysis pipeline.
 
-I've found a niche I really enjoy at Georgia Tech. My Robotics: AI Techniques class had me write a Kalman filter from scratch, and has led me to pursue real life projects in order to teach myself robotics fundamentals.
+In my postgrad, I have found a passion for robotics. Through my robotics course taught by [Sebastian Thrun](https://robots.stanford.edu/), I am gaining the knowledge to build real projects, both [inside](/projects/kalman-filter/) and [outside](/projects/pid-controller/) of class. I'm fascinated by software that interacts with the physical world.
 
-I am now pursuing self-learning as well as online classes to improve my software and robotics repertoire, while working part time as a Geek Squad agent.
+I work part time as a Geek Squad agent while attending online college at Georgia Tech. I immensely enjoy helping people, and learning more about technology daily.
 
 This site, along with my capstone's, is [self-hosted](#uptime) on a Lenovo mini PC in my bedroom running Linux, Docker, and Nginx behind a Cloudflare Tunnel.
 
