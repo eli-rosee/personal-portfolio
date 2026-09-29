@@ -9,6 +9,6 @@ cam: HCR Crag Cam 01 # label on the viewport glass
 sent: true # green SENT tab on the card
 sentNote: 25+ attempts # the SENT tab's tooltip
 title: Moondye Stand
-summary: Boulder @ Horseshoe Canyon Ranch
-tags: [V5, Sandstone, Dyno]
+summary: V5 Boulder at Horseshoe Canyon Ranch
+tags: [Sandstone, Dyno, V5]
 ---
