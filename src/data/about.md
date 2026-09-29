@@ -13,9 +13,11 @@ clip:
     Grade: V5
 ---
 
-I'm fascinated by software that interacts with the physical world. I came at it through data: my [senior capstone](https://github.com/eli-rosee/f1-style-analysis-capstone-project) was ML work alongside a General Motors data science team. I liked the analysis, but I wanted to build things that move.
+I'm fascinated by software that interacts with the physical world. My undergrad was largely focused on data, ML, and software projects. It culminated with my [senior capstone](https://github.com/eli-rosee/f1-style-analysis-capstone-project) working alongside a General Motorsports data science team. I loved the ML work, but I craved an engineering angle.
 
-At Georgia Tech, I'm doing that. My Robotics: AI Techniques class had me write a Kalman filter from scratch, and outside of class I'm writing the C controller for a friend's compressed-air engine, my first real embedded project.
+I've found a niche I really enjoy at Georgia Tech. My Robotics: AI Techniques class had me write a Kalman filter from scratch, and has led me to pursue real life projects in order to teach myself robotics fundamentals.
+
+I am now pursuing self-learning as well as online classes to improve my software and robotics repertoire, while working part time as a Geek Squad agent.
 
 This site, along with my capstone's, is [self-hosted](#uptime) on a Lenovo mini PC in my bedroom running Linux, Docker, and Nginx behind a Cloudflare Tunnel.
 
