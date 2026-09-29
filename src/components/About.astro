@@ -368,7 +368,7 @@ const clip:
 
 	/* On card hover (not the tab), the chip's border lightens with the frame */
 	:global(.clip-card):has(:global(.card:hover)) .play {
-		border-color: var(--muted);
+		border-color: #4e5870; /* a quiet step up from the resting border */
 	}
 
 	/* Dark backing keeps the label readable over whatever the footage shows */
@@ -444,7 +444,7 @@ const clip:
 
 	@keyframes about-highlight-chip {
 		from {
-			border-color: var(--muted);
+			border-color: #4e5870; /* a quiet step up from the resting border */
 		}
 	}
 </style>
