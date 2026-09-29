@@ -14,7 +14,7 @@ clip:
     Grade: V5
 ---
 
-In my undergrad, I mastered CS fundamentals, large scale data infastructure, and machine learning basics. See my [senior capstone](/projects/f1-capstone/), where I built a large scale data ingestion and analysis pipeline.
+In my undergrad, I mastered CS fundamentals, large scale data infrastructure, and machine learning basics. See my [senior capstone](/projects/f1-capstone/), where I built a large scale data ingestion and analysis pipeline.
 
 In my postgrad, I have found a passion for robotics. Through my robotics course taught by [Sebastian Thrun](https://robots.stanford.edu/), I am gaining the knowledge to build real projects, both [inside](/projects/kalman-filter/) and [outside](/projects/pid-controller/) of class. I'm fascinated by software that interacts with the physical world.
 
