@@ -1,44 +1,33 @@
 ---
-// Telemetry readouts, then copyright + email. Each readout is its own script and stays
+// Telemetry readouts, then "Powered by Astro". Each readout is its own script and stays
 // hidden until it has real data, so a failure (or no JavaScript) just leaves it out.
-import { site } from "../data/site";
-import CopyEmail from "./CopyEmail.astro";
+import SectionHeading from "./SectionHeading.astro";
 ---
 
 <footer>
 	<div class="inner">
 		<section class="telemetry" aria-labelledby="telemetry-heading">
-			<h2 id="telemetry-heading" class="section-title">// Telemetry</h2>
+			<SectionHeading id="telemetry-heading" text="Telemetry" />
 			<dl class="grid">
 				<div class="cell" data-iss hidden>
-					<dt class="label">ISS position</dt>
+					<dt class="label"><span class="light" aria-hidden="true"></span>ISS position</dt>
 					<dd class="value tabular" data-iss-coords></dd>
 					<dd class="sub" data-iss-place></dd>
 				</div>
 				<div class="cell" data-voyager hidden>
-					<dt class="label">Voyager&nbsp;1</dt>
+					<dt class="label"><span class="light" aria-hidden="true"></span>Voyager&nbsp;1</dt>
 					<dd class="value tabular"><span data-voyager-total></span> km</dd>
 					<dd class="sub">from the Sun</dd>
 				</div>
-				<div class="cell" data-voyager hidden>
-					<dt class="label">Since you arrived</dt>
-					<dd class="value tabular">+<span data-voyager-session>0</span> km</dd>
-					<dd class="sub">traveled by Voyager&nbsp;1</dd>
-				</div>
 				<div class="cell" id="uptime" data-uptime hidden>
-					<dt class="label">Uptime</dt>
+					<dt class="label"><span class="light" aria-hidden="true"></span>Uptime</dt>
 					<dd class="value tabular" data-uptime-value></dd>
 					<dd class="sub">self-hosted at home</dd>
 				</div>
 			</dl>
 		</section>
 
-		<div class="meta label">
-			<p class="copyright">© {new Date().getFullYear()} Eli Rose</p>
-			{/* A div, since the email component brings its own status <p> */}
-			<div class="contact"><CopyEmail class="email" label={site.email} copiedLabel="Copied to clipboard" /></div>
-			<p>Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a></p>
-		</div>
+		<p class="credit label">Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a></p>
 	</div>
 </footer>
 
@@ -110,9 +99,8 @@ import CopyEmail from "./CopyEmail.astro";
 
 	const cells = document.querySelectorAll<HTMLElement>("[data-voyager]");
 	const total = document.querySelector<HTMLElement>("[data-voyager-total]");
-	const session = document.querySelector<HTMLElement>("[data-voyager-session]");
 
-	if (cells.length && total && session) {
+	if (cells.length && total) {
 		const format = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 		// Only touches the page when the digits actually change (each write re-lays out the text)
 		const setText = (el: HTMLElement, text: string) => {
@@ -121,7 +109,6 @@ import CopyEmail from "./CopyEmail.astro";
 		const render = () => {
 			const secondsSinceReference = (Date.now() - REFERENCE_TIME) / 1000;
 			setText(total, format.format(REFERENCE_KM + secondsSinceReference * KM_PER_SECOND));
-			setText(session, format.format((performance.now() / 1000) * KM_PER_SECOND));
 		};
 		render();
 		cells.forEach((cell) => (cell.hidden = false));
@@ -339,14 +326,24 @@ import CopyEmail from "./CopyEmail.astro";
 		white-space: normal;
 	}
 
-	/* Console-style readout: a thin rule on the left, label / value / note */
+	/* Readout: label (with a live light) / value / note; no rules, just space */
 	.cell {
 		display: grid;
 		align-content: start;
 		gap: 0.35rem;
-		padding-left: var(--space-2);
-		border-left: var(--border-width) solid var(--border);
 		white-space: nowrap;
+	}
+
+	/* Same as the project cards' status light: each readout is a live feed */
+	dt .light {
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		margin-right: 0.8em;
+		vertical-align: 1px;
+		border-radius: 50%;
+		background: var(--status);
+		box-shadow: 0 0 3px var(--status);
 	}
 
 	dd {
@@ -382,63 +379,20 @@ import CopyEmail from "./CopyEmail.astro";
 		}
 	}
 
-	.meta {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		align-items: center;
-		gap: var(--space-1) var(--space-4);
-		margin-top: var(--space-8);
-		padding-top: var(--space-3);
-		border-top: var(--border-width) solid var(--border);
+	/* Well clear of the telemetry, centered */
+	.credit {
+		margin-top: clamp(var(--space-6), 8vw, var(--space-12));
+		text-align: center;
 	}
 
-	/* Phones: one centered column with room to breathe, the email first (it matters most) and
-	   the copyright last */
-	@media (max-width: 30rem) {
-		.meta {
-			flex-direction: column;
-			align-items: center;
-			gap: var(--space-2);
-			padding-top: var(--space-4);
-			text-align: center;
-		}
-
-		/* A blank line's worth of space sets the email apart from the two lines below it */
-		.contact {
-			order: -1;
-			margin-bottom: 1lh;
-		}
-
-		.copyright {
-			order: 1;
-		}
-	}
-
-	a {
+	.credit a {
 		color: var(--text);
 		text-decoration: underline;
 		text-decoration-color: var(--muted);
 		text-underline-offset: 0.3em;
 	}
 
-	a:hover {
+	.credit a:hover {
 		text-decoration-color: var(--accent);
-	}
-
-	/* The address matches the row's labels; it brightens and underlines on hover to show it's clickable */
-	a.email {
-		color: inherit;
-		text-decoration-color: transparent;
-	}
-
-	a.email:hover {
-		color: var(--text);
-		text-decoration-color: var(--muted);
-	}
-
-	/* "Copied to clipboard" is a confirmation, not a link */
-	a.email.is-copied {
-		text-decoration-color: transparent;
 	}
 </style>

@@ -5,5 +5,4 @@ export const site = {
 	resume: "/Eli-Rose-Resume.pdf", // named so a downloaded copy is identifiable
 	github: "https://github.com/eli-rosee",
 	linkedin: "https://www.linkedin.com/in/eli-rose-ua/",
-	email: "eli.j.rose.04@gmail.com",
 };
