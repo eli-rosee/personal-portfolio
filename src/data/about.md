@@ -5,7 +5,8 @@ clip:
   poster: /videos/climb.jpg
   label: Bouldering Moondye Stand (V5) at Horseshoe Canyon Ranch
   cam: HCR Crag Cam 01 # label on the viewport glass
-  sent: true # green SENT chip beside the mission log heading
+  sent: true # green SENT tab on the mission log
+  sentNote: 25+ attempts # the SENT tab's tooltip
   # Mission log under the viewport, one row per entry
   log:
     Site: Horseshoe Canyon Ranch

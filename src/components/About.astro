@@ -1,20 +1,40 @@
 ---
 import { Content, frontmatter } from "../data/about.md";
+import SectionHeading from "./SectionHeading.astro";
 
 const clip:
-	| { src: string; poster?: string; label: string; cam?: string; sent?: boolean; log?: Record<string, string> }
+	| { src: string; poster?: string; label: string; cam?: string; sent?: boolean; sentNote?: string; log?: Record<string, string> }
 	| undefined = frontmatter.clip;
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">
-	<h2 id="about-heading" class="section-title">// About</h2>
+	<SectionHeading id="about-heading" text="About" />
 	<div class:list={["layout", { "has-clip": clip }]}>
 		<div class="prose">
 			<Content />
 		</div>
 		{
 			clip && (
-				<figure>
+				<figure class:list={{ "has-tab": clip.sent }}>
+					{/* Built like a project card: the SENT status in a tab, the clip as its screen, the mission log below */}
+					{clip.sent && (
+						<span class="tab label">
+							<span class="status" tabindex={clip.sentNote ? 0 : undefined} aria-describedby={clip.sentNote && "sent-tip"}>
+								<span class="light" aria-hidden="true" />
+								<span class="status-text">Sent</span>
+								{clip.sentNote && (
+									<svg class="info" width="11" height="11" viewBox="0 0 11 11" aria-hidden="true">
+										<circle cx="5.5" cy="5.5" r="5" fill="none" stroke="currentColor" />
+										<g fill="currentColor" shape-rendering="crispEdges">
+											<rect x="5" y="2.5" width="1" height="1" />
+											<rect x="5" y="4.5" width="1" height="4" />
+										</g>
+									</svg>
+								)}
+							</span>
+						</span>
+					)}
+					{clip.sent && clip.sentNote && <span class="tip label" id="sent-tip" role="tooltip">{clip.sentNote}</span>}
 					{/* Spaceship viewport: hull edge > bezel > glass edge > video + glare */}
 					<div class="viewport">
 						<div class="bezel">
@@ -51,22 +71,22 @@ const clip:
 					</div>
 					{clip.log && (
 						<figcaption class="log">
-							<div class="log-head">
-								<p class="label">// Mission log</p>
-								{clip.sent && (
-									<span class="label sent">
-										<span class="light" aria-hidden="true" />
-										Sent
-									</span>
-								)}
-							</div>
 							<dl>
-								{Object.entries(clip.log).map(([key, value]) => (
-									<div>
-										<dt class="label">{key}</dt>
-										<dd>{value}</dd>
-									</div>
-								))}
+								{Object.entries(clip.log).map(([key, value]) => {
+									// A boulder grade gets a V0–V17 gauge, so anyone can see where it sits
+									const grade = /^V(\d+)$/.exec(value);
+									return (
+										<div>
+											<dt class="label">{key}</dt>
+											<dd>
+												{grade && (
+													<span class="gauge" aria-hidden="true" style={`--grade: ${Math.min(Number(grade[1]), 17) / 17}`} />
+												)}
+												{value}
+											</dd>
+										</div>
+									);
+								})}
 							</dl>
 						</figcaption>
 					)}
@@ -77,9 +97,9 @@ const clip:
 </section>
 
 <script>
-	// The clip waits on its poster with a "Play feed" chip; a click or tap on the chip or the clip
-	// starts it looping silently (no native controls), and clicking a playing clip pauses it and
-	// brings the chip back. While the first frames load, the chip reads "Acquiring signal" and only
+	// The clip waits on its poster with a "Play feed" chip; a click or tap anywhere on its card (the
+	// chip, the clip, the log; not the SENT tab) starts it looping silently (no native controls), and
+	// clicking again pauses it and brings the chip back. While the first frames load, the chip reads "Acquiring signal" and only
 	// disappears once the video is actually showing. It starts downloading as it nears the screen
 	// where the browser allows (iPhones often wait for the tap), and pauses while off screen.
 	const video = document.querySelector<HTMLVideoElement>("video[data-about-clip]");
@@ -113,8 +133,16 @@ const clip:
 		};
 
 		video.addEventListener("playing", () => setChip("hidden"));
-		chip.addEventListener("click", start);
-		video.addEventListener("click", () => (video.paused ? start() : stop()));
+		// The card stays in its bright, hovered look while the clip plays
+		const card = video.closest("figure");
+		video.addEventListener("play", () => card?.classList.add("is-playing"));
+		video.addEventListener("pause", () => card?.classList.remove("is-playing"));
+		card?.addEventListener("click", (event) => {
+			// The tab has its own job (the tooltip); with the fallback controls the browser handles clicks
+			if ((event.target as Element).closest(".tab, .tip") || video.controls) return;
+			if (video.paused) start();
+			else stop();
+		});
 		setChip("play");
 
 		new IntersectionObserver(
@@ -159,6 +187,12 @@ const clip:
 		 * The text sets the row height and the clip fills it: size containment keeps the
 		 * figure from adding height of its own, and the video crops to whatever frame is left
 		 */
+		/* The SENT tab rises into the space under the heading, so the card's body (not its tab)
+		   lines up with the top of the text */
+		.has-clip figure.has-tab {
+			margin-top: calc(-1 * var(--tab-h));
+		}
+
 		.has-clip figure {
 			contain: size;
 			grid-template-rows: minmax(0, 1fr) auto;
@@ -185,7 +219,7 @@ const clip:
 
 	figure {
 		display: grid;
-		gap: var(--space-3);
+		gap: 1rem;
 		max-width: 18rem;
 		margin: 0;
 	}
@@ -258,7 +292,7 @@ const clip:
 		background: var(--bg);
 		/* Cool, muted grade so the footage sits in the navy/amber palette like a spacecraft camera feed */
 		filter: saturate(0.6) contrast(1.1) brightness(0.9);
-		cursor: pointer; /* click to play or pause */
+		transition: filter 0.2s;
 	}
 
 	/*
@@ -359,10 +393,6 @@ const clip:
 		}
 	}
 
-	.play:hover {
-		border-color: var(--accent);
-	}
-
 	/* Dark backing keeps the label readable over whatever the footage shows */
 	.cam {
 		position: absolute;
@@ -403,36 +433,237 @@ const clip:
 		translate: 0 50%;
 	}
 
-	/* Mission log: console-style rows under the viewport */
+	/*
+	 * The clip and its log as one card, built like the project cards (see MissionCard.astro): the tab
+	 * and frame are one continuous 2px outline (the frame color, with the panel color inset inside
+	 * it), the tab on the right, the other three corners bevelled.
+	 */
+	figure {
+		--frame: 2px;
+		--line: #2e3649;
+		--tab-w: 8.5rem;
+		--tab-h: 1.6rem;
+		--slant: 0.6rem;
+		--kink: 1.35px; /* keeps the 2px slants as thick as the rest */
+		--cut: 10px;
+		--cut-kink: 0.83px; /* the same for the 45° bevels */
+		position: relative;
+		isolation: isolate;
+		padding: 14px 14px 16px;
+		cursor: pointer; /* the whole card plays and pauses the clip */
+		transition: --line 0.15s; /* --line is registered in MissionCard.astro, so it can fade */
+	}
+
+	/* Hover, like the project cards: the frame brightens slightly, the feed a little, and the play chip
+	   lights. The card stays bright while the clip plays. */
+	figure:is(:hover, .is-playing) {
+		--line: #3f4960;
+	}
+
+	figure:is(:hover, .is-playing) video {
+		filter: saturate(0.7) contrast(1.09) brightness(1);
+	}
+
+	figure:hover .play {
+		border-color: var(--accent);
+	}
+
+	figure.has-tab {
+		padding-top: calc(var(--tab-h) + 14px);
+	}
+
+	figure::before,
+	figure::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+	}
+
+	figure::before {
+		background: var(--line);
+		clip-path: polygon(
+			100% calc(100% - var(--cut)),
+			100% var(--tab-h),
+			calc(100% - var(--slant)) 0,
+			calc(100% - var(--tab-w) + var(--slant)) 0,
+			calc(100% - var(--tab-w)) var(--tab-h),
+			var(--cut) var(--tab-h),
+			0 calc(var(--tab-h) + var(--cut)),
+			0 calc(100% - var(--cut)),
+			var(--cut) 100%,
+			calc(100% - var(--cut)) 100%
+		);
+	}
+
+	figure::after {
+		background: var(--surface);
+		clip-path: polygon(
+			calc(100% - var(--frame)) calc(100% - var(--cut) - var(--cut-kink)),
+			calc(100% - var(--frame)) var(--tab-h),
+			calc(100% - var(--slant) - var(--kink)) var(--frame),
+			calc(100% - var(--tab-w) + var(--slant) + var(--kink)) var(--frame),
+			calc(100% - var(--tab-w) + var(--kink)) calc(var(--tab-h) + var(--frame)),
+			calc(var(--cut) + var(--cut-kink)) calc(var(--tab-h) + var(--frame)),
+			var(--frame) calc(var(--tab-h) + var(--cut) + var(--cut-kink)),
+			var(--frame) calc(100% - var(--cut) - var(--cut-kink)),
+			calc(var(--cut) + var(--cut-kink)) calc(100% - var(--frame)),
+			calc(100% - var(--cut) - var(--cut-kink)) calc(100% - var(--frame))
+		);
+	}
+
+	/* Mission log: console-style rows under the clip, the card's body */
 	.log {
 		display: grid;
 		gap: var(--space-1);
+		margin-inline: 4px;
 	}
 
-	.log-head {
+	/* Without a tab, a plain bevelled frame */
+	figure:not(.has-tab) {
+		--tab-h: 0px;
+		--tab-w: 0px;
+		--slant: 0px;
+		--kink: 0px;
+	}
+
+	/* The tab's contents: light left, word centered, ⓘ right, like the cards' tabs */
+	.tab {
+		position: absolute;
+		top: 0;
+		right: 0;
+		z-index: 1;
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		width: var(--tab-w);
+		height: var(--tab-h);
+		padding: var(--frame) var(--slant) 0;
+		color: var(--status);
+		user-select: none;
 	}
 
-	/* Like the mission cards' "in orbit" chip, but steady, not interactive, and trimmed to the heading's height */
-	.sent {
-		display: inline-flex;
+	.tab:has([tabindex]) {
+		cursor: pointer;
+	}
+
+	/* The tab's top edge, lit in the status color; brighter on hover or focus */
+	.tab::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: var(--slant);
+		right: var(--slant);
+		height: var(--frame);
+		background: currentColor;
+		box-shadow: 0 0 6px currentColor;
+		opacity: 0.7;
+		transition:
+			opacity 0.15s,
+			box-shadow 0.15s;
+	}
+
+	.tab:is(:hover, :focus-within)::after {
+		opacity: 1;
+		box-shadow: 0 0 10px currentColor;
+	}
+
+	.status {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
 		align-items: center;
-		gap: 0.5em;
-		padding: 0 0.4rem;
-		line-height: 1.6;
-		border: var(--border-width) solid var(--border);
-		color: var(--status);
+		justify-items: center;
+		width: 100%;
+		padding-inline: 0.55rem;
+		font-size: 0.65rem;
+		white-space: nowrap;
+	}
+
+	.status:focus-visible {
+		outline-offset: 3px;
+	}
+
+	/* Wide letters; the negative margin drops the last letter's trailing space so the word centers */
+	.status-text {
+		letter-spacing: 0.3em;
+		margin-right: -0.3em;
+	}
+
+	.info {
+		overflow: visible; /* the ring's soft edge would be clipped at the box */
 	}
 
 	/* Same as the project cards' status light */
-	.sent .light {
+	.tab .light {
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
 		background: currentColor;
 		box-shadow: 0 0 3px currentColor;
+	}
+
+	/* The note, hanging centered under the tab, like the cards' tooltips */
+	.tip {
+		position: absolute;
+		top: calc(var(--tab-h) + 0.7rem);
+		right: calc(var(--tab-w) / 2);
+		translate: 50% 0;
+		z-index: 2;
+		width: max-content;
+		padding: 0.4rem 0.7rem 0.5rem;
+		line-height: 1.6;
+		background: var(--bg);
+		border: 1px solid var(--line);
+		color: var(--text);
+		letter-spacing: 0.1em;
+		user-select: none;
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition:
+			opacity 0.15s,
+			visibility 0.15s;
+	}
+
+	.tip::before {
+		content: "";
+		position: absolute;
+		top: -4px;
+		left: calc(50% - 3.5px);
+		width: 7px;
+		height: 7px;
+		background: var(--bg);
+		border-top: 1px solid var(--line);
+		border-left: 1px solid var(--line);
+		rotate: 45deg;
+	}
+
+	.tab:is(:hover, :focus-within) + .tip {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	/* Grade gauge: V0–V17 in ticks, the climb's grade marked with a lit tick */
+	.gauge {
+		position: relative;
+		display: inline-block;
+		width: 6.5rem;
+		height: 11px;
+		margin-right: 0.75rem;
+		vertical-align: -1px;
+		background:
+			linear-gradient(var(--line), var(--line)) 0 50% / 100% 1px no-repeat,
+			repeating-linear-gradient(90deg, #3a4358 0 1px, transparent 1px calc((100% - 1px) / 17)) 0 3px / 100% 5px no-repeat;
+	}
+
+	.gauge::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: calc(var(--grade) * (100% - 1px));
+		width: 1px;
+		height: 100%;
+		background: var(--status);
+		box-shadow: 0 0 3px var(--status);
 	}
 
 	dl {
