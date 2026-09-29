@@ -1,0 +1,496 @@
+---
+// The console card shared by the project cards and the About clip: a tab (status light, word, ⓘ and
+// its tooltip) joined to a bevelled frame, a screen (hull edge > bezel > the slotted screen), then a
+// title, a summary, a hairline and tags. Wrappers supply the screen contents and any extra
+// behavior; sizes can be tuned per card through the CSS variables on .panel (pass them in `style`).
+import ExternalIcon from "./ExternalIcon.astro";
+
+interface Props {
+	title: string;
+	summary?: string;
+	tags?: string[];
+	tagsLabel?: string; // what the tag list is, for screen readers
+	href?: string; // the whole card links here; without one, a static mark replaces the ↗
+	status?: { label: string; tone: "status" | "accent" | "muted"; tip?: string; tipId?: string };
+	tabSide?: "left" | "right";
+	id?: string;
+	class?: string;
+	style?: string;
+}
+
+const { title, summary, tags, tagsLabel = "Tags", href, status, tabSide = "left", id, class: className, style } =
+	Astro.props;
+
+// Two words or fewer stay on one line; longer notes break only before the last word, so the
+// tooltip wraps to two snug lines
+const tipText =
+	status?.tip && (status.tip.split(" ").length <= 2 ? status.tip.replace(/ /g, " ") : status.tip.replace(/ (?=.* )/g, " "));
+---
+
+<div
+	id={id}
+	class:list={["panel", `tone-${status?.tone ?? "muted"}`, { "tab-right": tabSide === "right", "no-tab": !status }, className]}
+	style={style}
+>
+	{
+		status && (
+			<span class="tab label">
+				<span class="status" tabindex={tipText ? 0 : undefined} aria-describedby={tipText && status.tipId}>
+					<span class="light" aria-hidden="true" />
+					<span class="status-text">{status.label}</span>
+					{tipText && (
+						/* Info mark: says "there's more here". Drawn on whole pixels (1px ring, the i as 1px
+						   rects) at a fixed 11px, so it stays sharp at this small size */
+						<svg class="info" width="11" height="11" viewBox="0 0 11 11" aria-hidden="true">
+							<circle cx="5.5" cy="5.5" r="5" fill="none" stroke="currentColor" />
+							<g fill="currentColor" shape-rendering="crispEdges">
+								<rect x="5" y="2.5" width="1" height="1" />
+								<rect x="5" y="4.5" width="1" height="4" />
+							</g>
+						</svg>
+					)}
+				</span>
+			</span>
+		)
+	}
+	{
+		tipText && (
+			<span class="tip label" id={status?.tipId} role="tooltip">
+				{tipText}
+			</span>
+		)
+	}
+
+	<article class="card">
+		<div class="viewport">
+			<div class="bezel">
+				<slot />
+			</div>
+		</div>
+
+		<div class="text">
+			<h3>
+				{
+					href ? (
+						<a class="title-link" href={href}>
+							<span>{title}</span>
+							<ExternalIcon />
+						</a>
+					) : (
+						<span class="title-static">
+							{title}
+							{/* A small diamond where a linked card has its ↗: this one isn't a link */}
+							<span class="static-mark" aria-hidden="true" />
+						</span>
+					)
+				}
+			</h3>
+			{summary && <p class="summary">{summary}</p>}
+		</div>
+
+		{
+			tags && (
+				<>
+					<hr class="separator" />
+					<ul class="stack label" aria-label={tagsLabel}>
+						{tags.map((tag) => (
+							<li>{tag}</li>
+						))}
+					</ul>
+				</>
+			)
+		}
+	</article>
+</div>
+
+<style>
+	.panel {
+		--frame: 2px;
+		--line: #2e3649; /* a touch lighter than --border, so the 2px frame reads */
+		--tab-w: 12rem;
+		--tab-h: 1.9rem;
+		--slant: 0.75rem;
+		/* How far the inner edge of a 2px slanted line sits from the outer one, along the top and
+		   bottom of the slant (from the tab's proportions); keeps the slants as thick as the rest */
+		--kink: 1.35px;
+		--cut: 14px; /* the bevelled corners: the three away from the tab */
+		/* How far the inner edge of a 2px 45° line sits from the outer one, along each side */
+		--cut-kink: 0.83px;
+		--status-inset: calc(32px - var(--slant)); /* light and ⓘ from the tab's outer edges */
+		--screen-cut: 1rem; /* the screen's bevelled corners */
+		--bezel-pad: 0.55rem;
+		/* Text lines up with the inner edge of the screen's frame (margin + hull edge + bezel) */
+		--inset: calc(var(--space-3) + 1px + var(--bezel-pad));
+		--summary-lines: 0; /* room reserved for the summary, in lines */
+		--tab-x: 0px; /* the tab's left edge */
+		--lit: var(--muted); /* the status color */
+		position: relative;
+		padding-top: var(--tab-h);
+		transition: --line 0.15s;
+	}
+
+	.tone-status {
+		--lit: var(--status);
+	}
+
+	.tone-accent {
+		--lit: var(--accent);
+	}
+
+	.tab-right {
+		--tab-x: calc(100% - var(--tab-w));
+	}
+
+	.no-tab {
+		--tab-h: 0px;
+		--tab-w: 0px;
+		--slant: 0px;
+		--kink: 0px;
+	}
+
+	/*
+	 * The outline, tab and card together, drawn as one shape: the frame color, with the panel color
+	 * inset 2px inside it. One continuous edge, so the tab flows into the frame with the same
+	 * thickness everywhere (two separate shapes rendered their joins unevenly on phones).
+	 * Drawn with the tab on the left; a right-hand tab is the same shape mirrored.
+	 */
+	.panel::before,
+	.panel::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+	}
+
+	.tab-right::before,
+	.tab-right::after {
+		scale: -1 1;
+	}
+
+	.panel::before {
+		background: var(--line);
+		clip-path: polygon(
+			0 calc(100% - var(--cut)),
+			0 var(--tab-h),
+			var(--slant) 0,
+			calc(var(--tab-w) - var(--slant)) 0,
+			var(--tab-w) var(--tab-h),
+			calc(100% - var(--cut)) var(--tab-h),
+			100% calc(var(--tab-h) + var(--cut)),
+			100% calc(100% - var(--cut)),
+			calc(100% - var(--cut)) 100%,
+			var(--cut) 100%
+		);
+	}
+
+	.panel::after {
+		background: var(--surface);
+		clip-path: polygon(
+			var(--frame) calc(100% - var(--cut) - var(--cut-kink)),
+			var(--frame) var(--tab-h),
+			calc(var(--slant) + var(--kink)) var(--frame),
+			calc(var(--tab-w) - var(--slant) - var(--kink)) var(--frame),
+			calc(var(--tab-w) - var(--kink)) calc(var(--tab-h) + var(--frame)),
+			calc(100% - var(--cut) - var(--cut-kink)) calc(var(--tab-h) + var(--frame)),
+			calc(100% - var(--frame)) calc(var(--tab-h) + var(--cut) + var(--cut-kink)),
+			calc(100% - var(--frame)) calc(100% - var(--cut) - var(--cut-kink)),
+			calc(100% - var(--cut) - var(--cut-kink)) calc(100% - var(--frame)),
+			calc(var(--cut) + var(--cut-kink)) calc(100% - var(--frame))
+		);
+	}
+
+	/* The tab's contents, over the outline */
+	.tab {
+		position: absolute;
+		top: 0;
+		left: var(--tab-x);
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: var(--tab-w);
+		height: var(--tab-h);
+		padding: var(--frame) var(--slant) 0;
+		user-select: none;
+	}
+
+	.tab:has([tabindex]) {
+		cursor: pointer; /* a pointer over the whole tab, text included; the text isn't selectable */
+	}
+
+	/* The tab's top edge, lit in the status color */
+	.tab::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: var(--slant);
+		right: var(--slant);
+		height: var(--frame);
+		background: var(--lit);
+		box-shadow: 0 0 6px var(--lit);
+		opacity: 0.7; /* dimmed at rest; full brightness on hover */
+		transition:
+			opacity 0.15s,
+			box-shadow 0.15s;
+	}
+
+	/* Hover/focus: the edge brightens and a wash of its color falls into the tab, like a lamp */
+	.tab::before {
+		content: "";
+		position: absolute;
+		inset: var(--frame) calc(var(--frame) * 1.5) 0;
+		clip-path: polygon(calc(var(--slant) - 1px) 0, calc(100% - var(--slant) + 1px) 0, 100% 100%, 0 100%);
+		background: linear-gradient(to bottom, color-mix(in srgb, var(--lit) 22%, transparent), transparent 90%);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s;
+	}
+
+	.tab:is(:hover, :focus-within)::before {
+		opacity: 1;
+	}
+
+	.tab:is(:hover, :focus-within)::after {
+		opacity: 1;
+		box-shadow: 0 0 10px var(--lit);
+	}
+
+	/* The light anchored left and the ⓘ right, with the word centered between them */
+	.status {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
+		justify-items: center;
+		width: 100%;
+		padding-inline: var(--status-inset);
+		color: var(--lit);
+		font-size: 0.65rem;
+		white-space: nowrap;
+	}
+
+	/* Widely spaced letters; the negative margin drops the last letter's trailing space so the
+	   word sits truly centered */
+	.status-text {
+		letter-spacing: 0.3em;
+		margin-right: -0.3em;
+	}
+
+	.info {
+		overflow: visible; /* the ring's soft edge would be clipped at the box */
+	}
+
+	.status:focus-visible {
+		outline-offset: 3px;
+	}
+
+	.light {
+		/* Whole-pixel size keeps the dot round */
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+		box-shadow: 0 0 3px currentColor; /* a tight glow, not a haze */
+	}
+
+	/* Hangs centered under the tab, pointing up at the status */
+	.tip {
+		position: absolute;
+		top: calc(var(--tab-h) + 0.7rem);
+		left: calc(var(--tab-x) + var(--tab-w) / 2);
+		translate: -50% 0;
+		z-index: 2;
+		width: min-content; /* as wide as its longest line */
+		padding: 0.4rem 0.7rem 0.5rem; /* a touch more below: the capitals sit high in the line */
+		text-align: center;
+		line-height: 1.6;
+		background: var(--bg);
+		border: 1px solid var(--line);
+		color: var(--text);
+		letter-spacing: 0.1em;
+		user-select: none;
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition:
+			opacity 0.15s,
+			visibility 0.15s;
+	}
+
+	/* Pointer: a small outlined notch continuing the tooltip's border */
+	.tip::before {
+		content: "";
+		position: absolute;
+		top: -4px;
+		left: calc(50% - 3.5px);
+		width: 7px;
+		height: 7px;
+		background: var(--bg);
+		border-top: 1px solid var(--line);
+		border-left: 1px solid var(--line);
+		rotate: 45deg;
+	}
+
+	.tab:is(:hover, :focus-within) + .tip {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	/* Card contents, inside the outline */
+	.card {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		padding: var(--frame);
+	}
+
+	/*
+	 * Screen: hull edge > bezel > the slotted screen, each clipped to the same cut-corner shape.
+	 * A layer inset by p needs a cut about 0.41p smaller to keep the diagonal edges even.
+	 */
+	.viewport,
+	.bezel,
+	.bezel > :global(*) {
+		clip-path: polygon(
+			var(--c) 0,
+			calc(100% - var(--c)) 0,
+			100% var(--c),
+			100% calc(100% - var(--c)),
+			calc(100% - var(--c)) 100%,
+			var(--c) 100%,
+			0 calc(100% - var(--c)),
+			0 var(--c)
+		);
+	}
+
+	.viewport {
+		--c: var(--screen-cut);
+		margin: var(--space-3) var(--space-3) 0;
+		padding: 1px;
+		background: var(--border);
+	}
+
+	.bezel {
+		--c: calc(var(--screen-cut) - 0.41px);
+		padding: var(--bezel-pad);
+		background: var(--bezel);
+	}
+
+	.bezel > :global(*) {
+		--c: calc(var(--screen-cut) - 0.41px - 0.41 * var(--bezel-pad));
+	}
+
+	/* Footage and images, graded to sit in the palette like a console feed */
+	.bezel :global(:is(img, video)) {
+		filter: saturate(0.75) brightness(0.8) contrast(1.1);
+		transition: filter 0.2s;
+	}
+
+	.text {
+		display: grid;
+		align-content: start;
+		gap: 0.75rem;
+		flex-grow: 1; /* keeps the tags at the bottom, level across cards */
+		padding: var(--space-3) var(--inset) 1.25rem;
+	}
+
+	h3 {
+		font-size: 1.125rem;
+		letter-spacing: var(--tracking-title);
+		text-transform: uppercase;
+	}
+
+	/* The ↗ (or the static mark), in proportion to the title, is pinned to the right edge of the text,
+	   so it lines up across cards and never wraps a title */
+	.title-link,
+	.title-static {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-2);
+		color: var(--text);
+	}
+
+	.title-link :global(svg) {
+		flex-shrink: 0;
+	}
+
+	.title-link:hover {
+		text-decoration: none;
+	}
+
+	/* A linked card is one big link: the title link's box stretches over the card (above the screen's
+	   contents). The tab sits outside the card, so its tooltip keeps working. */
+	.title-link::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+	}
+
+	/* Keyboard focus rings the whole card, not just the title */
+	.title-link:focus-visible {
+		outline: none;
+	}
+
+	.card:has(.title-link:focus-visible) {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+	}
+
+	/* Outlined diamond, the ↗'s size and place, in the muted color */
+	.static-mark {
+		flex: none;
+		width: 7px;
+		height: 7px;
+		margin-right: 3px;
+		border: 1.5px solid var(--muted);
+		rotate: 45deg;
+	}
+
+	.summary {
+		color: var(--muted);
+		font-size: 0.875rem;
+		line-height: 1.75;
+		min-height: calc(var(--summary-lines) * 1lh);
+		text-wrap: pretty; /* no short lines or lone last word in the narrow card */
+	}
+
+	/* Separator above the tags: a plain hairline, in the frame's resting color (it doesn't brighten) */
+	.separator {
+		margin: 0 var(--inset);
+		border: 0;
+		height: 1px;
+		background: #2e3649;
+	}
+
+	/* The shared tag list hides a leading "·" by shifting left and clipping; keep the card's padding.
+	   Tighter than the shared tags (narrower separators and tracking) so two long tags share a line */
+	.stack {
+		--sep: 1.75em;
+		letter-spacing: 0.14em;
+		margin-left: calc(var(--inset) - var(--sep));
+		padding: 1.25rem var(--inset) var(--space-3) 0;
+	}
+
+	/*
+	 * Hover (or keyboard focus, or .is-active from a wrapper) anywhere on the card, not the tab: the
+	 * frame brightens slightly and the screen brightens a little, like a monitor waking up
+	 */
+	.panel:is(.is-active, :has(.card:hover, .title-link:focus-visible)) {
+		--line: #3f4960;
+	}
+
+	.panel:is(.is-active, :has(.card:hover, .title-link:focus-visible)) .bezel :global(:is(img, video)) {
+		filter: saturate(0.85) brightness(0.9) contrast(1.09);
+	}
+</style>
+
+<style is:global>
+	/* Registered so the frame color can fade on hover (plain custom properties switch instantly) */
+	@property --line {
+		syntax: "<color>";
+		inherits: true;
+		initial-value: #2e3649;
+	}
+</style>
