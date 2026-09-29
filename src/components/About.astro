@@ -290,8 +290,9 @@ const clip:
 		aspect-ratio: 9 / 16; /* reserves space before the poster loads */
 		object-fit: cover;
 		background: var(--bg);
-		/* Cool, muted grade so the footage sits in the navy/amber palette like a spacecraft camera feed */
-		filter: saturate(0.6) contrast(1.1) brightness(0.9);
+		/* Cool, muted grade so the footage sits in the navy/amber palette like a spacecraft camera feed;
+		   dimmer at rest, so hovering or playing it visibly powers it up */
+		filter: saturate(0.5) contrast(1.1) brightness(0.72);
 		transition: filter 0.2s;
 	}
 
@@ -461,7 +462,7 @@ const clip:
 	}
 
 	figure:is(:hover, .is-playing) video {
-		filter: saturate(0.7) contrast(1.09) brightness(1);
+		filter: saturate(0.6) contrast(1.1) brightness(0.9);
 	}
 
 	figure:hover .play {
