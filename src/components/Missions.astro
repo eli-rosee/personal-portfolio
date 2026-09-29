@@ -1,12 +1,13 @@
 ---
 import { getProjects } from "../data/projects";
 import MissionCard from "./MissionCard.astro";
+import SectionHeading from "./SectionHeading.astro";
 
 const projects = await getProjects();
 ---
 
 <section id="projects" class="section" aria-labelledby="projects-heading">
-	<h2 id="projects-heading" class="section-title">// Projects</h2>
+	<SectionHeading id="projects-heading" text="Projects" />
 	<div class="grid">
 		{/* The first row (two cards) is on screen at load on desktop, so its images load right away. On phones
 		    the second is below the fold; the audit flags that, but one small image early is the cheaper miss */}

@@ -1,4 +1,5 @@
-"""Render the name wordmark and the [ER] + rocket logo in Mission Control DCU to transparent PNGs.
+"""Render the name wordmark, the [ER] + rocket logo and the section headings in Mission Control DCU
+to transparent PNGs.
 
 The font's desktop license allows rasterized images for web use but not
 embedding the font itself, so the site only ever ships these PNGs.
@@ -90,6 +91,13 @@ logo = row(
     [bracket_gap, bracket_gap, 70 * SUPERSAMPLE],
 )
 save(logo, "src/assets/logo.png", 250)  # nav: ~125px wide
+
+# Section headings: off-white, 21px tall on the page (saved at 2x). One scale for all, so the
+# letters match across headings whatever their ink.
+heading_scale = 42 / glyphs("E", TEXT).height
+for word in ["Projects", "About", "Telemetry"]:
+    art = glyphs(word.upper(), TEXT)
+    save(art, f"src/assets/headings/{word.lower()}.png", round(art.width * heading_scale), TEXT)
 
 # Favicons, all the rocket alone.
 # SVG (Chrome, Edge, Firefox): transparent, dark body on light tab bars and off-white on dark ones.

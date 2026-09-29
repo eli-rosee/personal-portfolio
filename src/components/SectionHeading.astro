@@ -1,0 +1,22 @@
+---
+// A section heading in Mission Control DCU. The font's license only allows images of it, so the
+// word is a PNG from scripts/render-wordmark.py; its alt text is the heading's text for screen
+// readers and search. Renaming a section means re-running that script.
+import { Image } from "astro:assets";
+import projects from "../assets/headings/projects.png";
+import about from "../assets/headings/about.png";
+import telemetry from "../assets/headings/telemetry.png";
+
+interface Props {
+	id: string;
+	text: "Projects" | "About" | "Telemetry";
+}
+
+const { id, text } = Astro.props;
+const art = { Projects: projects, About: about, Telemetry: telemetry }[text];
+---
+
+<h2 id={id} class="section-title">
+	{/* Projects is on screen at load; the others load as they come near */}
+	<Image src={art} alt={text} height={21} densities={[1, 2]} loading={text === "Projects" ? "eager" : "lazy"} />
+</h2>
