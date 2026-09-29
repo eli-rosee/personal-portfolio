@@ -32,4 +32,20 @@ const projects = defineCollection({
 		}),
 });
 
-export const collections = { projects };
+// The climbing clip on the About card (one entry, src/content/clip.md)
+const clip = defineCollection({
+	loader: glob({ pattern: "clip.md", base: "./src/content" }),
+	schema: z.object({
+		src: z.string(), // the video, under public/
+		poster: z.string().optional(),
+		label: z.string(), // describes the clip for screen readers
+		cam: z.string().optional(), // label on the viewport glass
+		sent: z.boolean().default(false), // shows the green SENT tab
+		sentNote: z.string().optional(), // the SENT tab's tooltip
+		title: z.string(),
+		summary: z.string().optional(),
+		tags: z.array(z.string()).optional(),
+	}),
+});
+
+export const collections = { projects, clip };
