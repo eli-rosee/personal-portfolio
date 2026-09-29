@@ -151,6 +151,14 @@ const clip = (await getEntry("clip", "clip"))?.data;
 		}),
 	);
 
+	// The highlight is over once it has faded, or as soon as the visitor points at the card (normal
+	// hover takes over, and leaving doesn't replay it)
+	const clipPanel = document.querySelector<HTMLElement>("#about-clip");
+	clipPanel?.querySelector(".card")?.addEventListener("pointerenter", () => clipPanel.classList.remove("highlighted"));
+	clipPanel?.addEventListener("animationend", (event) => {
+		if (event.animationName.includes("about-highlight-frame")) clipPanel.classList.remove("highlighted");
+	});
+
 	// Altimeter: the marker tracks how far through the clip it is, every frame while playing
 	const glass = video?.closest<HTMLElement>(".glass");
 	if (video && glass) {
@@ -169,14 +177,49 @@ const clip = (await getEntry("clip", "clip"))?.data;
 		gap: var(--space-6);
 	}
 
-	/* Paragraph type, on trial (option 03: Space Grotesk, the sans grown out of Space Mono) */
+	/*
+	 * The text (about.md): the first paragraph is a statement in the label font, its *emphasis* in
+	 * amber; the rest in Inter, muted, with **key phrases** in the text color
+	 */
 	.prose {
 		display: grid;
 		gap: var(--space-3);
 		max-width: 38rem;
-		font-family: "Space Grotesk", sans-serif;
-		font-size: 1.05rem;
-		line-height: 1.75;
+		font-family: "Inter", sans-serif;
+		font-size: 1rem;
+		line-height: 2.1;
+		color: var(--muted);
+	}
+
+	.prose :global(p:first-child) {
+		margin-bottom: 0.5rem;
+		font-family: var(--font-label);
+		font-size: 1.35rem;
+		line-height: 1.45;
+		letter-spacing: -0.01em;
+		color: var(--text);
+	}
+
+	.prose :global(p:first-child em) {
+		font-style: normal;
+		color: var(--accent);
+	}
+
+	/* Small dim signal waves (the headings' mark, in a frame-line grey) open each body paragraph. They
+	   float one line tall, so only the first line steps in (just short of the heading's word) and the
+	   rest of the paragraph wraps back out to the full width */
+	.prose :global(p:not(:first-child))::before {
+		content: "";
+		float: left;
+		width: calc(14px + 1.2rem); /* the waves, then a gap a little tighter than the heading's */
+		height: 1lh;
+		background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 26' fill='none' stroke='%235a6580' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 3Q15 13 6 23'/%3E%3Cpath d='M28 3Q37 13 28 23' opacity='.5'/%3E%3C/svg%3E")
+			0 50% / auto 11px no-repeat;
+	}
+
+	.prose :global(strong) {
+		font-weight: 500;
+		color: var(--text);
 	}
 
 
@@ -198,10 +241,12 @@ const clip = (await getEntry("clip", "clip"))?.data;
 		:global(.clip-card) {
 			max-width: 20rem;
 			contain: size;
-			/* (the half-leading of the text's lines is taken off, so the edges meet the letters themselves) */
-			--half-leading: calc((1.75 - 1) * 1.05rem / 2);
-			margin-block: calc(var(--half-leading) - var(--tab-h) - var(--frame) - var(--space-3))
-				calc(var(--half-leading) - var(--frame) - var(--space-3));
+			/* (the half-leading of the lines is taken off, so the edges meet the letters themselves: the
+			   statement's at the top, the body text's at the bottom) */
+			--lead-top: calc((1.45 - 1) * 1.35rem / 2);
+			--lead-bottom: calc((2.1 - 1) * 1rem / 2);
+			margin-block: calc(var(--lead-top) - var(--tab-h) - var(--frame) - var(--space-3))
+				calc(var(--lead-bottom) - var(--frame) - var(--space-3));
 		}
 
 		:global(.clip-card) :global(.viewport) {
@@ -404,15 +449,15 @@ const clip = (await getEntry("clip", "clip"))?.data;
 	/* Reached from "climbing" in the text: the hover look comes on at once and fades straight back.
 	   Pointing at the card cancels it, and normal hover takes over. */
 	:global(.clip-card.highlighted) {
-		animation: about-highlight-frame 1.5s ease-out;
+		animation: about-highlight-frame 2s ease-out;
 	}
 
 	:global(.clip-card.highlighted) video {
-		animation: about-highlight-feed 1.5s ease-out;
+		animation: about-highlight-feed 2s ease-out;
 	}
 
 	:global(.clip-card.highlighted) .play {
-		animation: about-highlight-chip 1.5s ease-out;
+		animation: about-highlight-chip 2s ease-out;
 	}
 
 	:global(.clip-card.highlighted):has(:global(.card:hover)),
