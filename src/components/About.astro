@@ -1,21 +1,11 @@
 ---
-import { Content, frontmatter } from "../data/about.md";
+import { getEntry } from "astro:content";
+import { Content } from "../data/about.md";
 import SectionHeading from "./SectionHeading.astro";
 import ConsoleCard from "./ConsoleCard.astro";
 
-const clip:
-	| {
-			src: string;
-			poster?: string;
-			label: string;
-			cam?: string;
-			sent?: boolean;
-			sentNote?: string;
-			title?: string;
-			summary?: string;
-			tags?: string[];
-	  }
-	| undefined = frontmatter.clip;
+// The climbing clip's card (src/content/clip.md); the section still works without it
+const clip = (await getEntry("clip", "clip"))?.data;
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">
