@@ -79,7 +79,7 @@ const tipText =
 					) : (
 						<span class="title-static">
 							{title}
-							{/* A small diamond where a linked card has its ↗: this one isn't a link */}
+							{/* A short dash where a linked card has its ↗: this one isn't a link */}
 							<span class="static-mark" aria-hidden="true" />
 						</span>
 					)
@@ -411,8 +411,13 @@ const tipText =
 		color: var(--text);
 	}
 
+	/* The ↗, larger than on the buttons: its ink is about 0.66em wide and sits flush with the text's right
+	   edge (the 1em box has 0.19em of space on the right) */
 	.title-link :global(svg) {
 		flex-shrink: 0;
+		width: 1em;
+		height: 1em;
+		margin-right: -0.19em;
 	}
 
 	.title-link:hover {
@@ -438,14 +443,12 @@ const tipText =
 		outline-offset: 3px;
 	}
 
-	/* Outlined diamond, the ↗'s size and place, in the muted color */
+	/* A short dash, as wide as the ↗'s ink and flush with the edge like it, in the muted color */
 	.static-mark {
 		flex: none;
-		width: 7px;
-		height: 7px;
-		margin-right: 3px;
-		border: 1.5px solid var(--muted);
-		rotate: 45deg;
+		width: 0.66em;
+		height: 2px;
+		background: var(--muted);
 	}
 
 	.summary {
