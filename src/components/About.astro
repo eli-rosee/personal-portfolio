@@ -3,7 +3,17 @@ import { Content, frontmatter } from "../data/about.md";
 import SectionHeading from "./SectionHeading.astro";
 
 const clip:
-	| { src: string; poster?: string; label: string; cam?: string; sent?: boolean; sentNote?: string; log?: Record<string, string> }
+	| {
+			src: string;
+			poster?: string;
+			label: string;
+			cam?: string;
+			sent?: boolean;
+			sentNote?: string;
+			title?: string;
+			summary?: string;
+			tags?: string[];
+	  }
 	| undefined = frontmatter.clip;
 ---
 
@@ -15,7 +25,7 @@ const clip:
 		</div>
 		{
 			clip && (
-				<figure class:list={{ "has-tab": clip.sent }}>
+				<figure id="about-clip" class:list={{ "has-tab": clip.sent }}>
 					{/* Built like a project card: the SENT status in a tab, the clip as its screen, the mission log below */}
 					{clip.sent && (
 						<span class="tab label">
@@ -69,25 +79,25 @@ const clip:
 							</div>
 						</div>
 					</div>
-					{clip.log && (
+					{clip.title && (
 						<figcaption class="log">
-							<dl>
-								{Object.entries(clip.log).map(([key, value]) => {
-									// A boulder grade gets a V0–V17 gauge, so anyone can see where it sits
-									const grade = /^V(\d+)$/.exec(value);
-									return (
-										<div>
-											<dt class="label">{key}</dt>
-											<dd>
-												{grade && (
-													<span class="gauge" aria-hidden="true" style={`--grade: ${Math.min(Number(grade[1]), 17) / 17}`} />
-												)}
-												{value}
-											</dd>
-										</div>
-									);
-								})}
-							</dl>
+							{/* Built like a project card's text: title, summary, a hairline, the tags */}
+							<div class="log-text">
+								<h3 class="log-title">
+									{clip.title}
+									{/* A small diamond where a project card has its ↗: this one isn't a link */}
+									<span class="static-mark" aria-hidden="true" />
+								</h3>
+								{clip.summary && <p class="log-summary">{clip.summary}</p>}
+							</div>
+							{clip.tags && (
+								<>
+									<hr class="log-rule" />
+									<ul class="stack label" aria-label="Details">
+										{clip.tags.map((tag) => <li>{tag}</li>)}
+									</ul>
+								</>
+							)}
 						</figcaption>
 					)}
 				</figure>
@@ -158,6 +168,31 @@ const clip:
 		).observe(video);
 	}
 
+	// "climbing" in the text links here: the card comes into view (it's beside the text on desktop,
+	// below it on phones), then flashes its hover look and fades straight back, like the Uptime readout
+	document.querySelectorAll<HTMLAnchorElement>('a[href="#about-clip"]').forEach((link) =>
+		link.addEventListener("click", (event) => {
+			const card = document.querySelector<HTMLElement>("#about-clip");
+			if (!card) return;
+			event.preventDefault();
+			// Already fully in view (below the pinned nav)? Then no scrolling, just the ping
+			const box = card.getBoundingClientRect();
+			const navBottom = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+			if (box.top < navBottom || box.bottom > innerHeight) card.scrollIntoView({ block: "center" });
+			const observer = new IntersectionObserver(
+				([entry]) => {
+					if (!entry.isIntersecting) return;
+					observer.disconnect();
+					card.classList.remove("highlighted");
+					void card.offsetWidth; // restart the animation
+					card.classList.add("highlighted");
+				},
+				{ threshold: 0.5 },
+			);
+			observer.observe(card);
+		}),
+	);
+
 	// Altimeter: the marker tracks how far through the clip it is, every frame while playing
 	const glass = video?.closest<HTMLElement>(".glass");
 	if (video && glass) {
@@ -179,7 +214,7 @@ const clip:
 	/* Text on the left, the clip on the right (below the text on phones) */
 	@media (min-width: 48rem) {
 		.layout.has-clip {
-			grid-template-columns: minmax(0, 38rem) minmax(0, 18rem);
+			grid-template-columns: minmax(0, 38rem) minmax(0, 20rem);
 			justify-content: space-between;
 		}
 
@@ -210,24 +245,28 @@ const clip:
 		}
 	}
 
+	/* Paragraph type, on trial (option 08: the body mono, smaller and tighter than elsewhere) */
 	.prose {
 		display: grid;
 		gap: var(--space-3);
 		max-width: 38rem;
-		line-height: 1.9;
+		font-size: 0.9rem;
+		line-height: 1.8;
+		letter-spacing: -0.01em;
 	}
 
+	/* Spaced like the project cards: 24px between the clip and the log */
 	figure {
 		display: grid;
-		gap: 1rem;
-		max-width: 18rem;
+		gap: var(--space-3);
+		max-width: 20rem; /* room for the log's longest value on one line inside the card's padding */
 		margin: 0;
 	}
 
-	/* One column: the clip sits centered under the text instead of hugging the left edge */
+	/* One column: full width under the text, like the project cards */
 	@media (max-width: 47.99rem) {
 		figure {
-			justify-self: center;
+			max-width: none;
 		}
 	}
 
@@ -290,9 +329,8 @@ const clip:
 		aspect-ratio: 9 / 16; /* reserves space before the poster loads */
 		object-fit: cover;
 		background: var(--bg);
-		/* Cool, muted grade so the footage sits in the navy/amber palette like a spacecraft camera feed;
-		   dimmer at rest, so hovering or playing it visibly powers it up */
-		filter: saturate(0.5) contrast(1.1) brightness(0.72);
+		/* Graded like the project screens (the glass adds a cool cast on top) */
+		filter: saturate(0.75) brightness(0.8) contrast(1.1); /* the project screens' values */
 		transition: filter 0.2s;
 	}
 
@@ -361,6 +399,7 @@ const clip:
 		color: var(--text);
 		cursor: pointer;
 		white-space: nowrap;
+		transition: border-color 0.15s;
 	}
 
 	.play svg {
@@ -450,27 +489,66 @@ const clip:
 		--cut-kink: 0.83px; /* the same for the 45° bevels */
 		position: relative;
 		isolation: isolate;
-		padding: 14px 14px 16px;
+		/* The clip sits 24px inside the 2px frame, like the project cards' screens */
+		padding: calc(var(--frame) + var(--space-3));
 		cursor: pointer; /* the whole card plays and pauses the clip */
 		transition: --line 0.15s; /* --line is registered in MissionCard.astro, so it can fade */
 	}
 
-	/* Hover, like the project cards: the frame brightens slightly, the feed a little, and the play chip
-	   lights. The card stays bright while the clip plays. */
-	figure:is(:hover, .is-playing) {
+	/* Hover, like the project cards: the frame brightens slightly, the feed a little, and the play chip's
+	   border lightens. The card stays bright while the clip plays. Hovering the SENT tab (or its
+	   tooltip) doesn't count, as on the project cards, where the tab sits outside the card. */
+	figure:is(:hover:not(:has(.tab:hover, .tip:hover)), .is-playing) {
 		--line: #3f4960;
 	}
 
-	figure:is(:hover, .is-playing) video {
-		filter: saturate(0.6) contrast(1.1) brightness(0.9);
+	figure:is(:hover:not(:has(.tab:hover, .tip:hover)), .is-playing) video {
+		filter: saturate(0.85) brightness(0.9) contrast(1.09);
 	}
 
-	figure:hover .play {
-		border-color: var(--accent);
+	figure:hover:not(:has(.tab:hover, .tip:hover)) .play {
+		border-color: var(--muted);
+	}
+
+	/* Reached from "climbing" in the text: the hover look comes on at once and fades straight back */
+	figure.highlighted {
+		animation: about-highlight-frame 1.5s ease-out;
+	}
+
+	figure.highlighted video {
+		animation: about-highlight-feed 1.5s ease-out;
+	}
+
+	figure.highlighted .play {
+		animation: about-highlight-chip 1.5s ease-out;
+	}
+
+	@keyframes about-highlight-frame {
+		from {
+			--line: #3f4960;
+		}
+	}
+
+	@keyframes about-highlight-feed {
+		from {
+			filter: saturate(0.85) brightness(0.9) contrast(1.09);
+		}
+	}
+
+	@keyframes about-highlight-chip {
+		from {
+			border-color: var(--muted);
+		}
+	}
+
+	/* The visitor points at the card while it's highlighted: drop the highlight, normal hover takes over */
+	figure.highlighted:hover,
+	figure.highlighted:hover :is(video, .play) {
+		animation: none;
 	}
 
 	figure.has-tab {
-		padding-top: calc(var(--tab-h) + 14px);
+		padding-top: calc(var(--tab-h) + var(--frame) + var(--space-3));
 	}
 
 	figure::before,
@@ -513,11 +591,57 @@ const clip:
 		);
 	}
 
-	/* Mission log: console-style rows under the clip, the card's body */
+	/* The card's body, styled like a project card's text (see MissionCard.astro), lined up with the
+	   clip's inner frame (hull edge + bezel) */
 	.log {
+		margin-inline: calc(var(--border-width) + 0.625rem);
+	}
+
+	.log-text {
 		display: grid;
-		gap: var(--space-1);
-		margin-inline: 4px;
+		gap: 0.75rem;
+		padding-bottom: 1.25rem;
+	}
+
+	.log-title {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 1.125rem;
+		letter-spacing: var(--tracking-title);
+		text-transform: uppercase;
+	}
+
+	/* Outlined diamond, the ↗'s size and place on the project cards, in the muted color */
+	.static-mark {
+		flex: none;
+		width: 7px;
+		height: 7px;
+		margin-right: 3px;
+		border: 1.5px solid var(--muted);
+		rotate: 45deg;
+	}
+
+	.log-summary {
+		color: var(--muted);
+		font-size: 0.875rem;
+		line-height: 1.75;
+	}
+
+	.log-rule {
+		margin: 0;
+		border: 0;
+		height: 1px;
+		background: #2e3649;
+	}
+
+	/* Tags, like the project cards' (tighter than the shared list); the shared list hides a leading "·"
+	   by shifting left and clipping */
+	.log .stack {
+		--sep: 1.75em;
+		letter-spacing: 0.14em;
+		padding-top: 1.25rem;
 	}
 
 	/* Without a tab, a plain bevelled frame */
@@ -561,6 +685,22 @@ const clip:
 		transition:
 			opacity 0.15s,
 			box-shadow 0.15s;
+	}
+
+	/* Hover/focus: a wash of the status color falls into the tab, like a lamp (as on the project cards) */
+	.tab::before {
+		content: "";
+		position: absolute;
+		inset: var(--frame) calc(var(--frame) * 1.5) 0;
+		clip-path: polygon(calc(var(--slant) - 1px) 0, calc(100% - var(--slant) + 1px) 0, 100% 100%, 0 100%);
+		background: linear-gradient(to bottom, color-mix(in srgb, currentColor 22%, transparent), transparent 90%);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s;
+	}
+
+	.tab:is(:hover, :focus-within)::before {
+		opacity: 1;
 	}
 
 	.tab:is(:hover, :focus-within)::after {
@@ -641,54 +781,5 @@ const clip:
 	.tab:is(:hover, :focus-within) + .tip {
 		opacity: 1;
 		visibility: visible;
-	}
-
-	/* Grade gauge: V0–V17 in ticks, the climb's grade marked with a lit tick */
-	.gauge {
-		position: relative;
-		display: inline-block;
-		width: 6.5rem;
-		height: 11px;
-		margin-right: 0.75rem;
-		vertical-align: -1px;
-		background:
-			linear-gradient(var(--line), var(--line)) 0 50% / 100% 1px no-repeat,
-			repeating-linear-gradient(90deg, #3a4358 0 1px, transparent 1px calc((100% - 1px) / 17)) 0 3px / 100% 5px no-repeat;
-	}
-
-	.gauge::after {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: calc(var(--grade) * (100% - 1px));
-		width: 1px;
-		height: 100%;
-		background: var(--status);
-		box-shadow: 0 0 3px var(--status);
-	}
-
-	dl {
-		display: grid;
-		gap: 0.25rem;
-		margin: 0;
-	}
-
-	dl div {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--space-2);
-		padding-block: 0.25rem;
-		border-bottom: var(--border-width) solid var(--border);
-	}
-
-	dt {
-		line-height: inherit;
-	}
-
-	dd {
-		margin: 0;
-		font-family: var(--font-label);
-		font-size: var(--text-sm);
-		text-align: right;
 	}
 </style>
