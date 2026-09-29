@@ -123,11 +123,14 @@ a:hover {
 	padding-top: var(--section-seam);
 }
 
-/* Section heading: just the word, in Mission Control DCU as an image (see SectionHeading.astro).
-   The text styles are a fallback if the image doesn't load. */
+/* Section heading: a small amber slant (the card tabs' angle) at the content edge, then the word
+   in Mission Control DCU as an image (see SectionHeading.astro). The text styles are a fallback
+   if the image doesn't load. */
 .section-title {
+	display: flex;
+	align-items: center;
+	gap: 1.5rem; /* room on both sides of the word: from the slant, and before the waves */
 	margin-bottom: var(--space-6);
-	padding-left: 4px; /* stepped in slightly from the content's left edge, to break up that edge */
 	font-family: var(--font-label);
 	font-size: 0.95rem;
 	font-weight: 700;
@@ -136,15 +139,36 @@ a:hover {
 	color: var(--text);
 }
 
+.section-title::before {
+	content: "";
+	flex: none;
+	width: 14px;
+	height: 21px;
+	background: var(--accent);
+	clip-path: polygon(40% 0, 100% 0, 60% 100%, 0 100%);
+}
+
 .section-title img {
 	display: block;
 	height: 21px;
 	width: auto;
 }
 
+/* Signal waves spreading out from the word, like a transmission fading: the first arc in the slant's
+   full amber (so the slant and the waves read as one mark), the rest fainter and further apart than
+   a stock "signal" icon. Sized to the word's height (the arcs are drawn in an 86×26 box). */
+.section-title::after {
+	content: "";
+	flex: none;
+	width: calc(21px * 86 / 26);
+	height: 21px;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 86 26' fill='none' stroke='%23F2A541' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 3Q15 13 6 23'/%3E%3Cpath d='M28 3Q37 13 28 23' opacity='.6'/%3E%3Cpath d='M50 3Q59 13 50 23' opacity='.36'/%3E%3Cpath d='M72 3Q81 13 72 23' opacity='.18'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
 /* Phones: like desktop, more room above a heading (the gap between sections) than below it */
 @media (max-width: 47.99rem) {
 	.section-title {
+		gap: 1rem;
 		margin-bottom: 1.75rem;
 	}
 }
