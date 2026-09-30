@@ -5,6 +5,7 @@ import wordmark from "../assets/wordmark.png";
 import ExternalIcon from "./ExternalIcon.astro";
 ---
 
+{/* Name, one line on what I do, and the three links a recruiter needs, all above the fold */}
 <section class="hero">
 	<h1>
 		<Image
@@ -74,7 +75,7 @@ import ExternalIcon from "./ExternalIcon.astro";
 		white-space: nowrap; /* keeps the new-tab arrow beside its label */
 	}
 
-	/* New-tab arrow, like the nav's Resume link */
+	/* New-tab arrow */
 	.button :global(svg) {
 		margin-left: 0.2em;
 		vertical-align: 0.05em;
@@ -83,6 +84,17 @@ import ExternalIcon from "./ExternalIcon.astro";
 	.button:hover {
 		border-color: var(--muted);
 		text-decoration: none;
+	}
+
+	.button.primary {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--bg);
+	}
+
+	.button.primary:hover {
+		background: var(--text);
+		border-color: var(--text);
 	}
 
 	/* Phones: Resume full width, the other links side by side below it */
@@ -106,16 +118,5 @@ import ExternalIcon from "./ExternalIcon.astro";
 			margin-top: var(--space-3);
 			font-size: var(--text-base);
 		}
-	}
-
-	.button.primary {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--bg);
-	}
-
-	.button.primary:hover {
-		background: var(--text);
-		border-color: var(--text);
 	}
 </style>

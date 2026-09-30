@@ -5,10 +5,10 @@ import logo from "../assets/logo.png";
 ---
 
 {/*
-	Pinned bar: the [ER] + rocket logo on the left, a ringed planet on the right. Every 18 seconds a
+	Pinned bar: the [ER] + rocket logo on the left, a ringed planet on the right. Every 10 seconds a
 	space invader crosses the bar toward the planet; when it gets close, the planet flashes amber and
-	shoots it down. Pure CSS animation on its own loop (no JavaScript, nothing tied to scrolling);
-	off with reduced motion.
+	shoots it down. A CSS animation on its own loop (a tiny script only varies the invader); off
+	with reduced motion.
 */}
 <header>
 	<nav aria-label="Main">
@@ -16,7 +16,6 @@ import logo from "../assets/logo.png";
 			<Image src={logo} alt={site.name} width={125} densities={[1, 2]} loading="eager" />
 		</a>
 		<div class="sky" aria-hidden="true">
-			{/* A bar-wide box that slides right, carrying the invader at its right edge */}
 			{/* A bar-wide box that slides right, carrying the invader at its right edge. The script picks
 				a different kind for each pass; without JavaScript it's always the crab. */}
 			<span class="run" data-kind="crab" data-run>
@@ -70,9 +69,9 @@ import logo from "../assets/logo.png";
 </header>
 
 <script>
-	// The first pass is always the classic crab, so it's recognizable. After that, a different kind on
-	// each pass: the squid, crab, or octopus, never the same one twice in a row. It switches between
-	// passes, while the invader is invisible.
+	// The first pass is always the classic crab (set in the markup), so it's recognizable. After that,
+	// a different kind on each pass, never the same one twice in a row. It switches between passes,
+	// while the invader is invisible.
 	const run = document.querySelector<HTMLElement>("[data-run]");
 	if (run) {
 		const aliens = ["squid", "crab", "octopus"];
@@ -80,7 +79,6 @@ import logo from "../assets/logo.png";
 			const options = aliens.filter((kind) => kind !== last);
 			return options[Math.floor(Math.random() * options.length)];
 		};
-		run.dataset.kind = "crab";
 		run.addEventListener("animationiteration", (event) => {
 			if (event.target === run) run.dataset.kind = pick(run.dataset.kind);
 		});
@@ -97,7 +95,6 @@ import logo from "../assets/logo.png";
 		border-bottom: var(--border-width) solid var(--border);
 	}
 
-	/* Keyframe names are global across the page (the footer has its own "flash"), hence the prefixes */
 	nav {
 		/* Skirmish timing, shared by the invader's lane and the planet's flash so they stay in step */
 		--cycle: 10s;
@@ -160,8 +157,8 @@ import logo from "../assets/logo.png";
 		position: absolute;
 		top: 0;
 		right: 0;
-		width: calc(var(--w) * var(--px));
-		height: calc(var(--h) * var(--px));
+		width: calc(var(--w) * var(--px) * var(--scale, 1));
+		height: calc(var(--h) * var(--px) * var(--scale, 1));
 		translate: 0 -50%;
 		fill: var(--text);
 	}
@@ -174,9 +171,7 @@ import logo from "../assets/logo.png";
 
 	/* The squid is the smallest alien in the arcade; a little extra size keeps it easy to see */
 	.invader[data-kind="squid"] {
-		--px-scale: 1.25;
-		width: calc(var(--w) * var(--px) * var(--px-scale));
-		height: calc(var(--h) * var(--px) * var(--px-scale));
+		--scale: 1.25;
 	}
 
 	/* Two leg poses, swapping like the arcade original */
@@ -214,6 +209,7 @@ import logo from "../assets/logo.png";
 		animation-name: invader-burst;
 	}
 
+	/* Keyframe names are global across the page (the footer has its own "flash"), hence the prefixes */
 	@keyframes invader-advance {
 		0%,
 		3% {

@@ -1,28 +1,37 @@
 ---
+/*
+ * About: a one-line statement, then short paragraphs under small prompts (src/data/about.md),
+ * with the climbing clip card beside them (below them on phones).
+ *
+ * Markdown conventions in about.md:
+ *   statement: "... *phrase* ..."   the phrase is amber and launches the rocket on the clip card
+ *   ### Prompt                      a small label over each paragraph
+ *   **key phrase**                  set in the text color, above the muted body
+ *   [text](#target "Tip")           a bracketed link with a tooltip
+ */
 import { getEntry } from "astro:content";
 import { compiledContent, frontmatter } from "../data/about.md";
 import SectionHeading from "./SectionHeading.astro";
-import ConsoleCard from "./ConsoleCard.astro";
+import ClipCard from "./ClipCard.astro";
 
-// The climbing clip's card (src/content/clip.md); the section still works without it
+// The clip is optional; the section works without it
 const clip = (await getEntry("clip", "clip"))?.data;
 
-// The opening statement (about.md frontmatter); *phrase* sets that phrase in amber
-const escape = (text: string) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
-const statement: string | undefined = frontmatter.statement;
-// The amber phrase is a button: it launches the rocket on the clip card
-const statementHtml =
-	statement &&
-	escape(statement).replace(
-		// Any punctuation right after it stays on the same line as the closing bracket
-		/\*([^*]+)\*([.,!?;:]?)/g,
-		'<span class="nowrap"><button type="button" class="launch" data-launch><em>$1</em><span class="tip label" aria-hidden="true">Launch the Rocket</span></button>$2</span>',
-	);
+const escapeHtml = (text: string) =>
+	text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-// The text (about.md). A link's title ([text](#id "Tip")) becomes a tooltip under the link
+// Punctuation right after the phrase stays on its line, next to the closing bracket
+const statement: string | undefined = frontmatter.statement;
+const statementHtml = statement
+	? escapeHtml(statement).replace(
+			/\*([^*]+)\*([.,!?;:]?)/g,
+			'<span class="nowrap"><button type="button" class="launch" data-launch><em>$1</em><span class="tooltip label" aria-hidden="true">Launch the Rocket</span></button>$2</span>',
+		)
+	: undefined;
+
 const proseHtml = (await compiledContent()).replace(
 	/<a href="([^"]*)" title="([^"]*)">([^<]*)<\/a>/g,
-	'<a href="$1">$3<span class="tip label" aria-hidden="true">$2</span></a>',
+	'<a href="$1">$3<span class="tooltip label" aria-hidden="true">$2</span></a>',
 );
 ---
 
@@ -31,299 +40,20 @@ const proseHtml = (await compiledContent()).replace(
 	<div class:list={["layout", { "has-clip": clip }]}>
 		{statementHtml && <p class="statement" set:html={statementHtml} />}
 		<div class="prose" set:html={proseHtml} />
-		{
-			clip && (
-				<ConsoleCard
-					id="about-clip"
-					class="clip-card"
-					title={clip.title ?? clip.label}
-					summary={clip.summary}
-					tags={clip.tags}
-					tagsLabel="Details"
-					tabSide="right"
-					status={clip.sent ? { label: "Sent", tone: "status", tip: clip.sentNote, tipId: "sent-tip" } : undefined}
-					style="--tab-w: 8.5rem; --tab-h: 1.6rem; --slant: 0.6rem; --cut: 10px; --status-inset: 0.55rem; --screen-cut: 2rem; --bezel-pad: 0.625rem"
-				>
-					{/* The screen: glass edge > video + glare, static, HUD, and the play chip */}
-					{/* The logo's rocket, landed on the card with a green flag planted beside it: the summit, like SENT */}
-					<div slot="on-top" class="landing" aria-hidden="true">
-						{/* The logo's rocket, exactly: the same body, fins, window and flame as scripts/render-wordmark.py
-						    (ROCKET, WINDOW, FLAME), standing upright on its fins. The flame burns only in flight. */}
-						<svg class="rocket" viewBox="0 0 100 124">
-							<path class="flame" d="M36 116H64L50 158Z" />
-							<path class="hull" fill-rule="evenodd" d="M50 0 72 34V78L90 112V124L72 110H28L10 124V112L28 78V34Z M41 53a9 9 0 1 0 18 0a9 9 0 1 0-18 0Z" />
-						</svg>
-						<svg class="flag" viewBox="0 0 34 60">
-							<line x1="4" y1="60" x2="4" y2="3" />
-							<path d="M5 5 C 12 2, 18 9, 30 5 L 30 21 C 18 25, 12 18, 5 21 Z" />
-							<circle cx="4" cy="3" r="2.2" />
-						</svg>
-					</div>
-					<div class="glass">
-						{/* Controls without JavaScript; the script swaps them for the "Play feed" chip */}
-						<video
-							data-about-clip
-							controls
-							muted
-							loop
-							playsinline
-							preload="none"
-							poster={clip.poster}
-							src={clip.src}
-							aria-label={clip.label}
-						/>
-						{/* Light static drifting over the footage, like a camera feed from orbit */}
-						<span class="static" aria-hidden="true" />
-						{/* Camera label + altimeter (its marker climbs with the video, set by the script) */}
-						<div class="hud" aria-hidden="true">
-							{clip.cam && <span class="label cam">{clip.cam}</span>}
-							<span class="altimeter">
-								<span class="marker" />
-							</span>
-						</div>
-						{/* Play chip (the script shows it): "Play feed", then "Acquiring signal" while loading */}
-						<button class="label play" type="button" hidden data-play>
-							<svg viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0v12l10-6z" /></svg>
-							<span class="light" aria-hidden="true"></span>
-							<span data-play-label>Play feed</span>
-						</button>
-					</div>
-				</ConsoleCard>
-			)
-		}
+		{clip && <ClipCard clip={clip} />}
 	</div>
 </section>
 
-<script>
-	// The clip waits on its poster with a "Play feed" chip; a click or tap anywhere on its card (the
-	// chip, the clip, the text; not the SENT tab, which sits outside the card) starts it looping
-	// silently (no native controls), and clicking again pauses it and brings the chip back. While the
-	// first frames load, the chip reads "Acquiring signal" and only disappears once the video is
-	// actually showing. It starts downloading as it nears the screen
-	// where the browser allows (iPhones often wait for the tap), and pauses while off screen.
-	const video = document.querySelector<HTMLVideoElement>("video[data-about-clip]");
-	const chip = video?.parentElement?.querySelector<HTMLButtonElement>("[data-play]");
-	const chipLabel = chip?.querySelector<HTMLElement>("[data-play-label]");
-	if (video && chip && chipLabel) {
-		video.controls = false;
-		let wanted = false; // the visitor started it (and hasn't paused it)
-
-		const setChip = (state: "play" | "loading" | "hidden") => {
-			chip.hidden = state === "hidden";
-			chip.dataset.state = state;
-			chipLabel.textContent = state === "loading" ? "Acquiring signal" : "Play feed";
-		};
-
-		const start = () => {
-			wanted = true;
-			if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) setChip("loading");
-			video.play().catch(() => {
-				// Refused even after a click: fall back to the browser's own controls
-				wanted = false;
-				setChip("hidden");
-				video.controls = true;
-			});
-		};
-
-		const stop = () => {
-			wanted = false;
-			video.pause();
-			setChip("play");
-		};
-
-		video.addEventListener("playing", () => setChip("hidden"));
-		// The card stays in its bright, hovered look while the clip plays
-		const panel = video.closest<HTMLElement>(".panel");
-		video.addEventListener("play", () => panel?.classList.add("is-active"));
-		video.addEventListener("pause", () => panel?.classList.remove("is-active"));
-		video.closest(".card")?.addEventListener("click", () => {
-			// With the fallback controls, the browser handles clicks
-			if (video.controls) return;
-			if (video.paused) start();
-			else stop();
-		});
-		setChip("play");
-
-		new IntersectionObserver(
-			([entry]) => {
-				if (entry.isIntersecting) {
-					if (video.preload === "none") video.preload = "auto"; // get a head start on the first click
-					if (wanted && video.paused) video.play().catch(() => {});
-				} else if (!video.paused) {
-					video.pause(); // off screen; resumes when it's back if the visitor had it playing
-				}
-			},
-			{ rootMargin: "200px" },
-		).observe(video);
-	}
-
-	// "the physical world" launches the rocket: the engine lights, it lifts off along one smooth curve that
-	// leans it over to the logo's 45° as it climbs away, the flag stands alone for a beat, then it comes
-	// back straight down, slowing to touch down. Reduced motion: the engine just flickers in place.
-	const launchButton = document.querySelector<HTMLButtonElement>("[data-launch]");
-	const landing = document.querySelector<HTMLElement>("#about-clip .landing");
-	const ship = landing?.querySelector<SVGElement>(".rocket");
-	const flame = ship?.querySelector<SVGElement>(".flame");
-	if (launchButton && landing && ship && flame) {
-		const heading = document.querySelector<HTMLElement>("#about-heading");
-		let flying = false;
-
-		// The climb, as a gravity turn: the rocket pitches over gradually from straight up to the logo's 45°
-		// the whole way up (still turning as it fades), while its speed builds like a real launch: it creeps off
-		// the pad, lingers low, and the acceleration eases off at the top (distance 2p³ - p⁴). The path is traced
-		// once at unit height; each launch scales it to the sky under the About heading, so the rocket is gone by
-		// the time it reaches the top of the section
-		const MAX_HEIGHT = 245; // px, when there's sky to spare
-		const pitch = (p: number) => 45 * p ** 1.5; // degrees from vertical
-		const STEPS = 240;
-		const climbPath: [number, number][] = [[0, 0]];
-		for (let i = 1, x = 0, y = 0; i <= STEPS; i++) {
-			const p = (i - 0.5) / STEPS;
-			const speed = 6 * p ** 2 - 4 * p ** 3; // d/dp of 2p³ - p⁴
-			const a = (pitch(p) * Math.PI) / 180;
-			x += (speed * Math.sin(a)) / STEPS;
-			y -= (speed * Math.cos(a)) / STEPS;
-			climbPath.push([x, y]);
-		}
-		const top = -climbPath[STEPS][1];
-		for (const point of climbPath) (point[0] /= top), (point[1] /= top);
-		const along = (p: number, i: number) => {
-			const f = p * STEPS, k = Math.min(STEPS - 1, Math.floor(f));
-			return climbPath[k][i] + (climbPath[k + 1][i] - climbPath[k][i]) * (f - k);
-		};
-		const clamp = (v: number) => Math.min(1, Math.max(0, v));
-		// Smooth at both ends with the top speed at `peak`: the speed ramps up over [0, peak] and back down over [peak, 1]
-		const ease = (t: number, peak: number) =>
-			t < peak
-				? t - (peak / Math.PI) * Math.sin((Math.PI * t) / peak)
-				: t + ((1 - peak) / Math.PI) * Math.sin((Math.PI * (t - peak)) / (1 - peak));
-		const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
-
-		// Timeline (ms): ignite, climb, pause (gone), descend, settle. A shorter hop is quicker (time ~ √distance)
-		const IGNITE = 800, PAUSE = 1000, SETTLE = 450;
-		const ENTRY = 0.2; // the descent picks up its speed curve this far in, near full speed
-		const FADE = 0.16; // the landing fades in over this share of the descent; the takeoff fades out just as long
-		let height = MAX_HEIGHT, CLIMB_MS = 4000, DESCEND = 3800, TOTAL = 0;
-		const measure = () => {
-			const shipHeight = ship.getBoundingClientRect().height;
-			const ceiling = heading ? heading.getBoundingClientRect().top : -Infinity;
-			// The sky between the ground and the heading: the rocket's last trace fades out level with its top
-			const room = landing.getBoundingClientRect().bottom - ceiling - 26;
-			height = Math.min(MAX_HEIGHT, Math.max(0.35 * MAX_HEIGHT, room));
-			CLIMB_MS = 4000 * Math.sqrt(height / MAX_HEIGHT);
-			DESCEND = 3800 * Math.sqrt(height / MAX_HEIGHT);
-			TOTAL = IGNITE + CLIMB_MS + PAUSE + DESCEND + SETTLE;
-			return height + shipHeight; // the sky that has to be on screen
-		};
-
-		const frame = (ms: number) => {
-			let x = 0, y = 0, angle = 0, opacity = 1, burn = 0;
-			if (ms < IGNITE) {
-				const t = ms / IGNITE;
-				burn = easeInOut(t);
-				y = -Math.sin(t * Math.PI) * 1.5; // settles on its fins as it throttles up
-			} else if (ms < IGNITE + CLIMB_MS) {
-				const p = (ms - IGNITE) / CLIMB_MS;
-				x = along(p, 0) * height;
-				y = along(p, 1) * height;
-				angle = pitch(p);
-				burn = 1;
-				// Fades out over the same time the landing takes to fade in
-				const fade = (FADE * DESCEND) / CLIMB_MS;
-				opacity = 1 - easeInOut(clamp((p - (1 - fade)) / fade));
-			} else if (ms < IGNITE + CLIMB_MS + PAUSE) {
-				opacity = 0;
-			} else if (ms < TOTAL - SETTLE) {
-				const t = (ms - IGNITE - CLIMB_MS - PAUSE) / DESCEND;
-				// Comes in already moving (the curve's slow start is skipped, so it's never still while it fades
-				// in), then brakes steadily to the ground
-				const e0 = ease(ENTRY, 0.25);
-				const u = (ease(ENTRY + t * (1 - ENTRY), 0.25) - e0) / (1 - e0);
-				y = -0.85 * height * (1 - u);
-				opacity = easeInOut(clamp(t / FADE));
-				burn = 1 - 0.4 * easeInOut(clamp((t - 0.6) / 0.4)); // throttles down near the ground
-			} else {
-				burn = 0.6 * (1 - easeInOut((ms - (TOTAL - SETTLE)) / SETTLE));
-			}
-			ship.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
-			ship.style.opacity = String(opacity);
-			flame.style.opacity = String(burn);
-		};
-
-		const fly = () => {
-			flying = true;
-			landing.classList.add("flying");
-			const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-			const start = performance.now();
-			const tick = (now: number) => {
-				const ms = now - start;
-				if (still) flame.style.opacity = ms < 900 ? String(0.5 + 0.5 * Math.sin(ms / 40)) : "0";
-				else frame(Math.min(ms, TOTAL));
-				if (ms < (still ? 900 : TOTAL)) requestAnimationFrame(tick);
-				else {
-					ship.style.transform = ship.style.opacity = flame.style.opacity = "";
-					landing.classList.remove("flying");
-					flying = false;
-				}
-			};
-			requestAnimationFrame(tick);
-		};
-
-		launchButton.addEventListener("click", () => {
-			if (flying) return;
-			// Scroll only if the rocket or the sky it climbs into is out of view, then fly once settled
-			const navBottom = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-			const sky = measure();
-			const box = ship.getBoundingClientRect();
-			const needsRoom = box.bottom - sky < navBottom || box.bottom > innerHeight;
-			if (!needsRoom) return fly();
-			const target = Math.min(navBottom + sky + 24, innerHeight - 40); // where the rocket's bottom should end up
-			let done = false;
-			const go = () => {
-				if (done) return;
-				done = true;
-				fly();
-			};
-			addEventListener("scrollend", go, { once: true });
-			setTimeout(go, 900); // browsers without scrollend
-			scrollBy({ top: box.bottom - target, behavior: "smooth" });
-		});
-	}
-
-	// Altimeter: the marker tracks how far through the clip it is, every frame while playing
-	const glass = video?.closest<HTMLElement>(".glass");
-	if (video && glass) {
-		const track = () => {
-			if (video.duration) glass.style.setProperty("--alt", String(video.currentTime / video.duration));
-			if (!video.paused) requestAnimationFrame(track);
-		};
-		video.addEventListener("play", track);
-		video.addEventListener("seeked", track);
-	}
-</script>
-
 <style>
+	/* One rhythm: 2.5rem after the statement, 2rem between parts, 0.5rem from a prompt to its paragraph */
 	.layout {
 		display: grid;
 		row-gap: var(--space-6);
 	}
 
-	/*
-	 * The text (about.md): a statement in its own row, then short parts, each under a ### prompt.
-	 * One rhythm: 2.5rem after the statement, 2rem between parts, 0.5rem from a prompt to its paragraph
-	 */
-	.prose {
-		max-width: 29rem;
-		font-family: "Inter", sans-serif;
-		font-size: 1rem;
-		line-height: 1.9;
-		color: var(--muted);
-	}
-
-	/* The statement: the label font, its *emphasis* in amber */
 	.statement {
-		max-width: 30rem; /* 30: room for the brackets, so the statement stays on two lines */
-		margin-bottom: calc(2.5rem - var(--space-6)); /* 2.5rem to the text (the row gap is part of it) */
+		max-width: 30rem; /* room for the brackets, so the statement stays on two lines */
+		margin-bottom: calc(2.5rem - var(--space-6)); /* 2.5rem to the text, counting the row gap */
 		font-family: var(--font-label);
 		font-size: 1.35rem;
 		line-height: 1.45;
@@ -336,8 +66,16 @@ const proseHtml = (await compiledContent()).replace(
 		color: var(--accent);
 	}
 
-	/* The prompts: small bold labels, lighter than the body text so they read as headings, but below
-	   the white key phrases */
+	.prose {
+		max-width: 29rem;
+		font-family: "Inter", sans-serif;
+		font-size: 1rem;
+		line-height: 1.9;
+		color: var(--muted);
+	}
+
+	/* Prompts: small bold labels, lighter than the body so they read as headings, but below the
+	   white key phrases */
 	.prose :global(h3) {
 		margin: 2rem 0 0.5rem;
 		font-family: var(--font-label);
@@ -358,145 +96,17 @@ const proseHtml = (await compiledContent()).replace(
 		color: var(--text);
 	}
 
-
-	/* Text on the left, the clip on the right (below the text on phones, full width like the
-	   project cards) */
-	@media (min-width: 48rem) {
-		/* Rows: the statement spans four equal rows, then the text. The card starts on the fourth, three
-		   quarters down the statement, plus half the gap to the first prompt: halfway between the
-		   statement's midpoint and the first prompt (no measuring: a spanning item's height is shared
-		   equally by the 1fr rows) */
-		.layout.has-clip {
-			grid-template-columns: minmax(0, 30rem) minmax(0, 22rem);
-			grid-template-rows: 1fr 1fr 1fr 1fr auto;
-			justify-content: space-between;
-			row-gap: 0;
-		}
-
-		.layout.has-clip .statement {
-			grid-column: 1;
-			grid-row: 1 / 5;
-			margin-bottom: 0;
-		}
-
-		.layout.has-clip .prose {
-			grid-column: 1;
-			grid-row: 5;
-			margin-top: 2.5rem;
-		}
-
-		.layout.has-clip :global(.clip-card) {
-			grid-column: 2;
-			grid-row: 4 / 6;
-		}
-
-		/*
-		 * The text sets the row height and the card fills it: size containment keeps the card from
-		 * adding height of its own, and the video crops to whatever frame is left. The card lines up
-		 * with the text's letters at the top and the bottom.
-		 */
-		:global(.clip-card) {
-			max-width: 22rem;
-			contain: size;
-			/* The tab's top: halfway between the statement's midpoint and the first prompt's letters; the
-			   card's bottom meets the last line's letters (its half-leading taken off). Other spots: the
-			   statement's midpoint = row 3 / 6, no margin-top; the first prompt = row 5, margin-top
-			   calc(2.5rem + (1.6 - 1) * 0.72rem / 2) */
-			margin-block: calc((2.5rem + (1.6 - 1) * 0.72rem / 2) / 2 + 6px) calc((1.9 - 1) * 1rem / 2);
-		}
-
-		:global(.clip-card) :global(.viewport) {
-			flex: 1 1 0;
-			min-height: 0;
-		}
-
-		:global(.clip-card) :global(.text) {
-			flex-grow: 0;
-		}
-
-		:global(.clip-card) :global(.bezel),
-		.glass {
-			height: 100%;
-		}
-
-		:global(.clip-card) video {
-			height: 100%;
-			aspect-ratio: auto;
-			object-position: top; /* crop from the bottom up so the top of the climb stays in frame */
-		}
-	}
-
-	/* The rocket and flag stand on the card body's top edge, left of the tab */
-	.landing {
-		position: absolute;
-		left: 10%;
-		bottom: calc(100% - var(--tab-h));
-		z-index: 4;
-		display: flex;
-		align-items: flex-end;
-		gap: 24px;
-		pointer-events: none;
-	}
-
-	/* A soft shadow under the rocket's feet */
-	.landing::before {
-		content: "";
-		position: absolute;
-		left: 13.5px;
-		bottom: -3px;
-		width: 47px;
-		height: 6px;
-		translate: -50% 0;
-		background: radial-gradient(closest-side, rgb(0 0 0 / 0.55), transparent);
-	}
-
-	.rocket {
-		display: block;
-		width: 27px;
-		overflow: visible;
-	}
-
-	.rocket .hull {
-		fill: var(--text);
-	}
-
-	/* The engine (the logo's amber flame): off at rest, lit and flickering while the rocket flies */
-	.rocket .flame {
-		fill: var(--accent);
-		opacity: 0;
-		transform-origin: 50px 116px;
-	}
-
-	.flying .rocket .flame {
-		animation: flame-flicker 0.12s steps(2) infinite;
-	}
-
-	@keyframes flame-flicker {
-		50% {
-			transform: scaleY(0.8);
-		}
-	}
-
-	/* The shadow fades while the rocket is off the ground */
-	.landing::before {
-		transition: opacity 0.4s;
-	}
-
-	.flying::before {
-		opacity: 0.35;
-	}
-
-	.rocket {
-		transform-box: fill-box;
-		transform-origin: 50% 60%;
-	}
-
-	/* "the physical world" (a button that launches the rocket) and the text's links: amber, framed in amber
-	   console brackets, with a tooltip hanging under them on hover (the card tab's tooltip, in miniature) */
+	/* The launch phrase and the links: amber, framed in amber console brackets instead of an
+	   underline, with a tooltip underneath */
 	.statement :global(.launch) {
 		all: unset;
 		position: relative;
 		cursor: pointer;
+	}
+
+	.statement :global(.launch:focus-visible) {
+		outline: 2px solid var(--accent); /* `all: unset` drops the global focus ring */
+		outline-offset: 3px;
 	}
 
 	.statement :global(.nowrap),
@@ -526,248 +136,38 @@ const proseHtml = (await compiledContent()).replace(
 		color: var(--accent);
 	}
 
-	.statement :global(.tip),
-	.prose :global(.tip) {
-		position: absolute;
-		top: calc(100% + 0.6rem);
-		left: 50%;
-		translate: -50% 0;
-		z-index: 5;
-		padding: 0.4rem calc(0.7rem - 0.1em) 0.5rem 0.7rem; /* less on the right: the tracking trails the last letter */
-		line-height: 1.6;
-		white-space: nowrap;
-		background: var(--bg);
-		border: 1px solid #3f4960;
-		color: var(--text);
-		letter-spacing: 0.1em;
-		user-select: none;
-		opacity: 0;
-		visibility: hidden;
-		pointer-events: none;
-		transition:
-			opacity 0.15s,
-			visibility 0.15s;
-	}
-
-	/* Pointer: a small outlined notch continuing the border */
-	.statement :global(.tip)::before,
-	.prose :global(.tip)::before {
-		content: "";
-		position: absolute;
-		top: -4px;
-		left: calc(50% - 3.5px);
-		width: 7px;
-		height: 7px;
-		background: var(--bg);
-		border-top: 1px solid #3f4960;
-		border-left: 1px solid #3f4960;
-		rotate: 45deg;
-	}
-
-	.statement :global(.launch:is(:hover, :focus-visible) .tip),
-	.prose :global(a:is(:hover, :focus-visible) .tip) {
-		opacity: 1;
-		visibility: visible;
-	}
-
-	.statement :global(.launch:focus-visible) {
-		outline: 2px solid var(--accent);
-		outline-offset: 3px;
-	}
-
-	.flag {
-		display: block;
-		height: 42px;
-		overflow: visible;
-	}
-
-	.flag line {
-		stroke: var(--muted);
-		stroke-width: 2.4;
-		stroke-linecap: round;
-	}
-
-	.flag path {
-		fill: var(--status);
-	}
-
-	.flag circle {
-		fill: var(--muted);
-	}
-
-	/* The whole card plays and pauses the clip */
-	:global(.clip-card) :global(.card) {
-		cursor: pointer;
-	}
-
-	/* Glass edge, with glare across the top and a darker rim (over the video) */
-	.glass {
-		position: relative;
-		padding: var(--border-width);
-		background: var(--border);
-	}
-
-	.glass::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		background:
-			linear-gradient(135deg, rgb(255 255 255 / 0.1), transparent 30%),
-			repeating-linear-gradient(transparent 0 2px, rgb(0 0 0 / 0.16) 2px 3px), /* faint scanlines */
-			rgb(40 70 130 / 0.14); /* cool cast over the footage */
-		box-shadow: inset 0 0 2.5rem rgb(0 0 0 / 0.55);
-		pointer-events: none; /* keeps the no-JS controls clickable */
-	}
-
-	video {
-		display: block;
-		width: 100%;
-		aspect-ratio: 9 / 16; /* reserves space before the poster loads */
-		object-fit: cover;
-		background: var(--bg);
-	}
-
 	/*
-	 * Space-cam static: a tile of fine noise over the footage, jumping between offsets a few times a
-	 * second so it shimmers like a weak signal. It only moves itself (a transform), so it's cheap
-	 * even over playing video. Still with reduced motion.
+	 * Desktop: text on the left, the card on the right. The statement spans four equal rows and the
+	 * card starts on the fourth, so its top sits three quarters down the statement (no measuring: a
+	 * spanning item's height is shared equally by 1fr rows). Its margins then nudge the tab's top to
+	 * halfway between the statement's midpoint and the first prompt, and its bottom level with the
+	 * last line's letters (half the line's leading up from the text's box). The text sets the height.
 	 */
-	.static {
-		position: absolute;
-		inset: 0;
-		overflow: hidden;
-		pointer-events: none;
-	}
-
-	.static::before {
-		content: "";
-		position: absolute;
-		inset: -50%;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.4 0 0 0 -0.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-		background-size: 180px;
-		opacity: 0.16;
-		animation: about-static 0.5s steps(1) infinite;
-	}
-
-	@keyframes about-static {
-		0% {
-			translate: 0 0;
+	@media (min-width: 48rem) {
+		.layout.has-clip {
+			grid-template-columns: minmax(0, 30rem) minmax(0, 22rem);
+			grid-template-rows: 1fr 1fr 1fr 1fr auto;
+			justify-content: space-between;
+			row-gap: 0;
 		}
-		25% {
-			translate: -37px 23px;
+
+		.has-clip .statement {
+			grid-column: 1;
+			grid-row: 1 / 5;
+			margin-bottom: 0;
 		}
-		50% {
-			translate: 51px -44px;
+
+		.has-clip .prose {
+			grid-column: 1;
+			grid-row: 5;
+			margin-top: 2.5rem;
 		}
-		75% {
-			translate: -18px 61px;
+
+		.has-clip :global(.clip-card) {
+			grid-column: 2;
+			grid-row: 4 / 6;
+			max-width: 22rem;
+			margin-block: calc((2.5rem + (1.6 - 1) * 0.72rem / 2) / 2 + 6px) calc((1.9 - 1) * 1rem / 2);
 		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.static::before {
-			animation: none;
-		}
-	}
-
-	.hud {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-
-	/* "Play feed" chip, centered on the glass, styled like the camera label */
-	.play {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		z-index: 1; /* above the glass glare */
-		translate: -50% -50%;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6em;
-		padding: 0.4rem 0.8rem;
-		background: rgb(11 14 20 / 0.7);
-		border: var(--border-width) solid var(--border);
-		color: var(--text);
-		cursor: pointer;
-		white-space: nowrap;
-		transition: border-color 0.15s;
-	}
-
-	.play svg {
-		width: 0.6em;
-		height: 0.7em;
-		fill: var(--accent);
-	}
-
-	/* Loading: the play icon becomes a pulsing amber light */
-	.play .light {
-		display: none;
-		width: 0.45em;
-		height: 0.45em;
-		border-radius: 50%;
-		background: var(--accent);
-		box-shadow: 0 0 0.4rem var(--accent);
-		animation: acquiring 1s ease-in-out infinite;
-	}
-
-	.play[data-state="loading"] svg {
-		display: none;
-	}
-
-	.play[data-state="loading"] .light {
-		display: block;
-	}
-
-	@keyframes acquiring {
-		50% {
-			opacity: 0.25;
-		}
-	}
-
-	/* On card hover (not the tab), the chip's border lightens with the frame */
-	:global(.clip-card):has(:global(.card:hover)) .play {
-		border-color: #4e5870; /* a quiet step up from the resting border */
-	}
-
-	/* Dark backing keeps the label readable over whatever the footage shows */
-	.cam {
-		position: absolute;
-		bottom: 0.75rem;
-		left: 50%;
-		translate: -50%;
-		padding: 0.1rem 0.45rem;
-		background: rgb(11 14 20 / 0.6);
-		color: var(--text);
-		white-space: nowrap;
-	}
-
-	/* Tick scale on the right edge, clear of the cut corners; a major tick every fifth */
-	.altimeter {
-		position: absolute;
-		top: 3rem;
-		bottom: 3rem;
-		right: 0.6rem;
-		width: 0.6rem;
-		background:
-			repeating-linear-gradient(to top, rgb(230 225 214 / 0.8) 0 1px, transparent 1px 20%) right / 100% 100%
-				no-repeat,
-			repeating-linear-gradient(to top, rgb(230 225 214 / 0.5) 0 1px, transparent 1px 4%) right / 50% 100%
-				no-repeat;
-		border-top: 1px solid rgb(230 225 214 / 0.8); /* the repeat stops short of the top tick */
-		filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.8));
-	}
-
-	/* Amber pointer riding up the scale */
-	.marker {
-		position: absolute;
-		right: calc(100% + 0.2rem);
-		bottom: calc(var(--alt, 0) * 100%);
-		width: 0;
-		height: 0;
-		border-block: 0.3rem solid transparent;
-		border-left: 0.45rem solid var(--accent);
-		translate: 0 50%;
 	}
 </style>

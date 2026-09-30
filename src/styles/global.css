@@ -1,4 +1,8 @@
-/* Design tokens. See PLAN.md > Color palette / Typography. */
+/*
+ * Global styles: design tokens, base element styles, and the few classes shared across
+ * components. Component-specific styles live in each component's <style> block.
+ */
+
 :root {
 	/* Colors */
 	--bg: #0b0e14;
@@ -8,7 +12,9 @@
 	--muted: #8a93a6;
 	--accent: #f2a541;
 	--status: #7bc47f;
-	--bezel: #0f131c; /* viewport bezels (About clip, project screens): between --bg and --surface, so it reads on both */
+	--bezel: #0f131c; /* screen bezels on the cards: between --bg and --surface, so it reads on both */
+	--frame-line: #2e3649; /* card frames: a touch lighter than --border, so a 2px frame reads */
+	--frame-line-lit: #3f4960; /* card frames on hover, tooltip borders */
 
 	/* Font roles */
 	--font-label: "Space Mono", ui-monospace, monospace; /* nav, labels, buttons, titles, counters */
@@ -30,7 +36,6 @@
 	--space-3: 1.5rem;
 	--space-4: 2rem;
 	--space-6: 3rem;
-	--space-8: 4rem;
 	--space-12: 6rem;
 
 	/* Layout */
@@ -40,6 +45,14 @@
 	   that follows another, so the gaps above and below the mission cards match */
 	--section-seam: clamp(0.75rem, 2.25vw, 1.75rem);
 	--border-width: 1px;
+}
+
+/* Registered so a card's frame color can fade on hover (plain custom properties switch instantly).
+   Each card sets --line from the frame tokens above; see ConsoleCard.astro. */
+@property --line {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #2e3649;
 }
 
 /* Base */
@@ -123,9 +136,8 @@ a:hover {
 	padding-top: var(--section-seam);
 }
 
-/* Section heading: a small amber slant (the card tabs' angle) at the content edge, then the word
-   in Mission Control DCU as an image (see SectionHeading.astro). The text styles are a fallback
-   if the image doesn't load. */
+/* Section heading (SectionHeading.astro): a small amber slant (the card tabs' angle), then the
+   word as an image, then signal waves. The text styles are a fallback if the image doesn't load. */
 .section-title {
 	display: flex;
 	align-items: center;
@@ -173,14 +185,14 @@ a:hover {
 	}
 }
 
-/* Utilities */
+/* Shared pieces */
 
 /* Keeps `hidden` working on elements that set their own display */
 [hidden] {
 	display: none !important;
 }
 
-/* Uppercase, widely spaced console label: "MISSION 03 · IN ORBIT" */
+/* Uppercase, widely spaced console label: "IN ORBIT", "UPTIME" */
 .label {
 	font-family: var(--font-label);
 	font-size: var(--text-xs);
@@ -189,43 +201,64 @@ a:hover {
 	color: var(--muted);
 }
 
-/* Tech stack tags: "PYTHON · C · NGINX". Each separator sits before its tag, and the list
-   is shifted one separator-width left with that strip clipped off, so a separator that
-   would begin a wrapped line is hidden instead of dangling. */
-.stack {
-	--sep: 2.75em;
-	display: flex;
-	flex-wrap: wrap;
-	margin: 0 0 0 calc(-1 * var(--sep));
-	padding: 0;
-	list-style: none;
-	color: var(--accent);
-	clip-path: inset(0 0 0 var(--sep));
+/* Status light: a small glowing dot in the text color around it (card tabs, telemetry readouts).
+   A whole-pixel size keeps it round. */
+.light {
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	box-shadow: 0 0 3px currentColor; /* a tight glow, not a haze */
 }
 
-.stack li::before {
-	content: "·";
-	display: inline-block;
-	width: var(--sep);
-	text-align: center;
+/*
+ * Tooltip: a small label hanging centered under its parent, with a notch pointing up at it.
+ * The parent must be positioned. It shows while the parent is hovered or keyboard-focused;
+ * a parent can add its own trigger (the card tabs also show it on tap).
+ */
+.tooltip {
+	position: absolute;
+	top: calc(100% + 0.6rem);
+	left: 50%;
+	translate: -50% 0;
+	z-index: 5;
+	padding: 0.4rem calc(0.7rem - 0.1em) 0.5rem 0.7rem; /* less on the right: the tracking trails the last letter */
+	line-height: 1.6;
+	background: var(--bg);
+	border: 1px solid var(--frame-line-lit);
+	color: var(--text);
+	letter-spacing: 0.1em;
+	user-select: none;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity 0.15s,
+		visibility 0.15s;
+}
+
+.tooltip::before {
+	content: "";
+	position: absolute;
+	top: -4px;
+	left: calc(50% - 3.5px);
+	width: 7px;
+	height: 7px;
+	background: var(--bg);
+	border-top: inherit;
+	border-left: inherit;
+	rotate: 45deg;
+}
+
+:is(:hover, :focus-visible) > .tooltip {
+	opacity: 1;
+	visibility: visible;
 }
 
 /* Fixed-width digits so ticking counters don't jitter */
 .tabular {
 	font-variant-numeric: tabular-nums;
-}
-
-/* Hidden visually, still read by screen readers */
-.sr-only {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	padding: 0;
-	margin: -1px;
-	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

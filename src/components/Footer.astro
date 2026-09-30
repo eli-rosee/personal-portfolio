@@ -1,6 +1,7 @@
 ---
-// Telemetry readouts, then "Powered by Astro". Each readout is its own script and stays
-// hidden until it has real data, so a failure (or no JavaScript) just leaves it out.
+// Telemetry: three live readouts (ISS position, Voyager 1's distance, server uptime), then
+// "Powered by Astro". Each readout stays hidden until it has real data, so a failure (or no
+// JavaScript) just leaves it out; with none, the whole section hides.
 import SectionHeading from "./SectionHeading.astro";
 ---
 
@@ -32,256 +33,207 @@ import SectionHeading from "./SectionHeading.astro";
 </footer>
 
 <script>
-	// Uptime: the container writes /status.json when it starts (see PLAN.md, "Note: status.json")
-	type Status = { started: string };
+	import { renderLive, replayAnimation, setText } from "../scripts/live";
 
-	const formatUptime = (ms: number) => {
-		const hours = Math.floor(ms / 3_600_000);
-		if (hours >= 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
-		if (hours >= 1) return `${hours}h`;
-		return `${Math.max(1, Math.floor(ms / 60_000))}m`;
-	};
+	const footer = document.querySelector("footer")!;
 
-	const showUptime = async () => {
+	/*
+	 * Uptime: how long the server has been up, from /status.json ({ "started": "<ISO date>" }),
+	 * which the container writes when it starts. Missing or malformed: the readout stays hidden.
+	 */
+	const startUptime = async () => {
+		const cell = document.querySelector<HTMLElement>("[data-uptime]");
+		const value = document.querySelector("[data-uptime-value]");
+		if (!cell || !value) return;
+
+		const format = (ms: number) => {
+			const hours = Math.floor(ms / 3_600_000);
+			if (hours >= 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+			if (hours >= 1) return `${hours}h`;
+			return `${Math.max(1, Math.floor(ms / 60_000))}m`;
+		};
+
+		// "self-hosted" in the About text links here: once the readout is in view, it flashes amber.
+		// Without a readout, the link goes to the telemetry instead.
+		document.querySelectorAll('a[href="#uptime"]').forEach((link) =>
+			link.addEventListener("click", (event) => {
+				if (cell.hidden) {
+					event.preventDefault();
+					footer.scrollIntoView();
+					return;
+				}
+				const observer = new IntersectionObserver(
+					([entry]) => {
+						if (!entry.isIntersecting) return;
+						observer.disconnect();
+						replayAnimation(cell, "pinged");
+					},
+					{ threshold: 1 },
+				);
+				observer.observe(cell);
+			}),
+		);
+
 		try {
 			const response = await fetch("/status.json", { cache: "no-store" });
-			const { started } = (await response.json()) as Status;
+			if (!response.ok) return;
+			const { started } = (await response.json()) as { started: string };
 			const startedAt = Date.parse(started);
-			if (!response.ok || !(Date.now() - startedAt >= 0)) throw new Error("bad status.json");
+			if (!(Date.now() >= startedAt)) return; // unparseable, or in the future
 
-			// Recount every minute (the finest unit shown), and right away when the tab comes
-			// back, since background tabs and sleeping laptops pause timers
-			const value = document.querySelector("[data-uptime-value]")!;
-			const render = () => (value.textContent = formatUptime(Date.now() - startedAt));
+			// Recount every minute (the finest unit shown), and right away when the tab comes back,
+			// since background tabs and sleeping laptops pause timers
+			const render = () => setText(value, format(Date.now() - startedAt));
 			render();
 			setInterval(render, 60_000);
 			document.addEventListener("visibilitychange", () => document.hidden || render());
-			document.querySelector<HTMLElement>("[data-uptime]")!.hidden = false;
+			cell.hidden = false;
 		} catch {
-			// Missing or malformed: the uptime stays hidden
+			// Unreachable or not JSON: stays hidden
 		}
 	};
 
-	showUptime();
+	/*
+	 * Voyager 1: distance from the Sun, extrapolated from a JPL Horizons reference point. Its speed
+	 * away from the Sun is nearly constant, so a straight line stays accurate to well under 0.001%
+	 * for years. To refresh: Horizons, COMMAND='-31', QUANTITIES='19'.
+	 */
+	const startVoyager = () => {
+		const REFERENCE_TIME = Date.UTC(2026, 8, 24); // 2026-09-24 00:00 UTC
+		const REFERENCE_KM = 25_706_772_400; // distance from the Sun at REFERENCE_TIME
+		const KM_PER_SECOND = 16.8817;
 
-	// "self-hosted" in the About text links here: once the readout is in view, it flashes amber
-	document.querySelectorAll<HTMLAnchorElement>('a[href="#uptime"]').forEach((link) =>
-		link.addEventListener("click", (event) => {
-			const cell = document.querySelector<HTMLElement>("[data-uptime]")!;
-			if (cell.hidden) {
-				// No uptime (status.json missing): go to the telemetry instead
-				event.preventDefault();
-				document.querySelector("footer")!.scrollIntoView();
-				return;
-			}
-			const observer = new IntersectionObserver(
-				([entry]) => {
-					if (!entry.isIntersecting) return;
-					observer.disconnect();
-					cell.classList.remove("pinged");
-					void cell.offsetWidth; // restart the animation
-					cell.classList.add("pinged");
-				},
-				{ threshold: 1 },
-			);
-			observer.observe(cell);
-		}),
-	);
-</script>
+		const cell = document.querySelector<HTMLElement>("[data-voyager]");
+		const total = document.querySelector("[data-voyager-total]");
+		if (!cell || !total) return;
 
-<script>
-	// Voyager 1: distance from the Sun, extrapolated from a JPL Horizons reference point.
-	// Its speed away from the Sun is nearly constant, so a straight line is accurate to
-	// well under 0.001% for years. Refresh the reference now and then anyway.
-	const REFERENCE_TIME = Date.UTC(2026, 8, 24); // 2026-09-24 00:00 UTC
-	const REFERENCE_KM = 25_706_772_400; // distance from the Sun at REFERENCE_TIME
-	const KM_PER_SECOND = 16.8817;
-
-	const cells = document.querySelectorAll<HTMLElement>("[data-voyager]");
-	const total = document.querySelector<HTMLElement>("[data-voyager-total]");
-
-	if (cells.length && total) {
 		const format = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
-		// Only touches the page when the digits actually change (each write re-lays out the text)
-		const setText = (el: HTMLElement, text: string) => {
-			if (el.textContent !== text) el.textContent = text;
-		};
-		const render = () => {
-			const secondsSinceReference = (Date.now() - REFERENCE_TIME) / 1000;
-			setText(total, format.format(REFERENCE_KM + secondsSinceReference * KM_PER_SECOND));
-		};
-		render();
-		cells.forEach((cell) => (cell.hidden = false));
+		// The last digits roll like an odometer: Voyager covers ~17 km a second
+		renderLive(() => {
+			const seconds = (Date.now() - REFERENCE_TIME) / 1000;
+			setText(total, format.format(REFERENCE_KM + seconds * KM_PER_SECOND));
+		}, footer);
+		cell.hidden = false;
+	};
 
-		// Ticks up to 20 times a second (the last digits roll like an odometer; Voyager covers ~17 km
-		// a second) while the footer is on screen. With reduced motion, or off screen, once a second.
-		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-		let onScreen = false;
-		let frame = 0;
-		let lastRender = 0;
-		const loop = (now = performance.now()) => {
-			if (now - lastRender >= 50) {
-				lastRender = now;
-				render();
+	/*
+	 * ISS position, from wheretheiss.at. Each poll asks where the ISS is now and where it will be
+	 * 10 seconds from now; between polls the display glides from one to the other, so the
+	 * coordinates tick continuously. The place below them is the country it's over (from the
+	 * API) or, over water, a rough ocean guess.
+	 */
+	const startIss = () => {
+		const API = "https://api.wheretheiss.at/v1";
+		const POLL_MS = 5000; // the API allows 350 requests per 5 minutes; this uses 120
+		const LOOKAHEAD_S = 10;
+
+		type Position = { latitude: number; longitude: number; timestamp: number };
+
+		const cell = document.querySelector<HTMLElement>("[data-iss]");
+		const coords = document.querySelector("[data-iss-coords]");
+		const place = document.querySelector("[data-iss-place]");
+		if (!cell || !coords || !place) return;
+
+		const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+		// Countries that read as "over the ___"
+		const takesThe = new Set(["US", "GB", "NL", "PH", "AE", "CZ", "DO", "CD", "CG", "CF", "BS", "GM"]);
+
+		const getJson = async <T,>(url: string): Promise<T> => {
+			const response = await fetch(url);
+			if (!response.ok) throw new Error(`${response.status} ${url}`);
+			return response.json();
+		};
+
+		// Rough ocean boundaries, good enough to say which ocean the ISS is over. (Its orbit stays
+		// between 51.6°N and 51.6°S, so no Arctic or Southern Ocean.)
+		const oceanAt = (lat: number, lon: number) => {
+			const half = lat >= 0 ? "North" : "South";
+			if (lat > 30 && lat < 46 && lon > -6 && lon < 36) return "the Mediterranean";
+			if (lon > 20 && lon < 147 && lat < 25 && !(lon > 100 && lat > -10)) return "the Indian Ocean";
+			if (lon > -70 && lon <= 20) return `the ${half} Atlantic`;
+			if (lat > 8 && lon > -100 && lon <= -70) return "the North Atlantic"; // Caribbean, Gulf
+			return `the ${half} Pacific`;
+		};
+
+		const placeAt = async ({ latitude, longitude }: Position) => {
+			try {
+				const { country_code } = await getJson<{ country_code: string }>(
+					`${API}/coordinates/${latitude},${longitude}`,
+				);
+				const name = /^[A-Z]{2}$/.test(country_code) && countryNames.of(country_code);
+				if (name) return takesThe.has(country_code) ? `the ${name}` : name;
+			} catch {
+				// Lookup failed: fall back to the ocean guess
 			}
-			frame = requestAnimationFrame(loop);
+			return oceanAt(latitude, longitude);
 		};
-		const update = () => {
-			cancelAnimationFrame(frame);
-			if (onScreen && !reducedMotion.matches) loop();
+
+		// Where the ISS is at `ms`, on the line between the two known positions. Longitude wraps
+		// at ±180°, so the step between them is taken the short way round.
+		let from: Position | undefined;
+		let to: Position | undefined;
+		const positionAt = (ms: number) => {
+			if (!from || !to) return;
+			const t = (ms / 1000 - from.timestamp) / (to.timestamp - from.timestamp);
+			const dLon = ((to.longitude - from.longitude + 540) % 360) - 180;
+			const lon = ((from.longitude + dLon * t + 540) % 360) - 180;
+			return { lat: from.latitude + (to.latitude - from.latitude) * t, lon };
 		};
-		setInterval(render, 1000);
-		reducedMotion.addEventListener("change", update);
-		new IntersectionObserver(([entry]) => {
-			onScreen = entry.isIntersecting;
-			update();
-		}).observe(cells[0].closest("footer")!);
-	}
-</script>
 
-<script>
-	// ISS position. Each poll asks wheretheiss.at for where the ISS is now and where it
-	// will be 10 seconds from now; in between polls the display glides from one to the
-	// other, so the coordinates tick continuously. The place below them (country, or a
-	// rough ocean guess) comes from the coordinates endpoint.
-	const API = "https://api.wheretheiss.at/v1";
-	const POLL_MS = 5000; // the API allows 350 requests per 5 minutes; this uses 120
-	const LOOKAHEAD_S = 10;
-
-	type Position = { latitude: number; longitude: number; timestamp: number };
-	type Coordinates = { country_code: string };
-
-	const cell = document.querySelector<HTMLElement>("[data-iss]");
-	const coords = document.querySelector<HTMLElement>("[data-iss-coords]");
-	const place = document.querySelector<HTMLElement>("[data-iss-place]");
-	const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
-
-	const getJson = async <T,>(url: string): Promise<T> => {
-		const response = await fetch(url);
-		if (!response.ok) throw new Error(`${response.status} ${url}`);
-		return response.json();
-	};
-
-	// Rough ocean boundaries. Good enough to say which ocean the ISS is over.
-	// (Its orbit stays between 51.6°N and 51.6°S, so no Arctic or Southern Ocean.)
-	const oceanAt = (lat: number, lon: number) => {
-		const half = lat >= 0 ? "North" : "South";
-		if (lat > 30 && lat < 46 && lon > -6 && lon < 36) return "the Mediterranean";
-		if (lon > 20 && lon < 147 && lat < 25 && !(lon > 100 && lat > -10)) return "the Indian Ocean";
-		if (lon > -70 && lon <= 20) return `the ${half} Atlantic`;
-		if (lat > 8 && lon > -100 && lon <= -70) return "the North Atlantic"; // Caribbean, Gulf
-		return `the ${half} Pacific`;
-	};
-
-	// Countries that read as "over the ___"
-	const takesThe = new Set(["US", "GB", "NL", "PH", "AE", "CZ", "DO", "CD", "CG", "CF", "BS", "GM"]);
-
-	const placeAt = async ({ latitude, longitude }: Position) => {
-		try {
-			const { country_code } = await getJson<Coordinates>(
-				`${API}/coordinates/${latitude},${longitude}`,
+		const render = () => {
+			const position = positionAt(Date.now());
+			if (!position) return;
+			const { lat, lon } = position;
+			setText(
+				coords,
+				`${Math.abs(lat).toFixed(2)}°${lat >= 0 ? "N" : "S"} ${Math.abs(lon).toFixed(2)}°${lon >= 0 ? "E" : "W"}`,
 			);
-			const name = /^[A-Z]{2}$/.test(country_code) && countryNames.of(country_code);
-			if (name) return takesThe.has(country_code) ? `the ${name}` : name;
-		} catch {
-			// Lookup failed: fall back to the ocean guess
-		}
-		return oceanAt(latitude, longitude);
-	};
+		};
 
-	const formatCoords = (lat: number, lon: number) =>
-		`${Math.abs(lat).toFixed(2)}°${lat >= 0 ? "N" : "S"} ` +
-		`${Math.abs(lon).toFixed(2)}°${lon >= 0 ? "E" : "W"}`;
+		// A new place name flashes briefly so the change gets noticed
+		const setPlace = (name: string) => {
+			const text = `over ${name}`;
+			if (place.textContent === text) return;
+			const isFirst = place.textContent === "";
+			place.textContent = text;
+			if (!isFirst) replayAnimation(place, "changed");
+		};
 
-	// Where the ISS is at `ms`, on the line between two known positions.
-	// Longitude wraps at ±180°, so the step between them is taken the short way round.
-	let from: Position | undefined;
-	let to: Position | undefined;
+		let failures = 0;
+		let timer: number | undefined;
+		let polling = false;
 
-	const positionAt = (ms: number) => {
-		if (!from || !to) return;
-		const t = (ms / 1000 - from.timestamp) / (to.timestamp - from.timestamp);
-		const dLon = ((to.longitude - from.longitude + 540) % 360) - 180;
-		const lon = ((from.longitude + dLon * t + 540) % 360) - 180;
-		return { lat: from.latitude + (to.latitude - from.latitude) * t, lon };
-	};
+		const poll = async () => {
+			polling = true;
+			try {
+				const now = Math.floor(Date.now() / 1000);
+				[from, to] = await getJson<Position[]>(
+					`${API}/satellites/25544/positions?timestamps=${now},${now + LOOKAHEAD_S}`,
+				);
+				render();
+				setPlace(await placeAt(from));
+				cell.hidden = false;
+				failures = 0;
+			} catch {
+				// One miss keeps gliding on the last reading; repeated misses hide the readout
+				if (++failures >= 3) cell.hidden = true;
+			}
+			polling = false;
+			if (!document.hidden) timer = window.setTimeout(poll, POLL_MS);
+		};
 
-	// Only touches the page when the coordinates actually change (each write re-lays out the text)
-	const render = () => {
-		const position = positionAt(Date.now());
-		if (!position) return;
-		const text = formatCoords(position.lat, position.lon);
-		if (coords!.textContent !== text) coords!.textContent = text;
-	};
-
-	// A new place name flashes briefly so the change gets noticed
-	const setPlace = (name: string) => {
-		const text = `over ${name}`;
-		if (place!.textContent === text) return;
-		const isFirst = place!.textContent === "";
-		place!.textContent = text;
-		if (!isFirst) {
-			place!.classList.remove("changed");
-			void place!.offsetWidth; // restart the animation
-			place!.classList.add("changed");
-		}
-	};
-
-	let failures = 0;
-	let timer: number | undefined;
-	let polling = false;
-
-	const poll = async () => {
-		polling = true;
-		try {
-			const now = Math.floor(Date.now() / 1000);
-			[from, to] = await getJson<Position[]>(
-				`${API}/satellites/25544/positions?timestamps=${now},${now + LOOKAHEAD_S}`,
-			);
-			render();
-			setPlace(await placeAt(from));
-			cell!.hidden = false;
-			failures = 0;
-		} catch {
-			// One miss keeps gliding on the last reading; repeated misses hide the cell
-			if (++failures >= 3) cell!.hidden = true;
-		}
-		polling = false;
-		if (!document.hidden) timer = window.setTimeout(poll, POLL_MS);
-	};
-
-	if (cell && coords && place) {
 		poll();
-		// Stop polling in background tabs, resume when the tab is visible again
+		// No polling in background tabs; resume when the tab is visible again
 		document.addEventListener("visibilitychange", () => {
 			clearTimeout(timer);
 			if (!document.hidden && !polling) poll();
 		});
+		renderLive(render, footer);
+	};
 
-		// Same pacing as the Voyager counter: up to 20 times a second while visible (the hundredths
-		// change a few times a second), else once a second
-		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-		let onScreen = false;
-		let frame = 0;
-		let lastRender = 0;
-		const loop = (now = performance.now()) => {
-			if (now - lastRender >= 50) {
-				lastRender = now;
-				render();
-			}
-			frame = requestAnimationFrame(loop);
-		};
-		const update = () => {
-			cancelAnimationFrame(frame);
-			if (onScreen && !reducedMotion.matches) loop();
-		};
-		setInterval(render, 1000);
-		reducedMotion.addEventListener("change", update);
-		new IntersectionObserver(([entry]) => {
-			onScreen = entry.isIntersecting;
-			update();
-		}).observe(cell.closest("footer")!);
-	}
+	startUptime();
+	startVoyager();
+	startIss();
 </script>
 
 <style>
@@ -334,16 +286,11 @@ import SectionHeading from "./SectionHeading.astro";
 		white-space: nowrap;
 	}
 
-	/* Same as the project cards' status light: each readout is a live feed */
+	/* The cards' status light: each readout is a live feed */
 	dt .light {
-		display: inline-block;
-		width: 6px;
-		height: 6px;
 		margin-right: 0.8em;
 		vertical-align: 1px;
-		border-radius: 50%;
-		background: var(--status);
-		box-shadow: 0 0 3px var(--status);
+		color: var(--status);
 	}
 
 	dd {
@@ -370,7 +317,7 @@ import SectionHeading from "./SectionHeading.astro";
 
 	/* Reached from the "self-hosted" link in About */
 	.pinged :is(.value, .sub) {
-		animation: flash 2.5s ease-out; /* the "self-hosted" ping; the About card's "climbing" highlight is 2s */
+		animation: flash 2.5s ease-out;
 	}
 
 	@keyframes flash {

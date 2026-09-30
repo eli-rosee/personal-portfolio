@@ -25,6 +25,7 @@
 		canvas?.remove();
 	} else {
 		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const starColor = getComputedStyle(canvas).getPropertyValue("--text");
 		let stars: Star[] = [];
 		let width = 0;
 		let height = 0;
@@ -60,7 +61,7 @@
 
 		const draw = () => {
 			ctx.clearRect(0, 0, width, height);
-			ctx.fillStyle = "#e6e1d6"; // --text
+			ctx.fillStyle = starColor;
 			for (const star of stars) {
 				ctx.globalAlpha = star.alpha;
 				ctx.beginPath();
