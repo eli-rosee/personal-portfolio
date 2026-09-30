@@ -1,19 +1,36 @@
 ---
 import { getEntry } from "astro:content";
-import { Content } from "../data/about.md";
+import { compiledContent, frontmatter } from "../data/about.md";
 import SectionHeading from "./SectionHeading.astro";
 import ConsoleCard from "./ConsoleCard.astro";
 
 // The climbing clip's card (src/content/clip.md); the section still works without it
 const clip = (await getEntry("clip", "clip"))?.data;
+
+// The opening statement (about.md frontmatter); *phrase* sets that phrase in amber
+const escape = (text: string) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+const statement: string | undefined = frontmatter.statement;
+// The amber phrase is a button: it launches the rocket on the clip card
+const statementHtml =
+	statement &&
+	escape(statement).replace(
+		// Any punctuation right after it stays on the same line as the closing bracket
+		/\*([^*]+)\*([.,!?;:]?)/g,
+		'<span class="nowrap"><button type="button" class="launch" data-launch><em>$1</em><span class="tip label" aria-hidden="true">Launch the Rocket</span></button>$2</span>',
+	);
+
+// The text (about.md). A link's title ([text](#id "Tip")) becomes a tooltip under the link
+const proseHtml = (await compiledContent()).replace(
+	/<a href="([^"]*)" title="([^"]*)">([^<]*)<\/a>/g,
+	'<a href="$1">$3<span class="tip label" aria-hidden="true">$2</span></a>',
+);
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">
 	<SectionHeading id="about-heading" text="About" />
 	<div class:list={["layout", { "has-clip": clip }]}>
-		<div class="prose">
-			<Content />
-		</div>
+		{statementHtml && <p class="statement" set:html={statementHtml} />}
+		<div class="prose" set:html={proseHtml} />
 		{
 			clip && (
 				<ConsoleCard
@@ -28,6 +45,20 @@ const clip = (await getEntry("clip", "clip"))?.data;
 					style="--tab-w: 8.5rem; --tab-h: 1.6rem; --slant: 0.6rem; --cut: 10px; --status-inset: 0.55rem; --screen-cut: 2rem; --bezel-pad: 0.625rem"
 				>
 					{/* The screen: glass edge > video + glare, static, HUD, and the play chip */}
+					{/* The logo's rocket, landed on the card with a green flag planted beside it: the summit, like SENT */}
+					<div slot="on-top" class="landing" aria-hidden="true">
+						{/* The logo's rocket, exactly: the same body, fins, window and flame as scripts/render-wordmark.py
+						    (ROCKET, WINDOW, FLAME), standing upright on its fins. The flame burns only in flight. */}
+						<svg class="rocket" viewBox="0 0 100 124">
+							<path class="flame" d="M36 116H64L50 158Z" />
+							<path class="hull" fill-rule="evenodd" d="M50 0 72 34V78L90 112V124L72 110H28L10 124V112L28 78V34Z M41 53a9 9 0 1 0 18 0a9 9 0 1 0-18 0Z" />
+						</svg>
+						<svg class="flag" viewBox="0 0 34 60">
+							<line x1="4" y1="60" x2="4" y2="3" />
+							<path d="M5 5 C 12 2, 18 9, 30 5 L 30 21 C 18 25, 12 18, 5 21 Z" />
+							<circle cx="4" cy="3" r="2.2" />
+						</svg>
+					</div>
 					<div class="glass">
 						{/* Controls without JavaScript; the script swaps them for the "Play feed" chip */}
 						<video
@@ -126,38 +157,138 @@ const clip = (await getEntry("clip", "clip"))?.data;
 		).observe(video);
 	}
 
-	// "climbing" in the text links here: the card comes into view (it's beside the text on desktop,
-	// below it on phones), then flashes its hover look and fades straight back, like the Uptime readout
-	document.querySelectorAll<HTMLAnchorElement>('a[href="#about-clip"]').forEach((link) =>
-		link.addEventListener("click", (event) => {
-			const card = document.querySelector<HTMLElement>("#about-clip");
-			if (!card) return;
-			event.preventDefault();
-			// Already fully in view (below the pinned nav)? Then no scrolling, just the ping
-			const box = card.getBoundingClientRect();
-			const navBottom = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-			if (box.top < navBottom || box.bottom > innerHeight) card.scrollIntoView({ block: "center" });
-			const observer = new IntersectionObserver(
-				([entry]) => {
-					if (!entry.isIntersecting) return;
-					observer.disconnect();
-					card.classList.remove("highlighted");
-					void card.offsetWidth; // restart the animation
-					card.classList.add("highlighted");
-				},
-				{ threshold: 0.5 },
-			);
-			observer.observe(card);
-		}),
-	);
+	// "the physical world" launches the rocket: the engine lights, it lifts off along one smooth curve that
+	// leans it over to the logo's 45° as it climbs away, the flag stands alone for a beat, then it comes
+	// back straight down, slowing to touch down. Reduced motion: the engine just flickers in place.
+	const launchButton = document.querySelector<HTMLButtonElement>("[data-launch]");
+	const landing = document.querySelector<HTMLElement>("#about-clip .landing");
+	const ship = landing?.querySelector<SVGElement>(".rocket");
+	const flame = ship?.querySelector<SVGElement>(".flame");
+	if (launchButton && landing && ship && flame) {
+		const heading = document.querySelector<HTMLElement>("#about-heading");
+		let flying = false;
 
-	// The highlight is over once it has faded, or as soon as the visitor points at the card (normal
-	// hover takes over, and leaving doesn't replay it)
-	const clipPanel = document.querySelector<HTMLElement>("#about-clip");
-	clipPanel?.querySelector(".card")?.addEventListener("pointerenter", () => clipPanel.classList.remove("highlighted"));
-	clipPanel?.addEventListener("animationend", (event) => {
-		if (event.animationName.includes("about-highlight-frame")) clipPanel.classList.remove("highlighted");
-	});
+		// The climb, as a gravity turn: the rocket pitches over gradually from straight up to the logo's 45°
+		// the whole way up (still turning as it fades), while its speed builds like a real launch: it creeps off
+		// the pad, lingers low, and the acceleration eases off at the top (distance 2p³ - p⁴). The path is traced
+		// once at unit height; each launch scales it to the sky under the About heading, so the rocket is gone by
+		// the time it reaches the top of the section
+		const MAX_HEIGHT = 245; // px, when there's sky to spare
+		const pitch = (p: number) => 45 * p ** 1.5; // degrees from vertical
+		const STEPS = 240;
+		const climbPath: [number, number][] = [[0, 0]];
+		for (let i = 1, x = 0, y = 0; i <= STEPS; i++) {
+			const p = (i - 0.5) / STEPS;
+			const speed = 6 * p ** 2 - 4 * p ** 3; // d/dp of 2p³ - p⁴
+			const a = (pitch(p) * Math.PI) / 180;
+			x += (speed * Math.sin(a)) / STEPS;
+			y -= (speed * Math.cos(a)) / STEPS;
+			climbPath.push([x, y]);
+		}
+		const top = -climbPath[STEPS][1];
+		for (const point of climbPath) (point[0] /= top), (point[1] /= top);
+		const along = (p: number, i: number) => {
+			const f = p * STEPS, k = Math.min(STEPS - 1, Math.floor(f));
+			return climbPath[k][i] + (climbPath[k + 1][i] - climbPath[k][i]) * (f - k);
+		};
+		const clamp = (v: number) => Math.min(1, Math.max(0, v));
+		// Smooth at both ends with the top speed at `peak`: the speed ramps up over [0, peak] and back down over [peak, 1]
+		const ease = (t: number, peak: number) =>
+			t < peak
+				? t - (peak / Math.PI) * Math.sin((Math.PI * t) / peak)
+				: t + ((1 - peak) / Math.PI) * Math.sin((Math.PI * (t - peak)) / (1 - peak));
+		const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+
+		// Timeline (ms): ignite, climb, pause (gone), descend, settle. A shorter hop is quicker (time ~ √distance)
+		const IGNITE = 800, PAUSE = 1000, SETTLE = 450;
+		const ENTRY = 0.2; // the descent picks up its speed curve this far in, near full speed
+		const FADE = 0.16; // the landing fades in over this share of the descent; the takeoff fades out just as long
+		let height = MAX_HEIGHT, CLIMB_MS = 4000, DESCEND = 3800, TOTAL = 0;
+		const measure = () => {
+			const shipHeight = ship.getBoundingClientRect().height;
+			const ceiling = heading ? heading.getBoundingClientRect().top : -Infinity;
+			// The sky between the ground and the heading: the rocket's last trace fades out level with its top
+			const room = landing.getBoundingClientRect().bottom - ceiling - 26;
+			height = Math.min(MAX_HEIGHT, Math.max(0.35 * MAX_HEIGHT, room));
+			CLIMB_MS = 4000 * Math.sqrt(height / MAX_HEIGHT);
+			DESCEND = 3800 * Math.sqrt(height / MAX_HEIGHT);
+			TOTAL = IGNITE + CLIMB_MS + PAUSE + DESCEND + SETTLE;
+			return height + shipHeight; // the sky that has to be on screen
+		};
+
+		const frame = (ms: number) => {
+			let x = 0, y = 0, angle = 0, opacity = 1, burn = 0;
+			if (ms < IGNITE) {
+				const t = ms / IGNITE;
+				burn = easeInOut(t);
+				y = -Math.sin(t * Math.PI) * 1.5; // settles on its fins as it throttles up
+			} else if (ms < IGNITE + CLIMB_MS) {
+				const p = (ms - IGNITE) / CLIMB_MS;
+				x = along(p, 0) * height;
+				y = along(p, 1) * height;
+				angle = pitch(p);
+				burn = 1;
+				// Fades out over the same time the landing takes to fade in
+				const fade = (FADE * DESCEND) / CLIMB_MS;
+				opacity = 1 - easeInOut(clamp((p - (1 - fade)) / fade));
+			} else if (ms < IGNITE + CLIMB_MS + PAUSE) {
+				opacity = 0;
+			} else if (ms < TOTAL - SETTLE) {
+				const t = (ms - IGNITE - CLIMB_MS - PAUSE) / DESCEND;
+				// Comes in already moving (the curve's slow start is skipped, so it's never still while it fades
+				// in), then brakes steadily to the ground
+				const e0 = ease(ENTRY, 0.25);
+				const u = (ease(ENTRY + t * (1 - ENTRY), 0.25) - e0) / (1 - e0);
+				y = -0.85 * height * (1 - u);
+				opacity = easeInOut(clamp(t / FADE));
+				burn = 1 - 0.4 * easeInOut(clamp((t - 0.6) / 0.4)); // throttles down near the ground
+			} else {
+				burn = 0.6 * (1 - easeInOut((ms - (TOTAL - SETTLE)) / SETTLE));
+			}
+			ship.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
+			ship.style.opacity = String(opacity);
+			flame.style.opacity = String(burn);
+		};
+
+		const fly = () => {
+			flying = true;
+			landing.classList.add("flying");
+			const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+			const start = performance.now();
+			const tick = (now: number) => {
+				const ms = now - start;
+				if (still) flame.style.opacity = ms < 900 ? String(0.5 + 0.5 * Math.sin(ms / 40)) : "0";
+				else frame(Math.min(ms, TOTAL));
+				if (ms < (still ? 900 : TOTAL)) requestAnimationFrame(tick);
+				else {
+					ship.style.transform = ship.style.opacity = flame.style.opacity = "";
+					landing.classList.remove("flying");
+					flying = false;
+				}
+			};
+			requestAnimationFrame(tick);
+		};
+
+		launchButton.addEventListener("click", () => {
+			if (flying) return;
+			// Scroll only if the rocket or the sky it climbs into is out of view, then fly once settled
+			const navBottom = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+			const sky = measure();
+			const box = ship.getBoundingClientRect();
+			const needsRoom = box.bottom - sky < navBottom || box.bottom > innerHeight;
+			if (!needsRoom) return fly();
+			const target = Math.min(navBottom + sky + 24, innerHeight - 40); // where the rocket's bottom should end up
+			let done = false;
+			const go = () => {
+				if (done) return;
+				done = true;
+				fly();
+			};
+			addEventListener("scrollend", go, { once: true });
+			setTimeout(go, 900); // browsers without scrollend
+			scrollBy({ top: box.bottom - target, behavior: "smooth" });
+		});
+	}
 
 	// Altimeter: the marker tracks how far through the clip it is, every frame while playing
 	const glass = video?.closest<HTMLElement>(".glass");
@@ -174,25 +305,25 @@ const clip = (await getEntry("clip", "clip"))?.data;
 <style>
 	.layout {
 		display: grid;
-		gap: var(--space-6);
+		row-gap: var(--space-6);
 	}
 
 	/*
-	 * The text (about.md): the first paragraph is a statement in the label font, its *emphasis* in
-	 * amber; the rest in Inter, muted, with **key phrases** in the text color
+	 * The text (about.md): a statement in its own row, then short parts, each under a ### prompt.
+	 * One rhythm: 2.5rem after the statement, 2rem between parts, 0.5rem from a prompt to its paragraph
 	 */
 	.prose {
-		display: grid;
-		gap: var(--space-3);
-		max-width: 38rem;
+		max-width: 29rem;
 		font-family: "Inter", sans-serif;
 		font-size: 1rem;
-		line-height: 2.1;
+		line-height: 1.9;
 		color: var(--muted);
 	}
 
-	.prose :global(p:first-child) {
-		margin-bottom: 0.5rem;
+	/* The statement: the label font, its *emphasis* in amber */
+	.statement {
+		max-width: 30rem; /* 30: room for the brackets, so the statement stays on two lines */
+		margin-bottom: calc(2.5rem - var(--space-6)); /* 2.5rem to the text (the row gap is part of it) */
 		font-family: var(--font-label);
 		font-size: 1.35rem;
 		line-height: 1.45;
@@ -200,21 +331,26 @@ const clip = (await getEntry("clip", "clip"))?.data;
 		color: var(--text);
 	}
 
-	.prose :global(p:first-child em) {
+	.statement :global(em) {
 		font-style: normal;
 		color: var(--accent);
 	}
 
-	/* Small dim signal waves (the headings' mark, in a frame-line grey) open each body paragraph. They
-	   float one line tall, so only the first line steps in (just short of the heading's word) and the
-	   rest of the paragraph wraps back out to the full width */
-	.prose :global(p:not(:first-child))::before {
-		content: "";
-		float: left;
-		width: calc(14px + 1.2rem); /* the waves, then a gap a little tighter than the heading's */
-		height: 1lh;
-		background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 26' fill='none' stroke='%235a6580' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 3Q15 13 6 23'/%3E%3Cpath d='M28 3Q37 13 28 23' opacity='.5'/%3E%3C/svg%3E")
-			0 50% / auto 11px no-repeat;
+	/* The prompts: small bold labels, lighter than the body text so they read as headings, but below
+	   the white key phrases */
+	.prose :global(h3) {
+		margin: 2rem 0 0.5rem;
+		font-family: var(--font-label);
+		font-size: 0.72rem;
+		font-weight: 700;
+		line-height: 1.6;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: #b9bdc7;
+	}
+
+	.prose :global(h3:first-child) {
+		margin-top: 0;
 	}
 
 	.prose :global(strong) {
@@ -226,27 +362,47 @@ const clip = (await getEntry("clip", "clip"))?.data;
 	/* Text on the left, the clip on the right (below the text on phones, full width like the
 	   project cards) */
 	@media (min-width: 48rem) {
+		/* Rows: the statement spans four equal rows, then the text. The card starts on the fourth, three
+		   quarters down the statement, plus half the gap to the first prompt: halfway between the
+		   statement's midpoint and the first prompt (no measuring: a spanning item's height is shared
+		   equally by the 1fr rows) */
 		.layout.has-clip {
-			grid-template-columns: minmax(0, 38rem) minmax(0, 20rem);
+			grid-template-columns: minmax(0, 30rem) minmax(0, 22rem);
+			grid-template-rows: 1fr 1fr 1fr 1fr auto;
 			justify-content: space-between;
+			row-gap: 0;
+		}
+
+		.layout.has-clip .statement {
+			grid-column: 1;
+			grid-row: 1 / 5;
+			margin-bottom: 0;
+		}
+
+		.layout.has-clip .prose {
+			grid-column: 1;
+			grid-row: 5;
+			margin-top: 2.5rem;
+		}
+
+		.layout.has-clip :global(.clip-card) {
+			grid-column: 2;
+			grid-row: 4 / 6;
 		}
 
 		/*
 		 * The text sets the row height and the card fills it: size containment keeps the card from
 		 * adding height of its own, and the video crops to whatever frame is left. The card lines up
-		 * with the text by its contents: it reaches up past the text's first line by its tab, frame
-		 * and padding, so the video's top meets the first line, and down by its frame and padding, so
-		 * the tags meet the last.
+		 * with the text's letters at the top and the bottom.
 		 */
 		:global(.clip-card) {
-			max-width: 20rem;
+			max-width: 22rem;
 			contain: size;
-			/* (the half-leading of the lines is taken off, so the edges meet the letters themselves: the
-			   statement's at the top, the body text's at the bottom) */
-			--lead-top: calc((1.45 - 1) * 1.35rem / 2);
-			--lead-bottom: calc((2.1 - 1) * 1rem / 2);
-			margin-block: calc(var(--lead-top) - var(--tab-h) - var(--frame) - var(--space-3))
-				calc(var(--lead-bottom) - var(--frame) - var(--space-3));
+			/* The tab's top: halfway between the statement's midpoint and the first prompt's letters; the
+			   card's bottom meets the last line's letters (its half-leading taken off). Other spots: the
+			   statement's midpoint = row 3 / 6, no margin-top; the first prompt = row 5, margin-top
+			   calc(2.5rem + (1.6 - 1) * 0.72rem / 2) */
+			margin-block: calc((2.5rem + (1.6 - 1) * 0.72rem / 2) / 2 + 6px) calc((1.9 - 1) * 1rem / 2);
 		}
 
 		:global(.clip-card) :global(.viewport) {
@@ -268,6 +424,175 @@ const clip = (await getEntry("clip", "clip"))?.data;
 			aspect-ratio: auto;
 			object-position: top; /* crop from the bottom up so the top of the climb stays in frame */
 		}
+	}
+
+	/* The rocket and flag stand on the card body's top edge, left of the tab */
+	.landing {
+		position: absolute;
+		left: 10%;
+		bottom: calc(100% - var(--tab-h));
+		z-index: 4;
+		display: flex;
+		align-items: flex-end;
+		gap: 24px;
+		pointer-events: none;
+	}
+
+	/* A soft shadow under the rocket's feet */
+	.landing::before {
+		content: "";
+		position: absolute;
+		left: 13.5px;
+		bottom: -3px;
+		width: 47px;
+		height: 6px;
+		translate: -50% 0;
+		background: radial-gradient(closest-side, rgb(0 0 0 / 0.55), transparent);
+	}
+
+	.rocket {
+		display: block;
+		width: 27px;
+		overflow: visible;
+	}
+
+	.rocket .hull {
+		fill: var(--text);
+	}
+
+	/* The engine (the logo's amber flame): off at rest, lit and flickering while the rocket flies */
+	.rocket .flame {
+		fill: var(--accent);
+		opacity: 0;
+		transform-origin: 50px 116px;
+	}
+
+	.flying .rocket .flame {
+		animation: flame-flicker 0.12s steps(2) infinite;
+	}
+
+	@keyframes flame-flicker {
+		50% {
+			transform: scaleY(0.8);
+		}
+	}
+
+	/* The shadow fades while the rocket is off the ground */
+	.landing::before {
+		transition: opacity 0.4s;
+	}
+
+	.flying::before {
+		opacity: 0.35;
+	}
+
+	.rocket {
+		transform-box: fill-box;
+		transform-origin: 50% 60%;
+	}
+
+	/* "the physical world" (a button that launches the rocket) and the text's links: amber, framed in amber
+	   console brackets, with a tooltip hanging under them on hover (the card tab's tooltip, in miniature) */
+	.statement :global(.launch) {
+		all: unset;
+		position: relative;
+		cursor: pointer;
+	}
+
+	.statement :global(.nowrap),
+	.prose :global(a) {
+		white-space: nowrap;
+	}
+
+	.prose :global(a) {
+		position: relative;
+		text-decoration: none;
+	}
+
+	.statement :global(.launch)::before,
+	.prose :global(a)::before {
+		content: "[";
+		margin-right: 0.1em;
+	}
+
+	.statement :global(.launch)::after,
+	.prose :global(a)::after {
+		content: "]";
+		margin-left: 0.1em;
+	}
+
+	.statement :global(.launch)::before,
+	.statement :global(.launch)::after {
+		color: var(--accent);
+	}
+
+	.statement :global(.tip),
+	.prose :global(.tip) {
+		position: absolute;
+		top: calc(100% + 0.6rem);
+		left: 50%;
+		translate: -50% 0;
+		z-index: 5;
+		padding: 0.4rem calc(0.7rem - 0.1em) 0.5rem 0.7rem; /* less on the right: the tracking trails the last letter */
+		line-height: 1.6;
+		white-space: nowrap;
+		background: var(--bg);
+		border: 1px solid #3f4960;
+		color: var(--text);
+		letter-spacing: 0.1em;
+		user-select: none;
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition:
+			opacity 0.15s,
+			visibility 0.15s;
+	}
+
+	/* Pointer: a small outlined notch continuing the border */
+	.statement :global(.tip)::before,
+	.prose :global(.tip)::before {
+		content: "";
+		position: absolute;
+		top: -4px;
+		left: calc(50% - 3.5px);
+		width: 7px;
+		height: 7px;
+		background: var(--bg);
+		border-top: 1px solid #3f4960;
+		border-left: 1px solid #3f4960;
+		rotate: 45deg;
+	}
+
+	.statement :global(.launch:is(:hover, :focus-visible) .tip),
+	.prose :global(a:is(:hover, :focus-visible) .tip) {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	.statement :global(.launch:focus-visible) {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+	}
+
+	.flag {
+		display: block;
+		height: 42px;
+		overflow: visible;
+	}
+
+	.flag line {
+		stroke: var(--muted);
+		stroke-width: 2.4;
+		stroke-linecap: round;
+	}
+
+	.flag path {
+		fill: var(--status);
+	}
+
+	.flag circle {
+		fill: var(--muted);
 	}
 
 	/* The whole card plays and pauses the clip */
@@ -444,42 +769,5 @@ const clip = (await getEntry("clip", "clip"))?.data;
 		border-block: 0.3rem solid transparent;
 		border-left: 0.45rem solid var(--accent);
 		translate: 0 50%;
-	}
-
-	/* Reached from "climbing" in the text: the hover look comes on at once and fades straight back.
-	   Pointing at the card cancels it, and normal hover takes over. */
-	:global(.clip-card.highlighted) {
-		animation: about-highlight-frame 2s ease-out;
-	}
-
-	:global(.clip-card.highlighted) video {
-		animation: about-highlight-feed 2s ease-out;
-	}
-
-	:global(.clip-card.highlighted) .play {
-		animation: about-highlight-chip 2s ease-out;
-	}
-
-	:global(.clip-card.highlighted):has(:global(.card:hover)),
-	:global(.clip-card.highlighted):has(:global(.card:hover)) :is(video, .play) {
-		animation: none;
-	}
-
-	@keyframes about-highlight-frame {
-		from {
-			--line: #3f4960;
-		}
-	}
-
-	@keyframes about-highlight-feed {
-		from {
-			filter: saturate(0.85) brightness(0.9) contrast(1.09);
-		}
-	}
-
-	@keyframes about-highlight-chip {
-		from {
-			border-color: #4e5870; /* a quiet step up from the resting border */
-		}
 	}
 </style>
