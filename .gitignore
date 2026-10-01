@@ -29,14 +29,10 @@ design/fonts/
 # editor settings
 .vscode/
 
-# resume is mounted into the container at deploy time, never committed
-public/Eli-Rose-Resume.pdf
-
-# written by the container at startup; the local copy is a fake for development
-public/status.json
-
-# the About clip, project demo videos and slide decks are mounted into the container at deploy
-# time, never committed
-public/climb_assets/
-public/videos/
-public/slides/
+# private files in public/assets/, put on the server by hand and never committed: the resume,
+# the About clip and its poster, and status.json (written by the server at startup; the local
+# copy is a fake for development)
+public/assets/Eli-Rose-Resume.pdf
+public/assets/climb.mp4
+public/assets/climb.jpg
+public/assets/status.json

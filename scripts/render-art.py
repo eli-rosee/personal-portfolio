@@ -1,24 +1,31 @@
 """Render the site's brand art: the name wordmark, the [ER] + rocket logo, the section headings,
-the favicons, and the rocket's outline for the About card.
+the favicons, the link-preview image, and the rocket's outline for the About card.
 
 The lettering is in Mission Control DCU, whose desktop license allows rasterized images for web
 use but not embedding the font, so the site only ships these PNGs. The font lives in
 design/fonts/ (gitignored); without it the script can't run.
 
-Usage (from the repo root, needs Pillow):
+Usage (from the repo root, needs Pillow and fontTools, and npm install for the web fonts):
     python3 scripts/render-art.py
 
 Outputs:
-    src/assets/brand/wordmark.png         hero name
-    src/assets/brand/logo.png             nav logo
-    src/assets/brand/headings/*.png       section headings (SectionHeading.astro)
-    src/assets/brand/rocket.json          rocket outline as SVG paths (ClipCard.astro)
-    public/favicon.{svg,ico,png}
+    src/assets/brand/wordmark.png      hero name
+    src/assets/brand/logo.png          nav logo
+    src/assets/brand/headings/*.png    section headings (SectionHeading.astro)
+    src/assets/brand/rocket.json       rocket outline as SVG paths (ClipCard.astro)
+    public/favicon.ico                 tab icon fallback (stays at the root, where browsers look for it)
+    public/assets/favicon.svg          tab icon
+    public/assets/apple-touch-icon.png home-screen icon on iPhones and iPads
+    public/preview-image.png           link-preview image (tagline from src/content/site.ts)
 """
 
 import json
+import random
+import re
+from io import BytesIO
 from pathlib import Path
 
+from fontTools.ttLib import TTFont
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -140,8 +147,8 @@ svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="-7 5 132 132">
 	</g>
 </svg>
 """
-(ROOT / "public/favicon.svg").write_text(svg)
-print("Wrote public/favicon.svg")
+(ROOT / "public/assets/favicon.svg").write_text(svg)
+print("Wrote public/assets/favicon.svg")
 
 
 def icon(background, body):
@@ -157,4 +164,98 @@ def icon(background, body):
 icon(None, MUTED).save(ROOT / "public/favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
 print("Wrote public/favicon.ico")
 # Apple touch icon: iOS fills transparency with black, so it keeps the page background
-save(icon(BG, TEXT), "public/favicon.png", 180)
+save(icon(BG, TEXT), "public/assets/apple-touch-icon.png", 180)
+
+
+# Link preview (preview-image.png): the picture chat apps and social sites show when the site's link is
+# shared, at the 1200x630 they all expect. The [ER] logo, the name and tagline, then the section
+# headings' amber slant and signal waves beside the domain, over faint stars.
+
+
+def web_font(package, file, size):
+    """A font the site already installs (an @fontsource WOFF file), loaded for Pillow."""
+    ttf = TTFont(ROOT / "node_modules/@fontsource" / package / "files" / file)
+    ttf.flavor = None  # unwrap the WOFF into a plain TrueType font
+    data = BytesIO()
+    ttf.save(data)
+    data.seek(0)
+    return ImageFont.truetype(data, size)
+
+
+def fit_width(image, width):
+    return image.resize((width, round(image.height * width / image.width)), Image.LANCZOS)
+
+
+def link_preview():
+    k = 2  # drawn at 2x, then downscaled for smooth edges
+    W, H = 1200 * k, 630 * k
+    pad_x, pad_y = 88 * k, 72 * k
+    footer_h = 30 * k
+    out = Image.new("RGBA", (W, H), BG + (255,))
+
+    # Faint stars, the same on every run; bigger ones are brighter, like the page's starfield
+    stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(stars)
+    rng = random.Random(7)
+    for _ in range(140):
+        depth = rng.random() ** 2
+        x, y, r = rng.random() * W, rng.random() * H, (0.6 + depth * 0.9) * k
+        draw.ellipse([x - r, y - r, x + r, y + r], fill=TEXT + (round(255 * (0.2 + depth * 0.5)),))
+    out.alpha_composite(stars)
+
+    # Top: the logo
+    top_logo = fit_width(logo, 190 * k)
+    out.alpha_composite(top_logo, (pad_x, pad_y))
+
+    # Middle: the name, then the tagline from src/content/site.ts, wrapped at 930px
+    tagline = re.search(r'tagline:\s*"([^"]+)"', (ROOT / "src/content/site.ts").read_text()).group(1)
+    plex = web_font("ibm-plex-mono", "ibm-plex-mono-latin-400-normal.woff", 31 * k)
+    lines = [""]
+    for word in tagline.split():
+        trial = f"{lines[-1]} {word}".strip()
+        if lines[-1] and plex.getlength(trial) > 930 * k:
+            lines.append(word)
+        else:
+            lines[-1] = trial
+    line_h = round(31 * 1.5 * k)
+    name = fit_width(glyphs("ELI ROSE", ACCENT), 780 * k)
+    gap = 30 * k
+    block_h = name.height + gap + line_h * len(lines)
+    space_top, space_bottom = pad_y + top_logo.height, H - pad_y - footer_h
+    y = space_top + (space_bottom - space_top - block_h) // 2  # centered between logo and footer
+    out.alpha_composite(name, (pad_x, y))
+    y += name.height + gap
+    draw = ImageDraw.Draw(out)
+    for text in lines:
+        draw.text((pad_x, y + line_h // 2), text, font=plex, fill=TEXT, anchor="lm")
+        y += line_h
+
+    # Bottom: the slant, the domain in widely spaced capitals, then the waves
+    top, mid = H - pad_y - footer_h, H - pad_y - footer_h // 2
+    sw = 20 * k
+    draw.polygon([(pad_x + 0.4 * sw, top), (pad_x + sw, top), (pad_x + 0.6 * sw, top + footer_h), (pad_x, top + footer_h)], fill=ACCENT)
+    space = web_font("space-mono", "space-mono-latin-400-normal.woff", 21 * k)
+    x = pad_x + sw + 26 * k
+    for ch in "ELIROSE.DEV":
+        draw.text((x, mid), ch, font=space, fill=TEXT, anchor="lm")
+        x += space.getlength(ch) + 0.2 * 21 * k  # 0.2em tracking, as on the site's labels
+    x += 26 * k
+    # The waves: the section headings' four arcs (an 86x26 drawing), the later ones fainter
+    s = 28 * k / 26
+    for i, opacity in enumerate([1, 0.6, 0.36, 0.18]):
+        x0 = 6 + 22 * i
+        arc = [((1 - t) ** 2 * x0 + 2 * (1 - t) * t * (x0 + 9) + t * t * x0, 3 + 20 * t) for t in (j / 40 for j in range(41))]
+        points = [(x + px * s, mid - 13 * s + py * s) for px, py in arc]
+        layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        wave = ImageDraw.Draw(layer)
+        wave.line(points, fill=ACCENT + (round(255 * opacity),), width=round(2 * s), joint="curve")
+        for px, py in (points[0], points[-1]):  # round caps
+            wave.ellipse([px - s, py - s, px + s, py + s], fill=ACCENT + (round(255 * opacity),))
+        out.alpha_composite(layer)
+
+    preview = out.convert("RGB").resize((1200, 630), Image.LANCZOS)
+    preview.save(ROOT / "public/preview-image.png", optimize=True)
+    print("Wrote public/preview-image.png (1200x630)")
+
+
+link_preview()

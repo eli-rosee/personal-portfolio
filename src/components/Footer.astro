@@ -38,7 +38,7 @@ import SectionHeading from "./SectionHeading.astro";
 	const footer = document.querySelector("footer")!;
 
 	/*
-	 * Uptime: how long the server has been up, from /status.json ({ "started": "<ISO date>" }),
+	 * Uptime: how long the server has been up, from /assets/status.json ({ "started": "<ISO date>" }),
 	 * which the container writes when it starts. Missing or malformed: the readout stays hidden.
 	 */
 	const startUptime = async () => {
@@ -75,7 +75,7 @@ import SectionHeading from "./SectionHeading.astro";
 		);
 
 		try {
-			const response = await fetch("/status.json", { cache: "no-store" });
+			const response = await fetch("/assets/status.json", { cache: "no-store" });
 			if (!response.ok) return;
 			const { started } = (await response.json()) as { started: string };
 			const startedAt = Date.parse(started);
