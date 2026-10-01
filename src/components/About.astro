@@ -1,6 +1,6 @@
 ---
 /*
- * About: a one-line statement, then short paragraphs under small prompts (src/data/about.md),
+ * About: a one-line statement, then short paragraphs under small prompts (src/content/about.md),
  * with the climbing clip card beside them (below them on phones).
  *
  * Markdown conventions in about.md:
@@ -10,7 +10,7 @@
  *   [text](#target "Tip")           a bracketed link with a tooltip
  */
 import { getEntry } from "astro:content";
-import { compiledContent, frontmatter } from "../data/about.md";
+import { compiledContent, frontmatter } from "../content/about.md";
 import SectionHeading from "./SectionHeading.astro";
 import ClipCard from "./ClipCard.astro";
 

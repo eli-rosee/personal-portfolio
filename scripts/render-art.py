@@ -9,10 +9,10 @@ Usage (from the repo root, needs Pillow):
     python3 scripts/render-art.py
 
 Outputs:
-    src/assets/wordmark.png         hero name
-    src/assets/logo.png             nav logo
-    src/assets/headings/*.png       section headings (SectionHeading.astro)
-    src/assets/rocket.json          rocket outline as SVG paths (ClipCard.astro)
+    src/assets/brand/wordmark.png         hero name
+    src/assets/brand/logo.png             nav logo
+    src/assets/brand/headings/*.png       section headings (SectionHeading.astro)
+    src/assets/brand/rocket.json          rocket outline as SVG paths (ClipCard.astro)
     public/favicon.{svg,ico,png}
 """
 
@@ -98,7 +98,7 @@ def save(image, path, width, color=None):
 
 
 # Wordmark: ~700px wide in the hero
-save(glyphs("ELI ROSE", ACCENT), "src/assets/wordmark.png", 1400, ACCENT)
+save(glyphs("ELI ROSE", ACCENT), "src/assets/brand/wordmark.png", 1400, ACCENT)
 
 # Logo: muted brackets around the initials, then the rocket with a clear gap
 er = glyphs("ER", TEXT)
@@ -107,14 +107,14 @@ logo = row(
     [glyphs("[", MUTED), er, glyphs("]", MUTED), rocket(round(er.height * 0.8))],
     [bracket_gap, bracket_gap, 70 * SUPERSAMPLE],
 )
-save(logo, "src/assets/logo.png", 250)  # nav: ~125px wide
+save(logo, "src/assets/brand/logo.png", 250)  # nav: ~125px wide
 
 # Section headings: off-white, 21px tall on the page (saved at 2x). One scale for all, so the
 # letters match across headings whatever their ink.
 heading_scale = 42 / glyphs("E", TEXT).height
 for word in ["Projects", "About", "Telemetry"]:
     art = glyphs(word.upper(), TEXT)
-    save(art, f"src/assets/headings/{word.lower()}.png", round(art.width * heading_scale), TEXT)
+    save(art, f"src/assets/brand/headings/{word.lower()}.png", round(art.width * heading_scale), TEXT)
 
 # The rocket as SVG paths: the hull with the window cut out (draw it with fill-rule="evenodd"),
 # and the flame
@@ -123,8 +123,8 @@ cx, cy, r = WINDOW
 hull_path = f"{polygon_path(HULL)} M{cx - r} {cy}a{r} {r} 0 1 0 {2 * r} 0a{r} {r} 0 1 0 {-2 * r} 0Z"
 flame_path = polygon_path(FLAME)
 
-(ROOT / "src/assets/rocket.json").write_text(json.dumps({"hull": hull_path, "flame": flame_path}, indent=2) + "\n")
-print("Wrote src/assets/rocket.json")
+(ROOT / "src/assets/brand/rocket.json").write_text(json.dumps({"hull": hull_path, "flame": flame_path}, indent=2) + "\n")
+print("Wrote src/assets/brand/rocket.json")
 
 # Favicons, all the rocket alone.
 # SVG (Chrome, Edge, Firefox): transparent, dark body on light tab bars and off-white on dark ones.
