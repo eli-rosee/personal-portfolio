@@ -35,7 +35,10 @@ public/                   served as-is
   favicon.ico             tab icon fallback (browsers look for it here)
   preview-image.png       the picture shown when the site's link is shared
   assets/                 icons, plus the private files below
-scripts/render-art.py     renders the brand art
+scripts/
+  render-art.py           renders the brand art
+  rebuild.sh              server: rebuilds the site
+  status.sh               server: writes status.json for the uptime readout
 ```
 
 ## Editing content
@@ -50,7 +53,7 @@ These are gitignored and mounted into the server's container at deploy time. The
 
 - `public/assets/Eli-Rose-Resume.pdf`: the resume the hero button links to
 - `public/assets/climb.mp4` and `climb.jpg`: the climbing clip and its poster (paths set in `clip.md`). Both have the card's lit color grade baked in; see `ClipCard.astro`.
-- `public/assets/status.json`: `{ "started": "<ISO date>" }`, written when the server starts; drives the uptime readout. Create one by hand to see it locally.
+- `public/assets/status.json`: `{ "started": "<ISO date>" }`, the server's boot time, written by `scripts/status.sh`; drives the uptime readout. Create one by hand to see it locally.
 
 ## Brand art
 
