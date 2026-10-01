@@ -139,6 +139,10 @@ const tipText =
 		--summary-lines: 0; /* room reserved for the summary, in lines, so cards line up */
 		--tab-x: 0px; /* the tab's left edge */
 		--lit: var(--muted); /* the status color */
+		/* The screen's color grade, at rest and lit (hover, focus, .is-active). A wrapper whose
+		   footage already has a grade baked in can override these. */
+		--grade: saturate(0.75) brightness(0.8) contrast(1.1);
+		--grade-lit: saturate(0.85) brightness(0.9) contrast(1.09);
 		position: relative;
 		padding-top: var(--tab-h);
 		transition: --line 0.15s;
@@ -379,7 +383,7 @@ const tipText =
 
 	/* Footage and images, graded to sit in the palette like a console feed */
 	.screen :global(:is(img, video)) {
-		filter: saturate(0.75) brightness(0.8) contrast(1.1);
+		filter: var(--grade);
 		transition: filter 0.2s;
 	}
 
@@ -495,6 +499,6 @@ const tipText =
 	}
 
 	.panel:is(.is-active, :has(.card:hover, .title-link:focus-visible)) .screen :global(:is(img, video)) {
-		filter: saturate(0.85) brightness(0.9) contrast(1.09);
+		filter: var(--grade-lit);
 	}
 </style>

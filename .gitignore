@@ -35,6 +35,8 @@ public/Eli-Rose-Resume.pdf
 # written by the container at startup; the local copy is a fake for development
 public/status.json
 
-# demo videos and slide decks are mounted into the container at deploy time, never committed
+# the About clip, project demo videos and slide decks are mounted into the container at deploy
+# time, never committed
+public/climb_assets/
 public/videos/
 public/slides/

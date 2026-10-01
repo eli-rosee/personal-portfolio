@@ -46,7 +46,7 @@ scripts/render-art.py     renders the brand art
 These are gitignored and mounted into the server's container at deploy time. The page works without them: the missing pieces hide themselves.
 
 - `public/Eli-Rose-Resume.pdf`: the resume the hero button links to
-- `public/videos/`: the climbing clip and its poster (paths set in `clip.md`)
+- `public/climb_assets/`: the climbing clip and its poster, `climb.mp4` and `climb.jpg` (paths set in `clip.md`). Both have the card's lit color grade baked in; see `ClipCard.astro`.
 - `public/status.json`: `{ "started": "<ISO date>" }`, written when the container starts; drives the uptime readout. Create one by hand to see it locally.
 
 ## Brand art

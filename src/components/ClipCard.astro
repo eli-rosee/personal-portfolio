@@ -4,6 +4,11 @@
  * (a camera feed with static, a camera label and an altimeter), a SENT tab on the right, and the
  * logo's rocket landed on top beside a flag.
  *
+ * The clip only plays while the card is lit, so the video and poster have the card's lit grade
+ * baked in (no filter over playing video). At rest, --grade turns that back into the resting
+ * grade exactly: rest ∘ lit⁻¹ = saturate(0.75/0.85) contrast(1/1.09) brightness(0.8/0.9)
+ * contrast(1.1). The grades are linear, so this inverts cleanly and still fades on hover.
+ *
  * Clicking the card plays or pauses the clip. The About statement's amber phrase launches the
  * rocket (src/scripts/launch.ts). Content comes from src/content/clip.md.
  */
@@ -27,7 +32,7 @@ const { clip } = Astro.props;
 	tagsLabel="Details"
 	tabSide="right"
 	status={clip.sent ? { label: "Sent", tone: "status", tip: clip.sentNote, tipId: "sent-tip" } : undefined}
-	style="--tab-w: 8.5rem; --tab-h: 1.6rem; --slant: 0.6rem; --cut: 10px; --status-inset: 0.55rem; --screen-cut: 2rem; --bezel-pad: 0.625rem; --screen-tint: rgb(40 70 130 / 0.14)"
+	style="--tab-w: 8.5rem; --tab-h: 1.6rem; --slant: 0.6rem; --cut: 10px; --status-inset: 0.55rem; --screen-cut: 2rem; --bezel-pad: 0.625rem; --screen-tint: rgb(40 70 130 / 0.14); --grade: saturate(0.882353) contrast(0.917431) brightness(0.888889) contrast(1.1); --grade-lit: none"
 >
 	{/* The logo's rocket (geometry from scripts/render-art.py), standing on its fins beside a green
 	    flag: the summit, like SENT. The flame burns only in flight. */}
