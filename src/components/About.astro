@@ -136,6 +136,22 @@ const proseHtml = (await compiledContent()).replace(
 		color: var(--accent);
 	}
 
+	/* Phones: the clip card comes right after the statement, so the rocket stands just under the
+	   phrase that launches it, with clear sky between them to fly in; the text follows */
+	@media (max-width: 47.99rem) {
+		.has-clip .statement {
+			margin-bottom: 7rem; /* plus the row gap: 10rem above the card */
+		}
+
+		.has-clip :global(.clip-card) {
+			order: 1;
+		}
+
+		.has-clip .prose {
+			order: 2;
+		}
+	}
+
 	/*
 	 * Desktop: text on the left, the card on the right. The statement spans four equal rows and the
 	 * card starts on the fourth, so its top sits three quarters down the statement (no measuring: a

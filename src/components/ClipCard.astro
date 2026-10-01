@@ -137,7 +137,10 @@ const { clip } = Astro.props;
 
 	const launchButton = document.querySelector<HTMLElement>("[data-launch]");
 	const landing = card?.querySelector<HTMLElement>(".landing");
-	if (launchButton && landing) initLaunch(launchButton, landing, document.querySelector("#about-heading"));
+	if (launchButton && landing) {
+		const statement = document.querySelector("#about .statement");
+		initLaunch(launchButton, landing, document.querySelector("#about-heading"), statement ? [statement] : []);
+	}
 </script>
 
 <style>

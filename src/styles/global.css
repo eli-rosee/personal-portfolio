@@ -251,9 +251,18 @@ a:hover {
 	rotate: 45deg;
 }
 
-:is(:hover, :focus-visible) > .tooltip {
+/* On touch screens a tap counts as a hover and leaves the tooltip stuck open, so hover only
+   shows it where there's a real pointer */
+:focus-visible > .tooltip {
 	opacity: 1;
 	visibility: visible;
+}
+
+@media (hover: hover) {
+	:hover > .tooltip {
+		opacity: 1;
+		visibility: visible;
+	}
 }
 
 /* Fixed-width digits so ticking counters don't jitter */

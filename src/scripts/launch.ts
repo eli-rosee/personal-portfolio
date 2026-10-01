@@ -8,8 +8,8 @@
  */
 
 const MAX_HEIGHT = 245; // px of climb when there's room for it
-const MIN_HEIGHT = 0.35 * MAX_HEIGHT;
 const HEADING_CLEARANCE = 26; // px: the rocket's last trace fades out level with the heading's top
+const TEXT_CLEARANCE = 12; // px: the rocket stays this far below any text it would otherwise cross
 
 // Timeline (ms): ignite, climb, pause (gone), descend, settle. Climb and descent are for a full
 // MAX_HEIGHT hop; shorter hops are quicker (time ~ √distance)
@@ -67,9 +67,14 @@ const along = (p: number): [number, number] => {
 /**
  * Wires `button` to launch the rocket in `landing` (which holds an svg.rocket with a .flame).
  * The climb is scaled to the sky between the landing and `ceiling`, so the rocket is gone by the
- * time it reaches it.
+ * time it reaches it, and it never crosses any of the `texts` that sit above its flight path.
  */
-export function initLaunch(button: HTMLElement, landing: HTMLElement, ceiling: HTMLElement | null) {
+export function initLaunch(
+	button: HTMLElement,
+	landing: HTMLElement,
+	ceiling: HTMLElement | null,
+	texts: Element[] = [],
+) {
 	const ship = landing.querySelector<SVGElement>(".rocket");
 	const flame = ship?.querySelector<SVGElement>(".flame");
 	if (!ship || !flame) return;
@@ -82,9 +87,20 @@ export function initLaunch(button: HTMLElement, landing: HTMLElement, ceiling: H
 
 	// Fits the flight to the room available; returns the sky that has to be on screen
 	const measure = () => {
-		const top = ceiling ? ceiling.getBoundingClientRect().top : -Infinity;
-		const room = landing.getBoundingClientRect().bottom - top - HEADING_CLEARANCE;
-		height = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, room));
+		const ground = landing.getBoundingClientRect().bottom;
+		const box = ship.getBoundingClientRect();
+		let room = ground - (ceiling ? ceiling.getBoundingClientRect().top : -Infinity) - HEADING_CLEARANCE;
+		// The flight drifts right as it climbs; any text over that corridor caps the climb, so the
+		// whole rocket stays below it
+		const left = box.left - TEXT_CLEARANCE;
+		const right = box.right + climbPath[STEPS][0] * MAX_HEIGHT + TEXT_CLEARANCE;
+		for (const text of texts) {
+			const r = text.getBoundingClientRect();
+			if (r.bottom <= ground && r.right > left && r.left < right) {
+				room = Math.min(room, ground - r.bottom - box.height - TEXT_CLEARANCE);
+			}
+		}
+		height = Math.max(1, Math.min(MAX_HEIGHT, room));
 		const scale = Math.sqrt(height / MAX_HEIGHT);
 		climbMs = CLIMB * scale;
 		descendMs = DESCEND * scale;
