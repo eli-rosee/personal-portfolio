@@ -1,10 +1,30 @@
 #!/bin/bash
-# Runs at boot (cron @reboot): writes status.json with the boot time for the uptime readout,
-# then rebuilds the site. In that order, so the build copies the new status.json into dist/.
-# Works from any directory: cron starts jobs in $HOME, not here.
+# Server jobs, run from cron (which starts jobs in $HOME; this works from any directory):
+#   rebuild.sh           at boot: writes status.json, then rebuilds the site. In that order, so the
+#                        build copies the new status.json into dist/.
+#   rebuild.sh --status  every 5 minutes: rewrites status.json in public/ and the live dist/, no
+#                        rebuild. Right after boot the clock can be hours off until it syncs, so the
+#                        boot run's value can be wrong; this corrects it.
 
 set -e
 cd "$(dirname "$0")/.."
+
+# Boot time = now minus seconds since boot, in UTC (the Z). No time zones are parsed, and the
+# browser converts it, so the server's time zone doesn't matter.
+write_status() {
+	local boot=$(( $(date +%s) - $(cut -d. -f1 /proc/uptime) ))
+	local status="{ \"started\": \"$(date -u -d "@$boot" +%Y-%m-%dT%H:%M:%SZ)\" }"
+	echo "$status" > public/assets/status.json
+	if [ -d dist/assets ]; then
+		echo "$status" > dist/assets/status.json
+	fi
+	echo "Wrote $status"
+}
+
+if [ "$1" = "--status" ]; then
+	write_status
+	exit
+fi
 
 # cron's PATH is minimal and finds the system Node (too old for Astro); load nvm's default Node,
 # the one an interactive shell uses, when nvm is installed
@@ -12,19 +32,7 @@ export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-# Right after boot the clock can be hours off until NTP corrects it (e.g. a hardware clock kept in
-# local time), so wait for the sync, up to 2 minutes, before reading it
-echo "Waiting for the clock to sync"
-for _ in $(seq 60); do
-	[ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = yes ] && break
-	sleep 2
-done
-
-# Boot time = now minus seconds since boot, in UTC (the Z). No time zones are parsed, and the
-# browser converts it, so the server's time zone doesn't matter.
-echo "Writing status.json"
-BOOT=$(( $(date +%s) - $(cut -d. -f1 /proc/uptime) ))
-echo "{ \"started\": \"$(date -u -d "@$BOOT" +%Y-%m-%dT%H:%M:%SZ)\" }" > public/assets/status.json
+write_status
 
 echo "Rebuilding website"
 npm run build
