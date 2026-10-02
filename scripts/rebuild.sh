@@ -12,9 +12,19 @@ export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-# Boot time in UTC (the Z); the browser converts it, so the server's time zone doesn't matter
+# Right after boot the clock can be hours off until NTP corrects it (e.g. a hardware clock kept in
+# local time), so wait for the sync, up to 2 minutes, before reading it
+echo "Waiting for the clock to sync"
+for _ in $(seq 60); do
+	[ "$(timedatectl show -p NTPSynchronized --value 2>/dev/null)" = yes ] && break
+	sleep 2
+done
+
+# Boot time = now minus seconds since boot, in UTC (the Z). No time zones are parsed, and the
+# browser converts it, so the server's time zone doesn't matter.
 echo "Writing status.json"
-echo "{ \"started\": \"$(date -u -d "$(uptime -s)" +%Y-%m-%dT%H:%M:%SZ)\" }" > public/assets/status.json
+BOOT=$(( $(date +%s) - $(cut -d. -f1 /proc/uptime) ))
+echo "{ \"started\": \"$(date -u -d "@$BOOT" +%Y-%m-%dT%H:%M:%SZ)\" }" > public/assets/status.json
 
 echo "Rebuilding website"
 npm run build
