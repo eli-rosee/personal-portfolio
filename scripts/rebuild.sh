@@ -6,8 +6,11 @@
 set -e
 cd "$(dirname "$0")/.."
 
-# cron's PATH is minimal; add the directory `which npm` prints on the server if it isn't here
+# cron's PATH is minimal and finds the system Node (too old for Astro); load nvm's default Node,
+# the one an interactive shell uses, when nvm is installed
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 # Boot time in UTC (the Z); the browser converts it, so the server's time zone doesn't matter
 echo "Writing status.json"
