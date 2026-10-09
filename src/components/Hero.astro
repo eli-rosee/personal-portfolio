@@ -97,8 +97,9 @@ import ExternalIcon from "./ExternalIcon.astro";
 		border-color: var(--text);
 	}
 
-	/* Phones: Resume full width, the other links side by side below it */
-	@media (max-width: 30rem) {
+	/* Until all three fit on one row (they need ~36rem): Resume full width, the other links side
+	   by side below it, so LinkedIn never wraps onto a row of its own */
+	@media (max-width: 39.99rem) {
 		.actions {
 			display: grid;
 			grid-template-columns: repeat(2, 1fr);
@@ -113,7 +114,9 @@ import ExternalIcon from "./ExternalIcon.astro";
 		.button.primary {
 			grid-column: 1 / -1;
 		}
+	}
 
+	@media (max-width: 30rem) {
 		.tagline {
 			margin-top: var(--space-3);
 			font-size: var(--text-base);
