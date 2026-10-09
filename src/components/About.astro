@@ -58,7 +58,7 @@ const proseHtml = (await compiledContent()).replace(
 </script>
 
 <style>
-	/* One rhythm: 2.5rem after the statement, 2rem between parts, 0.5rem from a prompt to its paragraph */
+	/* One rhythm: 3.5rem after the statement, 2.75rem between parts, 0.75rem from a prompt to its paragraph */
 	.layout {
 		position: relative;
 		display: grid;
@@ -115,7 +115,7 @@ const proseHtml = (await compiledContent()).replace(
 
 	.statement {
 		max-width: 30rem; /* room for the brackets, so the statement stays on two lines */
-		margin-bottom: calc(2.5rem - var(--space-6)); /* 2.5rem to the text, counting the row gap */
+		margin-bottom: calc(3.5rem - var(--space-6)); /* 3.5rem to the text, counting the row gap */
 		font-family: var(--font-label);
 		font-size: 1.35rem;
 		line-height: 1.45;
@@ -128,23 +128,24 @@ const proseHtml = (await compiledContent()).replace(
 		color: var(--accent);
 	}
 
+	/* Red Hat Text, a touch lighter than --muted so the paragraphs stay easy to read */
 	.prose {
-		max-width: 29rem;
-		font-family: "Inter", sans-serif;
+		max-width: 27.5rem;
+		font-family: "Red Hat Text", sans-serif;
 		font-size: 1rem;
-		line-height: 1.9;
-		color: var(--muted);
+		line-height: 1.85;
+		color: #a3abba;
 	}
 
-	/* Prompts: small bold labels, lighter than the body so they read as headings, but below the
-	   white key phrases */
+	/* Prompts: small bold labels in Red Hat Mono, lighter than the body so they read as headings,
+	   but below the white key phrases */
 	.prose :global(h3) {
-		margin: 2rem 0 0.5rem;
-		font-family: var(--font-label);
-		font-size: 0.72rem;
-		font-weight: 700;
+		margin: 2.75rem 0 0.75rem;
+		font-family: "Red Hat Mono", monospace;
+		font-size: 0.74rem;
+		font-weight: 600;
 		line-height: 1.6;
-		letter-spacing: 0.22em;
+		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: #b9bdc7;
 	}
@@ -154,7 +155,7 @@ const proseHtml = (await compiledContent()).replace(
 	}
 
 	.prose :global(strong) {
-		font-weight: 500;
+		font-weight: 600;
 		color: var(--text);
 	}
 
@@ -242,14 +243,14 @@ const proseHtml = (await compiledContent()).replace(
 		.has-clip .prose {
 			grid-column: 1;
 			grid-row: 5;
-			margin-top: 2.5rem;
+			margin-top: 3.5rem;
 		}
 
 		.has-clip :global(.clip-card) {
 			grid-column: 2;
 			grid-row: 4 / 6;
 			max-width: 22rem;
-			margin-block: calc((2.5rem + (1.6 - 1) * 0.72rem / 2) / 2 + 6px) calc((1.9 - 1) * 1rem / 2);
+			margin-block: calc((3.5rem + (1.6 - 1) * 0.74rem / 2) / 2 + 6px) calc((1.85 - 1) * 1rem / 2);
 		}
 	}
 </style>
