@@ -86,16 +86,20 @@ export function initLaunchArrow(
 			r.right - base.left + TEXT_GAP,
 			r.bottom - base.top + TEXT_GAP,
 		]);
-		const clear = (pts: number[][]) =>
-			!Array.from({ length: 41 }, (_, i) => cubic(pts, i / 40)).some(([x, y]) =>
+		const hits = (pts: number[][]) =>
+			Array.from({ length: 41 }, (_, i) => cubic(pts, i / 40)).filter(([x, y]) =>
 				lines.some(([l, t, r, b]) => x > l && x < r && y > t && y < b),
-			);
+			).length;
+		// The first shape that clears the text; failing that, the one that touches it least
 		const rises = below ? [0] : [1.2, 0.8, 0.45, 0.1];
 		let pts: number[][] = [];
+		let fewest = Infinity;
 		for (const rise of rises) {
 			const [tx, ty] = below ? unit(clamp((ex - sx) / dist, -0.3, 0.3), 1) : unit(1, -rise);
-			pts = [[sx, sy], [sx + tx * lead, sy + ty * lead], [ex, ey - drop], [ex, ey]];
-			if (clear(pts)) break;
+			const shape = [[sx, sy], [sx + tx * lead, sy + ty * lead], [ex, ey - drop], [ex, ey]];
+			const n = hits(shape);
+			if (n < fewest) [pts, fewest] = [shape, n];
+			if (!n) break;
 		}
 		const [p0, p1, p2, p3] = pts.map(([x, y]) => `${f(x)} ${f(y)}`);
 		path.setAttribute("d", `M${p0} C${p1} ${p2} ${p3}`);
