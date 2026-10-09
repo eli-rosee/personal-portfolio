@@ -1,7 +1,8 @@
 #!/bin/bash
 # Server jobs, run from cron (which starts jobs in $HOME; this works from any directory):
-#   rebuild.sh           at boot: writes status.json, then rebuilds the site. In that order, so the
-#                        build copies the new status.json into dist/.
+#   rebuild.sh           at boot: writes status.json, installs dependencies if the lockfile changed,
+#                        then rebuilds the site. status.json comes first, so the build copies the
+#                        new one into dist/.
 #   rebuild.sh --status  every 5 minutes: rewrites status.json in public/ and the live dist/, no
 #                        rebuild. Right after boot the clock can be hours off until it syncs, so the
 #                        boot run's value can be wrong; this corrects it.
@@ -33,6 +34,21 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 write_status
+
+# Install dependencies when package-lock.json has changed since the last install (a pulled commit
+# can add packages). Most boots skip this and need no network. The network can still be coming up
+# when cron's @reboot job starts, so retry a few times before giving up; on failure set -e stops
+# here and the previous dist/ stays live.
+lock_hash=$(sha256sum package-lock.json | cut -d' ' -f1)
+if [ "$(cat node_modules/.lock-hash 2>/dev/null)" != "$lock_hash" ]; then
+	for attempt in 1 2 3 4 5; do
+		echo "Installing dependencies (attempt $attempt)"
+		npm ci --no-audit --no-fund && break
+		[ "$attempt" -eq 5 ] && exit 1
+		sleep 30
+	done
+	echo "$lock_hash" > node_modules/.lock-hash
+fi
 
 echo "Rebuilding website"
 npm run build
