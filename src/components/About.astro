@@ -205,8 +205,12 @@ const proseHtml = (await compiledContent()).replace(
 			margin-bottom: 7rem; /* plus the row gap: 10rem above the card */
 		}
 
+		/* Capped so the portrait clip doesn't grow ~1000px tall on large phones and small tablets;
+		   phones up to ~430px wide still fill the width */
 		.has-clip :global(.clip-card) {
 			order: 1;
+			width: 100%;
+			max-width: 24rem;
 		}
 
 		.has-clip .prose {
