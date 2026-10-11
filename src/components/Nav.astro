@@ -83,6 +83,14 @@ import logo from "../assets/brand/logo.png";
 			if (event.target === run) run.dataset.kind = pick(run.dataset.kind);
 		});
 	}
+
+	// On the home page the logo glides back to the top instead of reloading the page
+	const home = document.querySelector<HTMLAnchorElement>("header .home");
+	home?.addEventListener("click", (event) => {
+		if (location.pathname !== "/") return;
+		event.preventDefault();
+		scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+	});
 </script>
 
 <style>
@@ -113,6 +121,15 @@ import logo from "../assets/brand/logo.png";
 	.home img {
 		display: block;
 		width: 125px;
+		transition:
+			translate 0.2s,
+			filter 0.2s;
+	}
+
+	/* The logo is the way home on every page: it brightens and lifts slightly on hover */
+	.home:is(:hover, :focus-visible) img {
+		translate: 0 -2px;
+		filter: brightness(1.15);
 	}
 
 	/*
@@ -320,6 +337,10 @@ import logo from "../assets/brand/logo.png";
 	@media (prefers-reduced-motion: reduce) {
 		.sky {
 			display: none;
+		}
+
+		.home:is(:hover, :focus-visible) img {
+			translate: none;
 		}
 
 		.planet :is(.globe, .ring) {
