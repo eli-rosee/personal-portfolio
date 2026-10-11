@@ -145,6 +145,8 @@ const { clip } = Astro.props;
 	if (launchButton && landing) {
 		const statement = document.querySelector("#about .statement");
 		initLaunch(launchButton, landing, document.querySelector("#about-heading"), statement ? [statement] : []);
+		// The rocket itself launches too (the phrase stays the keyboard and screen-reader way in)
+		landing.querySelector(".rocket")?.addEventListener("click", () => launchButton.click());
 	}
 </script>
 
@@ -228,6 +230,17 @@ const { clip } = Astro.props;
 
 	.rocket .hull {
 		fill: var(--text);
+		transition: fill 0.15s;
+	}
+
+	/* Clickable: a click on the rocket launches it; it brightens on hover */
+	.rocket {
+		pointer-events: auto;
+		cursor: pointer;
+	}
+
+	.rocket:hover .hull {
+		fill: #fff;
 	}
 
 	/* The engine (the logo's amber flame): off at rest, lit and flickering while the rocket flies */
