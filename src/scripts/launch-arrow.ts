@@ -110,7 +110,7 @@ export function initLaunchArrow(
 		const x0 = ship.left - base.left - BRACKET.pad;
 		const y0 = ship.top - base.top - BRACKET.pad;
 		const x1 = ship.right - base.left + BRACKET.pad;
-		const y1 = ship.bottom - base.top + BRACKET.pad - 4; // the fins stand on the card's edge
+		const y1 = ship.bottom - base.top + BRACKET.pad; // the same gap as above, so the rocket sits centered
 		const a = BRACKET.arm;
 		brackets.setAttribute(
 			"d",
