@@ -111,10 +111,11 @@ save(glyphs("ELI ROSE", ACCENT), "src/assets/brand/wordmark.png", 1400, ACCENT)
 er = glyphs("ER", TEXT)
 bracket_gap = 28 * SUPERSAMPLE
 logo = row(
-    [glyphs("[", MUTED), er, glyphs("]", MUTED), rocket(round(er.height * 0.8))],
+    [glyphs("[", MUTED), er, glyphs("]", MUTED), rocket(round(er.height * 0.875))],  # the size of every other rocket on the site
     [bracket_gap, bracket_gap, 70 * SUPERSAMPLE],
 )
-save(logo, "src/assets/brand/logo.png", 250)  # nav: ~125px wide
+# [ER] keeps its size (65.7px tall at 2x) whatever the rocket adds: the nav shows this at 128px wide
+save(logo, "src/assets/brand/logo.png", round(logo.width * 65.7 / er.height))
 
 # Section headings: off-white, 21px tall on the page (saved at 2x). One scale for all, so the
 # letters match across headings whatever their ink.
