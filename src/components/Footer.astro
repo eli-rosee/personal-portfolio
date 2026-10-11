@@ -1,8 +1,9 @@
 ---
 // Telemetry: three live readouts (ISS position, Voyager 1's distance, server uptime), then
-// "Powered by Astro". Each readout stays hidden until it has real data, so a failure (or no
+// "Powered by Astro" with my email beside it (and a copy button). Each readout stays hidden until it has real data, so a failure (or no
 // JavaScript) just leaves it out; with none, the whole section hides.
 import SectionHeading from "./SectionHeading.astro";
+import { site } from "../content/site";
 ---
 
 <footer>
@@ -28,12 +29,38 @@ import SectionHeading from "./SectionHeading.astro";
 			</dl>
 		</section>
 
-		<p class="credit label">Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astro</a></p>
+		<p class="credit label">
+			<span>Powered by <a href="https://astro.build" target="_blank" rel="noopener">Astr<span class="last">o</span></a></span>
+			<span class="dot" aria-hidden="true">·</span>
+			<a class="email" href={`mailto:${site.email}`}>{site.email}</a>
+			<button class="copy" type="button" data-copy={site.email}><span data-copy-label>Copy</span></button>
+		</p>
 	</div>
 </footer>
 
 <script>
 	import { renderLive, replayAnimation, setText } from "../scripts/live";
+
+	// Copy the email address; the button says so for two seconds
+	const copy = document.querySelector<HTMLButtonElement>("footer [data-copy]");
+	const copyLabel = copy?.querySelector<HTMLElement>("[data-copy-label]");
+	if (copy && copyLabel) {
+		let reset = 0;
+		copy.addEventListener("click", async () => {
+			try {
+				await navigator.clipboard.writeText(copy.dataset.copy!);
+			} catch {
+				return; // no clipboard access (insecure page, or refused): the mailto link still works
+			}
+			copyLabel.textContent = "Copied";
+			copy.classList.add("copied");
+			clearTimeout(reset);
+			reset = window.setTimeout(() => {
+				copyLabel.textContent = "Copy";
+				copy.classList.remove("copied");
+			}, 2000);
+		});
+	}
 
 	const footer = document.querySelector("footer")!;
 
@@ -327,9 +354,66 @@ import SectionHeading from "./SectionHeading.astro";
 	}
 
 	/* Well clear of the telemetry, centered */
+	/* One centered line: the credit, then the address and its copy button (wraps on narrow screens) */
 	.credit {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		row-gap: var(--space-1);
 		margin-top: clamp(var(--space-6), 8vw, var(--space-12));
 		text-align: center;
+	}
+
+	.dot {
+		margin: 0 1.6rem;
+	}
+
+	/* Addresses in Plex Mono: Space Mono's @ reads as an "a" */
+	.credit .email {
+		font-family: var(--font-body);
+		font-size: 0.8rem;
+		letter-spacing: 0;
+		text-transform: none;
+		text-decoration: none;
+	}
+
+	.credit .email:hover {
+		color: #fff;
+	}
+
+	/* [ Copy ]: the About links' amber console brackets */
+	.copy {
+		all: unset;
+		margin-left: 1.15rem;
+		color: var(--text);
+		cursor: pointer;
+		transition: color 0.15s;
+	}
+
+	.copy::before {
+		content: "[";
+		margin-right: 0.3em;
+		color: var(--accent);
+	}
+
+	.copy::after {
+		content: "]";
+		margin-left: 0.15em;
+		color: var(--accent);
+	}
+
+	.copy:hover {
+		color: #fff;
+	}
+
+	.copy:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+	}
+
+	.copy.copied {
+		color: var(--status);
 	}
 
 	.credit a {
@@ -341,5 +425,11 @@ import SectionHeading from "./SectionHeading.astro";
 
 	.credit a:hover {
 		text-decoration-color: var(--accent);
+	}
+
+	/* The wide tracking trails the last letter, so the underline overshot it: no tracking after the
+	   last letter (the dot's margin keeps the gap) */
+	.credit .last {
+		letter-spacing: 0;
 	}
 </style>
