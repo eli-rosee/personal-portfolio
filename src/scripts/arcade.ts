@@ -5,7 +5,8 @@
  * straight along the lane, one on screen at a time (the arcade's rule), so a miss costs time. Squids
  * are fast, crabs average, octopuses slow but take two hits.
  *
- * A banner across the bar announces each wave and, at the end, the result. Clearing the third wave
+ * A banner across the bar announces each wave and, at the end, the result; through the first wave a
+ * line under the lane says how to fire, until the first hit. Clearing the third wave
  * wins: bursts across the bar and the planet's ring turns green. An invader touching the planet ends
  * the game: the invader is gone in the impact, the rest fade away, and the planet breaks apart, then
  * forms again. The skirmish returns on its next pass. Esc quits. Off with reduced motion.
@@ -37,7 +38,7 @@ const pick = (r = Math.random()): Kind => (r < 0.25 ? "squid" : r < 0.65 ? "crab
 
 export function initArcade(header: HTMLElement) {
 	const button = header.querySelector<HTMLButtonElement>("[data-planet]");
-	const planet = button?.querySelector<SVGElement>(".planet");
+	const planet = button?.querySelector<HTMLElement>(".planet");
 	const sky = header.querySelector<HTMLElement>(".sky");
 	const run = header.querySelector<HTMLElement>("[data-run]");
 	const fx = header.querySelector<HTMLElement>("[data-fx]");
@@ -100,6 +101,23 @@ export function initArcade(header: HTMLElement) {
 	};
 
 	const fadeOut = (el: Element) => (el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 }).onfinish = () => el.remove());
+
+	// How to fire, under the lane (halfway down to the bar's bottom edge) until the first hit
+	let tip: HTMLElement | null = null;
+	const showTip = () => {
+		const { mid, y } = lane();
+		const below = (header.getBoundingClientRect().bottom - fx.getBoundingClientRect().top - y) / 2;
+		tip = document.createElement("span");
+		tip.className = "tipline";
+		tip.innerHTML = "<b>Space</b> or <b>click</b> to fire";
+		tip.style.translate = `${mid}px ${y + below}px`;
+		fx.append(tip);
+		tip.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+	};
+	const dropTip = () => {
+		if (tip) fadeOut(tip);
+		tip = null;
+	};
 
 	// Words across the bar, between the logo and the planet
 	const banner = (text: string, tone: "text" | "accent", ms: number) => {
@@ -168,6 +186,7 @@ export function initArcade(header: HTMLElement) {
 				}
 				foes = foes.filter((f) => f !== hit);
 				hit.el.remove();
+				dropTip();
 				burst(hit.x, y);
 			} else if (bolt.x < start) {
 				bolts = bolts.filter((b) => b !== bolt);
@@ -195,6 +214,8 @@ export function initArcade(header: HTMLElement) {
 		wave = n;
 		spawned = 0;
 		banner(TEXT.wave(n), "text", ANNOUNCE);
+		if (n === 1) showTip();
+		else dropTip();
 		later(() => {
 			phase = "play";
 			last = nextSpawn = performance.now();
@@ -225,6 +246,7 @@ export function initArcade(header: HTMLElement) {
 
 	const over = (won: boolean) => {
 		phase = "over";
+		dropTip();
 		[...foes, ...bolts].forEach((x) => fadeOut(x.el));
 		foes = [];
 		bolts = [];
@@ -240,7 +262,6 @@ export function initArcade(header: HTMLElement) {
 	// The skirmish fades back in on its next pass, so its invader never pops in mid-flight
 	const finish = () => {
 		phase = "idle";
-		header.classList.remove("arcade");
 		button.classList.remove("playing");
 		const back = (event: AnimationEvent) => {
 			if (event.target !== run || phase !== "idle") return;
@@ -257,12 +278,12 @@ export function initArcade(header: HTMLElement) {
 		lastShot = 0;
 		sky.classList.add("off");
 		planet.classList.add("calm");
-		header.classList.add("arcade");
 		button.classList.add("playing");
 		announce(1);
 	};
 
 	const quit = () => {
+		dropTip();
 		timers.forEach(clearTimeout);
 		timers = [];
 		[...foes, ...bolts].forEach((x) => fadeOut(x.el));
