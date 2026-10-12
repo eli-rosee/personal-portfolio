@@ -11,6 +11,7 @@ npm install
 npm run dev      # dev server at http://localhost:4321
 npm run build    # static site in ./dist
 npm run preview  # serve the production build
+npm run check    # type-check the code (the dev server and build skip types)
 npm run art      # re-render the brand art (needs the licensed font, not in the repo)
 ```
 

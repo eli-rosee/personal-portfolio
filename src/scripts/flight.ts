@@ -294,7 +294,6 @@ async function fly(button: HTMLElement) {
 	// The flying rocket is a clone of the logo's own rocket, sitting exactly where the logo's rocket is;
 	// the whole flight is a transform away from that spot, and at the dock the transform is zero, so the
 	// two are drawn identically and the hand-over can't show
-	const logo = document.querySelector<HTMLElement>("header .home")!;
 	const navRocket = document.querySelector<SVGSVGElement>("[data-logo-rocket]")!;
 	const r0 = rk.getBoundingClientRect();
 	const target = logoRocketPose(navRocket, r0.width / 100);

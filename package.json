@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "art": "python3 scripts/render-art.py",
-    "new-project": "node scripts/new-project.mjs"
+    "new-project": "node scripts/new-project.mjs",
+    "check": "astro check"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.2",
@@ -26,5 +27,10 @@
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.6.5",
+    "typescript": "^6.0.3"
   }
 }
