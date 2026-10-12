@@ -2,14 +2,15 @@
 /*
  * A project's Media section: one console card per item, two columns (`wide: true` spans both; an image
  * or clip card with `shape: portrait` is one column wide and two rows tall, packed in beside others). The
- * screens show the media as it is (no grade or glass). Images, clips, videos and slides open in the
- * theater; a link card opens its page in a new tab. A link without a screenshot is a plain row under
+ * screens show the media as it is (no grade or glass). A video plays on its card (its bar's bracket icon
+ * opens the theater); images, clips and slides open in the theater; a link card opens its page in a new tab. A link without a screenshot is a plain row under
  * the cards (a report, a paper).
  */
 import ConsoleCard from "../ConsoleCard.astro";
 import SectionHeading from "../SectionHeading.astro";
 import ExternalIcon from "../ExternalIcon.astro";
 import Visual from "./Visual.astro";
+import Player from "./Player.astro";
 import type { MediaItem } from "../../scripts/project-files";
 
 interface Props {
@@ -50,27 +51,19 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 									/>
 								)}
 								{it.type === "clip" && <Visual asset={it.asset} />}
-								{it.type === "video" &&
-									(it.poster ? <Visual asset={it.poster} width={it.wide ? 1200 : 640} /> : <div class="feed" />)}
+								{it.type === "video" && (
+									<Player id={it.id} asset={it.asset} poster={it.poster} title={it.title} width={it.wide ? 1200 : 640} fit="cover" expand meta />
+								)}
 								{it.type === "slides" && <Visual asset={it.slides[0]} width={it.wide ? 1200 : 640} />}
 								{it.type === "link" && it.screenshot && <Visual asset={it.screenshot} width={it.wide ? 1200 : 640} />}
 
-								{it.type === "video" && (
-									<span class="chip label">
-										<svg viewBox="0 0 6 7" aria-hidden="true">
-											<path d="M0 0l6 3.5L0 7z" />
-										</svg>
-										Play
-									</span>
-								)}
 								{it.type === "link" && (
 									<span class="chip label">
 										Open {it.tab.toLowerCase()} <ExternalIcon />
 									</span>
 								)}
-								{it.type === "video" && <span class="meta label" data-duration={it.id}>Sound on</span>}
 								{it.type === "slides" && <span class="meta label">01 / {slideCount(it.slides.length)}</span>}
-								{it.type !== "link" && (
+								{it.type !== "link" && it.type !== "video" && (
 									<button type="button" class="open" data-theater={it.id} aria-label={`Open ${it.title} larger`} />
 								)}
 							</div>
@@ -168,14 +161,6 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 		font-size: 0.6rem;
 	}
 
-	/* A video without a poster: the cards' "no signal" */
-	.feed {
-		position: absolute;
-		inset: 0;
-		background:
-			repeating-linear-gradient(transparent 0 7px, rgb(138 147 166 / 0.05) 7px 9px),
-			radial-gradient(circle at 50% 50%, rgb(37 44 59 / 0.9), var(--bg) 70%);
-	}
 
 	.chip {
 		position: absolute;

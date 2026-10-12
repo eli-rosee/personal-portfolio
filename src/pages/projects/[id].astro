@@ -68,11 +68,13 @@ const panes: Pane[] = [
 
 <script>
 	import { initTheater } from "../../scripts/theater";
+	import { initPlayers } from "../../scripts/player";
 	import { playClips } from "../../scripts/clips";
 	import { initFlight } from "../../scripts/flight";
 
 	const init = (root: ParentNode) => {
 		initTheater(root);
+		initPlayers(root);
 		playClips(root);
 		initFlight(root);
 	};

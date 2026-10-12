@@ -1,0 +1,337 @@
+---
+/*
+ * A video with sound, playable where it sits: on its Media card and in the theater. Before it starts,
+ * the poster with ▶ Play over the middle. On the card, ▶ Play plays it there and a click anywhere else
+ * opens the theater (the zoom cursor says so), carrying on from the same moment; in the theater (and full
+ * screen) a click plays or pauses. While it plays, a bar along the bottom (pause, time, a line to scrub,
+ * sound, full screen) slides up when the mouse moves and slides away 2.5 s after it stops, the cursor
+ * hiding with it until the mouse moves again; while paused it stays, with ▶ Play back in the middle.
+ * Full screen takes the whole player, so the bar comes along. Only one plays at a time.
+ * src/scripts/player.ts runs it.
+ */
+import Visual from "./Visual.astro";
+import type { Asset } from "../../scripts/project-files";
+
+interface Props {
+	id: string;
+	asset: Asset;
+	poster?: Asset;
+	title: string;
+	width?: number; // the poster's widest, in CSS px
+	fit?: "cover" | "contain";
+	expand?: boolean; // a click off ▶ Play opens the theater (cards only)
+	meta?: boolean; // "Sound on · 1:23" in the corner until it starts (cards only)
+}
+
+const { id, asset, poster, title, width = 1200, fit = "contain", expand = false, meta = false } = Astro.props;
+---
+
+{
+	asset.kind === "clip" ? (
+		<div class="player" data-player={id} data-fit={fit}>
+			<video src={asset.src} preload="metadata" playsinline aria-label={title} />
+			{poster && poster.kind !== "file" && (
+				<div class="poster">
+					<Visual asset={poster} width={width} fit={fit} />
+				</div>
+			)}
+			{expand && <button type="button" class="open" data-theater={id} aria-label={`Open ${title} larger`} />}
+			<button type="button" class="play label" data-play aria-label={`Play ${title}`}>
+				<svg viewBox="0 0 6 7" aria-hidden="true">
+					<path d="M0 0l6 3.5L0 7z" />
+				</svg>
+				Play
+			</button>
+			{meta && <span class="meta label" data-length>Sound on</span>}
+			<div class="bar label">
+				<button type="button" class="icon" data-pp aria-label="Pause">
+					<svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true">
+						<path d="M3 2v8M9 2v8" />
+					</svg>
+					<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true">
+						<path class="solid" d="M3 1.5l7 4.5-7 4.5z" />
+					</svg>
+				</button>
+				<span class="time tabular" data-time>0:00 / 0:00</span>
+				<span class="track" data-track role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuenow="0">
+					<span class="fill" />
+					<span class="knob" />
+				</span>
+				<button type="button" class="icon" data-mute aria-label="Mute">
+					<svg viewBox="0 0 14 12" aria-hidden="true">
+						<path class="solid" d="M1 4h2.5L7 1v10L3.5 8H1z" />
+						<path class="i-sound" d="M9.5 3.8a3 3 0 0 1 0 4.4M11.2 2a5.5 5.5 0 0 1 0 8" />
+						<path class="i-muted" d="M9.5 4l3.5 4M13 4l-3.5 4" />
+					</svg>
+				</button>
+				<button type="button" class="icon" data-full aria-label="Full screen">
+					<svg viewBox="0 0 12 12" aria-hidden="true">
+						<path class="i-full" d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8" />
+						<path class="i-exit" d="M4 1v3H1M11 4H8V1M8 11V8h3M1 8h3v3" />
+					</svg>
+				</button>
+			</div>
+		</div>
+	) : (
+		<Visual asset={asset} />
+	)
+}
+
+<style>
+	.player {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		cursor: pointer;
+		background: #000;
+	}
+
+	video,
+	.poster {
+		position: absolute;
+		inset: 0;
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	video {
+		object-fit: contain;
+	}
+
+	[data-fit="cover"] video {
+		object-fit: cover;
+	}
+
+	.started .poster,
+	.started .meta {
+		display: none;
+	}
+
+	/* The card: a click off ▶ Play opens the theater */
+	.open {
+		all: unset;
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		cursor: zoom-in;
+	}
+
+	.open:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -4px;
+	}
+
+	/* Full screen: the video whole, and a click plays or pauses */
+	.player:fullscreen {
+		background: #000;
+	}
+
+	.player:fullscreen :is(video, .poster :global(.visual)) {
+		object-fit: contain;
+	}
+
+	.player:fullscreen .open {
+		display: none;
+	}
+
+	/* While it plays, the cursor hides with the bar until the mouse moves again */
+	.playing:not(.awake),
+	.playing:not(.awake) .open {
+		cursor: none;
+	}
+
+	/* ▶ Play over the middle, before it starts and while paused */
+	.play {
+		all: unset;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		z-index: 2;
+		translate: -50% -50%;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		padding: 0.55rem 1.1rem;
+		background: color-mix(in srgb, var(--bg) 80%, transparent);
+		border: 1px solid var(--muted);
+		color: var(--text);
+		cursor: pointer;
+		white-space: nowrap;
+		/* .label's type, which all: unset clears */
+		font-family: var(--font-label);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+	}
+
+	.play svg {
+		width: 0.6em;
+		height: 0.7em;
+		fill: var(--accent);
+	}
+
+	.play:hover,
+	.play:focus-visible {
+		border-color: var(--text);
+	}
+
+	/* (not while the line is dragged, which holds the video still) */
+	.playing .play,
+	.scrubbing .play {
+		display: none;
+	}
+
+	.meta {
+		position: absolute;
+		right: 1rem;
+		bottom: 0.85rem;
+		z-index: 2;
+		padding: 0.1rem 0.45rem;
+		background: color-mix(in srgb, var(--bg) 70%, transparent);
+		font-size: 0.6rem;
+		pointer-events: none;
+	}
+
+	/* The bar: a solid band along the bottom, out of sight below the screen until it's wanted */
+	.bar {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 3;
+		display: flex;
+		align-items: center;
+		gap: 1.1rem;
+		padding: 0.55rem 1.1rem;
+		background: color-mix(in srgb, var(--bg) 85%, transparent);
+		border-top: 1px solid var(--border);
+		color: var(--text);
+		white-space: nowrap;
+		cursor: default;
+		translate: 0 101%;
+		transition: translate 0.25s ease-in;
+	}
+
+	/* Up while paused, or while the mouse moves (or a key is used) over the video */
+	.started:is(.paused, .awake) .bar {
+		translate: 0 0;
+		transition-timing-function: ease-out;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bar {
+			transition: none;
+		}
+	}
+
+	.icon {
+		all: unset;
+		display: grid;
+		place-items: center;
+		width: 1.1rem;
+		height: 1.1rem;
+		color: var(--muted);
+		cursor: pointer;
+	}
+
+	.icon:hover,
+	.icon:focus-visible {
+		color: var(--text);
+	}
+
+	.icon svg {
+		width: 0.8rem;
+		height: 0.8rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.4;
+		stroke-linecap: square;
+		overflow: visible;
+	}
+
+	.icon .solid {
+		fill: currentColor;
+		stroke: none;
+	}
+
+	[data-pp] {
+		color: var(--text);
+	}
+
+	/* Pause or play, sound or muted: one of each pair shows */
+	.i-play,
+	.paused .i-pause,
+	.i-muted,
+	.muted .i-sound,
+	.i-exit,
+	.player:fullscreen .i-full {
+		display: none;
+	}
+
+	.player:fullscreen .i-exit {
+		display: inline;
+	}
+
+	.paused .i-play {
+		display: block;
+	}
+
+	.muted .i-muted {
+		display: inline;
+	}
+
+	.time {
+		font-size: 0.65rem;
+	}
+
+	/* The line to scrub: a taller hit area around a 2px line */
+	.track {
+		position: relative;
+		flex: 1;
+		height: 1.1rem;
+		cursor: pointer;
+		touch-action: none;
+	}
+
+	.track::before,
+	.fill {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 50%;
+		height: 2px;
+		translate: 0 -50%;
+	}
+
+	.track::before {
+		right: 0;
+		background: rgb(230 225 214 / 0.25);
+	}
+
+	.fill {
+		background: var(--accent);
+	}
+
+	.knob {
+		position: absolute;
+		top: 50%;
+		width: 0.55rem;
+		height: 0.55rem;
+		translate: -50% -50%;
+		background: var(--accent);
+	}
+
+	.track:focus-visible {
+		outline: 1px solid var(--accent);
+		outline-offset: 2px;
+	}
+
+	/* Small cards (phones): smaller padding and gaps so the line keeps its room */
+	@media (max-width: 40rem) {
+		.bar {
+			gap: 0.8rem;
+			padding: 0.45rem 0.8rem;
+		}
+	}
+</style>
