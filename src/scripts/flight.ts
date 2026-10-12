@@ -104,11 +104,11 @@ function drawPath(row: HTMLElement, phrase: HTMLElement) {
 	// Phones: the launch sits under the text, so the path drops from under the phrase, turns, and runs
 	// level into the brackets' left side, as on desktop
 	if (phone) {
-		// Under the middle of the "t" in "take"
+		// Under the middle of the "a" in "take"
 		const word = phrase.querySelector("em")!.firstChild!;
 		const t = document.createRange();
-		t.setStart(word, 0);
-		t.setEnd(word, 1);
+		t.setStart(word, 1);
+		t.setEnd(word, 2);
 		const tr = t.getBoundingClientRect();
 		const sx = X(tr.left + tr.width / 2);
 		const sy = Y(second.bottom) + 14;
