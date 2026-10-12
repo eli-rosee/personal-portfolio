@@ -86,23 +86,51 @@ function drawPath(row: HTMLElement, phrase: HTMLElement) {
 	const ym = Y(ship.top + ship.height / 2);
 	const ex = X(Math.min(ship.left, pad.left)) - 7 - 9; // the chevron's tip, just outside the brackets
 	const ceiling = first.top - base.top + 3;
-	const xs = Math.max(sx, X(first.right) + 6);
-	const w = ex - xs;
-	// A low crest, eased up out of the level run, then a long even ease down into a short straight run
-	const crest = Math.max(ceiling + 6, Math.min(sy, ym) - 16);
-	const xc = xs + w * 0.6;
-	const run = Math.min(36, w * 0.14);
+	const nx = X(first.right) + 6; // past the name and its ↗
+	const gap = Y(first.bottom) - offset + 3; // below this, the path runs under the first line's letters
+	const run = 36; // the short level run into the chevron
 	const xr = ex - run;
+	// A crest just before the rocket. The climb and the descent are one ease scaled to their heights
+	// (each side's width in proportion to its height), so both have the same slope, and the hump is the
+	// same size whatever the name; the level run from the phrase takes up the rest. Only the part above
+	// the gap between the lines has to clear the name: a long name steepens the hump (to 4 px across
+	// per px of height at most), then turns it into one rise into the rocket, then a level line into
+	// the pad.
+	let crest = Math.max(ceiling + 6, Math.min(sy, ym) - 16);
+	let end = ym;
+	// Where the climb first reaches y, as a fraction of its width (the ease: handles at half its width)
+	const reach = (y: number) => {
+		const h = (sy - y) / (sy - crest);
+		if (h <= 0) return 0;
+		let t = 0.5;
+		for (let lo = 0, hi = 1, i = 0; i < 20; i++, t = (lo + hi) / 2) (3 * t * t - 2 * t * t * t < h ? (lo = t) : (hi = t));
+		return 1.5 * t * (1 - t) + t * t * t;
+	};
+	let xs = sx;
+	let xc = sx;
+	for (const shape of ["hump", "rise", "level"]) {
+		if (shape === "rise") crest = ym;
+		if (shape === "level") crest = end = sy;
+		const up = sy - crest;
+		const down = end - crest;
+		if (!up && !down) break;
+		const w = Math.min(xr - sx, 7 * (up + down)); // as gentle as the room allows, up to 7 px per px
+		xs = xr - w;
+		xc = xs + (w * up) / (up + down);
+		if (w >= 4 * (up + down) && xs + (xc - xs) * reach(gap) >= nx) break;
+	}
+	if (crest === sy) xs = xc = xr;
+	const ease = (x0: number, y0: number, x1: number, y1: number) =>
+		x1 - x0 < 0.5 ? "" : `C${P((x0 + x1) / 2, y0)} ${P((x0 + x1) / 2, y1)} ${P(x1, y1)}`;
 	svg.querySelector(".path")!.setAttribute(
 		"d",
-		`M${P(sx, sy)}L${P(xs, sy)}C${P(xs + w * 0.2, sy)} ${P(xc - w * 0.24, crest)} ${P(xc, crest)}` +
-			`C${P(xc + (xr - xc) * 0.42, crest)} ${P(xr - (xr - xc) * 0.5, ym)} ${P(xr, ym)}L${P(ex, ym)}`,
+		`M${P(sx, sy)}L${P(xs, sy)}${ease(xs, sy, xc, crest)}${ease(xc, crest, xr, end)}L${P(ex, end)}`,
 	);
 	const ring = svg.querySelector(".ring")!;
 	ring.setAttribute("r", "3");
 	ring.setAttribute("cx", fx(sx));
 	ring.setAttribute("cy", fx(sy));
-	svg.querySelector(".chevron")!.setAttribute("d", `M${P(ex - 5, ym - 4.5)}L${P(ex, ym)}L${P(ex - 5, ym + 4.5)}`);
+	svg.querySelector(".chevron")!.setAttribute("d", `M${P(ex - 5, end - 4.5)}L${P(ex, end)}L${P(ex - 5, end + 4.5)}`);
 
 	// Brackets around the rocket and the whole pad
 	const p = 7;
