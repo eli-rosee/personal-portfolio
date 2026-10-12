@@ -1,0 +1,82 @@
+---
+// The page for an address with nothing at it: "Lost signal", the address, and a way home.
+// The title is an image from scripts/render-art.py (the display font's license).
+import { Image } from "astro:assets";
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import Starfield from "../components/Starfield.astro";
+import Button from "../components/Button.astro";
+import title from "../assets/brand/lost-signal.png";
+---
+
+<Layout title="Lost signal · Eli Rose" description="There's no page at this address.">
+	<Starfield />
+	<Nav />
+	<main class="lost">
+		<p class="code label">Error 404</p>
+		<h1><Image src={title} alt="Lost signal" height={title.height / 2} densities={[1, 2]} loading="eager" /></h1>
+		{/* The page is built once, so the address is filled in by the script; without it the line stays hidden */}
+		<p class="line" hidden data-missing>Nothing is broadcasting at <span class="address" data-address></span></p>
+		<Button href="/" primary>Back to home</Button>
+	</main>
+	<Footer telemetry={false} />
+</Layout>
+
+<style>
+	/* The message takes the space the nav and credit line leave, so the page fits one screen */
+	:global(body) {
+		display: flex;
+		flex-direction: column;
+		min-height: 100svh;
+	}
+
+	.lost {
+		flex: 1;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 1.75rem;
+		padding: 9rem var(--gutter) 4rem;
+		text-align: center;
+	}
+
+	.code {
+		margin: 0;
+		color: var(--accent);
+	}
+
+	h1 {
+		margin: 0;
+		line-height: 0;
+	}
+
+	h1 img {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.line {
+		margin: 0;
+		color: var(--muted);
+		font-family: var(--font-body);
+		overflow-wrap: anywhere;
+	}
+
+	.address {
+		color: var(--text);
+	}
+</style>
+
+<script>
+	const line = document.querySelector<HTMLElement>("[data-missing]");
+	const address = document.querySelector<HTMLElement>("[data-address]");
+	if (line && address) {
+		let path = location.pathname;
+		try {
+			path = decodeURI(path);
+		} catch {} // a malformed address shows as typed
+		address.textContent = path;
+		line.hidden = false;
+	}
+</script>

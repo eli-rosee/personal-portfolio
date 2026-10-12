@@ -15,6 +15,7 @@ Outputs:
     src/assets/brand/headings/*.png    section headings (SectionHeading.astro)
     src/assets/brand/titles/<id>.png   each project's title, for its page (from src/content/projects),
                                        and <id>-two.png, the title on two lines for phones
+    src/assets/brand/lost-signal.png   the 404 page's title
     src/assets/brand/rocket.json       rocket outline as SVG paths, and the nav logo's rocket size and gap
     public/favicon.ico                 tab icon fallback (stays at the root, where browsers look for it)
     public/assets/favicon.svg          tab icon
@@ -168,6 +169,10 @@ for md in sorted((ROOT / "src/content/projects").glob("**/*.md")):
         two = two_lines(match.group(1).upper(), TEXT)
         if two:
             save(two, f"src/assets/brand/titles/{project_id}-two.png", round(two.width * title_scale), TEXT)
+
+# The 404 page's title, at the project titles' size
+art = glyphs("LOST SIGNAL", TEXT)
+save(art, "src/assets/brand/lost-signal.png", round(art.width * title_scale), TEXT)
 
 # The rocket as SVG paths: the hull with the window cut out (draw it with fill-rule="evenodd"),
 # and the flame

@@ -25,7 +25,9 @@ src/
     projects/*.md         one file per project
   content.config.ts       schemas for the projects and the clip
   components/             the page's sections and cards
-  pages/index.astro       the page itself
+  pages/index.astro       the home page
+  pages/projects/[id].astro  each project's page
+  pages/404.astro         the page for an address with nothing at it
   scripts/                client-side code: the rocket launch, the live footer readouts
   styles/global.css       design tokens and shared classes
   assets/
