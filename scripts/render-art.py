@@ -13,7 +13,8 @@ Outputs:
     src/assets/brand/logo.png          the whole logo, for the link-preview image
     src/assets/brand/logo-er.png       the nav logo's [ER] (the rocket beside it is SVG, from rocket.json)
     src/assets/brand/headings/*.png    section headings (SectionHeading.astro)
-    src/assets/brand/titles/<id>.png   each project's title, for its page (from src/content/projects)
+    src/assets/brand/titles/<id>.png   each project's title, for its page (from src/content/projects),
+                                       and <id>-two.png, the title on two lines for phones
     src/assets/brand/rocket.json       rocket outline as SVG paths, and the nav logo's rocket size and gap
     public/favicon.ico                 tab icon fallback (stays at the root, where browsers look for it)
     public/assets/favicon.svg          tab icon
@@ -136,7 +137,25 @@ for word in ["Projects", "About", "Telemetry", "Media", "Next project"]:
     save(art, f"src/assets/brand/headings/{word.lower().replace(' ', '-')}.png", round(art.width * heading_scale), TEXT)
 
 # Project titles, for the top of each project page: the same letters as the headings, larger (the capitals
-# 30px tall on the page, saved at 2x). One image per project, named by its id (the file or folder name).
+# 30px tall on the page, saved at 2x). One image per project, named by its id (the file or folder name),
+# and for a title of more than one word a two-line version (<id>-two.png), broken where the lines come
+# out most even and centered, which phones use when the one line would have to shrink.
+def two_lines(text, color):
+    words = text.split()
+    if len(words) < 2:
+        return None
+    splits = [(" ".join(words[:k]), " ".join(words[k:])) for k in range(1, len(words))]
+    top, bottom = min(splits, key=lambda s: max(font.getlength(s[0]), font.getlength(s[1])))
+    lines = [glyphs(top, color), glyphs(bottom, color)]
+    cap = glyphs("E", color).height
+    gap = round(cap * 0.45)
+    width = max(line.width for line in lines)
+    out = Image.new("RGBA", (width, cap * 2 + gap), (0, 0, 0, 0))
+    for i, line in enumerate(lines):
+        out.alpha_composite(line, ((width - line.width) // 2, i * (cap + gap)))
+    return out
+
+
 title_scale = 60 / glyphs("E", TEXT).height
 for old in (ROOT / "src/assets/brand/titles").glob("*.png"):  # drop titles of projects that are gone
     old.unlink()
@@ -146,6 +165,9 @@ for md in sorted((ROOT / "src/content/projects").glob("**/*.md")):
     if match:
         art = glyphs(match.group(1).upper(), TEXT)
         save(art, f"src/assets/brand/titles/{project_id}.png", round(art.width * title_scale), TEXT)
+        two = two_lines(match.group(1).upper(), TEXT)
+        if two:
+            save(two, f"src/assets/brand/titles/{project_id}-two.png", round(two.width * title_scale), TEXT)
 
 # The rocket as SVG paths: the hull with the window cut out (draw it with fill-rule="evenodd"),
 # and the flame
