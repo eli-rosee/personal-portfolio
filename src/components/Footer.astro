@@ -265,6 +265,7 @@ import { site } from "../content/site";
 		max-width: var(--page-max);
 		margin: 0 auto;
 		padding: 0 var(--gutter) var(--space-6);
+		container-type: inline-size; /* the credit line wraps by its width */
 	}
 
 	/* Hide the heading too when no readout has data */
@@ -311,6 +312,18 @@ import { site } from "../content/site";
 
 	.dot {
 		margin: 0 1.6rem;
+	}
+
+	/* Too narrow for one line (about 474px): the credit on a line of its own, the address under it, no dot
+	   (left at the end of the first line, it pushed the credit off center) */
+	@container (max-width: 30rem) {
+		.dot {
+			display: none;
+		}
+
+		.credit > span:first-child {
+			flex-basis: 100%;
+		}
 	}
 
 	/* Addresses in Plex Mono: Space Mono's @ reads as an "a" */
