@@ -191,11 +191,12 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 		--ar: 16 / 9;
 		position: relative;
 		display: grid;
-		grid-template-columns: 1fr auto;
+		grid-template-columns: minmax(0, 1fr) max-content;
 		grid-template-areas: "tl tr" "s s" "bl br";
 		align-items: end;
 		column-gap: 1.5rem;
-		width: min(1180px, 90vw, calc((100cqh - var(--labels)) * 16 / 9));
+		--w: min(1180px, 90vw, calc((100cqh - var(--labels)) * 16 / 9)); /* the screen's width */
+		width: max(var(--w), min(22rem, 90vw)); /* the labels' rows: never narrower than 22rem */
 	}
 
 	/* Narrow screens wrap their title and caption onto more lines: more room for the labels */
@@ -205,16 +206,62 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 
 	:global(.theater[data-shape="portrait"]) .col {
 		--ar: 3 / 4;
-		width: min(90vw, calc((100cqh - var(--labels)) * 3 / 4));
+		--w: min(90vw, calc((100cqh - var(--labels)) * 3 / 4));
 	}
 
 	:global(.theater[data-shape="tall"]) .col {
 		--ar: 9 / 16;
-		width: min(90vw, calc((100cqh - var(--labels)) * 9 / 16));
+		--w: min(90vw, calc((100cqh - var(--labels)) * 9 / 16));
+	}
+
+	/* A screen narrower than 26rem (a tall clip, or a portrait in a short window: the heights below are
+	   where the widths above reach 26rem) has no room for two labels side by side: Close drops its "Esc",
+	   and the hint moves under the title and caption instead of squeezing them (phones have their own
+	   layout). Below 22rem the labels' rows stay 22rem wide, reaching a little past the screen's edges. */
+	@media (width > 40rem) {
+		@container (max-height: 47.2rem) {
+			:global(.theater:is([data-shape="portrait"], [data-shape="tall"])) .esc {
+				display: none;
+			}
+
+			:global(.theater:is([data-shape="portrait"], [data-shape="tall"])) .col {
+				grid-template-areas: "tl tr" "s s" "bl bl" "br br";
+			}
+
+			:global(.theater:is([data-shape="portrait"], [data-shape="tall"])) .c-br {
+				justify-self: start;
+				padding-top: 0.6rem;
+			}
+
+			:global(.theater:is([data-shape="portrait"], [data-shape="tall"])) .hint-box {
+				justify-items: start;
+			}
+		}
+
+		@container (max-height: 58.7rem) {
+			:global(.theater[data-shape="tall"]) .esc {
+				display: none;
+			}
+
+			:global(.theater[data-shape="tall"]) .col {
+				grid-template-areas: "tl tr" "s s" "bl bl" "br br";
+			}
+
+			:global(.theater[data-shape="tall"]) .c-br {
+				justify-self: start;
+				padding-top: 0.6rem;
+			}
+
+			:global(.theater[data-shape="tall"]) .hint-box {
+				justify-items: start;
+			}
+		}
 	}
 
 	.col > :global(.stage) {
 		grid-area: s;
+		justify-self: center;
+		width: var(--w);
 		--screen-cut: 1.1rem;
 		--bezel-pad: 0.55rem;
 	}
@@ -280,6 +327,7 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 		font-size: var(--text-xs);
 		letter-spacing: var(--tracking-label);
 		text-transform: uppercase;
+		white-space: nowrap;
 	}
 
 	.close:hover,
@@ -570,15 +618,18 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 
 		.col {
 			display: block;
-			width: min(calc(100vw - 2rem), calc((100cqh - var(--labels)) * 16 / 9));
+			--w: min(calc(100vw - 2rem), calc((100cqh - var(--labels)) * 16 / 9));
+			width: var(--w);
 		}
 
 		:global(.theater[data-shape="portrait"]) .col {
-			width: min(calc(100vw - 2rem), calc((100cqh - var(--labels)) * 3 / 4));
+			--w: min(calc(100vw - 2rem), calc((100cqh - var(--labels)) * 3 / 4));
+			width: var(--w);
 		}
 
 		:global(.theater[data-shape="tall"]) .col {
-			width: min(calc(100vw - 2rem), calc((100cqh - var(--labels)) * 9 / 16));
+			--w: min(calc(100vw - 2rem), calc((100cqh - var(--labels)) * 9 / 16));
+			width: var(--w);
 		}
 
 		.col > :global(.stage) {
