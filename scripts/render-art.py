@@ -131,13 +131,15 @@ nav_logo = {  # CSS px at the nav's size
 # Section headings: off-white, 21px tall on the page (saved at 2x). One scale for all, so the
 # letters match across headings whatever their ink.
 heading_scale = 42 / glyphs("E", TEXT).height
-for word in ["Projects", "About", "Telemetry"]:
+for word in ["Projects", "About", "Telemetry", "Media", "Next project"]:
     art = glyphs(word.upper(), TEXT)
-    save(art, f"src/assets/brand/headings/{word.lower()}.png", round(art.width * heading_scale), TEXT)
+    save(art, f"src/assets/brand/headings/{word.lower().replace(' ', '-')}.png", round(art.width * heading_scale), TEXT)
 
 # Project titles, for the top of each project page: the same letters as the headings, larger (the capitals
 # 30px tall on the page, saved at 2x). One image per project, named by its id (the file or folder name).
 title_scale = 60 / glyphs("E", TEXT).height
+for old in (ROOT / "src/assets/brand/titles").glob("*.png"):  # drop titles of projects that are gone
+    old.unlink()
 for md in sorted((ROOT / "src/content/projects").glob("**/*.md")):
     project_id = md.parent.name if md.stem == "index" else md.stem
     match = re.search(r'^title:\s*"?(.+?)"?\s*$', md.read_text(), re.M)

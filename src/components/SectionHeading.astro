@@ -6,14 +6,16 @@ import { Image } from "astro:assets";
 import projects from "../assets/brand/headings/projects.png";
 import about from "../assets/brand/headings/about.png";
 import telemetry from "../assets/brand/headings/telemetry.png";
+import media from "../assets/brand/headings/media.png";
+import nextProject from "../assets/brand/headings/next-project.png";
 
 interface Props {
 	id: string;
-	text: "Projects" | "About" | "Telemetry";
+	text: "Projects" | "About" | "Telemetry" | "Media" | "Next project";
 }
 
 const { id, text } = Astro.props;
-const art = { Projects: projects, About: about, Telemetry: telemetry }[text];
+const art = { Projects: projects, About: about, Telemetry: telemetry, Media: media, "Next project": nextProject }[text];
 ---
 
 <h2 id={id} class="section-title">
