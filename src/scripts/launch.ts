@@ -22,6 +22,11 @@ const DESCENT_START = 0.85; // the descent starts from this share of the climb's
 const ENTRY = 0.2; // the descent joins its speed curve this far in, already near full speed
 const FADE = 0.16; // the landing fades in over this share of the descent; the takeoff fades out just as long
 const REDUCED_MOTION_MS = 900;
+// Sideways jolts as the engine throttles up, like the project pages' countdown: px at full burn, ms
+// per jolt, and how long they die away once the rocket is climbing
+const JOLT = 0.61;
+const JOLT_MS = 65;
+const JOLT_FADE = 400;
 
 // Pitch in degrees from vertical at progress p: a gravity turn, gradual the whole way up
 const pitch = (p: number) => 45 * p ** 1.5;
@@ -141,6 +146,12 @@ export function initLaunch(
 			burn = 1 - 0.4 * easeInOut(clamp01((t - 0.6) / 0.4)); // throttles down near the ground
 		} else {
 			burn = 0.6 * (1 - easeInOut((ms - (totalMs - SETTLE)) / SETTLE));
+		}
+		// The rocket strains on the pad, shaking harder as the engine builds, and steadies as it climbs
+		const jolt = ms < IGNITE ? burn : 1 - clamp01((ms - IGNITE) / JOLT_FADE);
+		if (jolt > 0) {
+			const k = (ms / JOLT_MS) % 2; // a triangle wave, one jolt each way
+			x += JOLT * jolt * (k < 1 ? 2 * k - 1 : 3 - 2 * k);
 		}
 		ship.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
 		ship.style.opacity = String(opacity);
