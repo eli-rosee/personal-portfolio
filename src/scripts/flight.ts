@@ -26,7 +26,9 @@ const dbez = (a: number, b: number, c: number, d: number, t: number) => {
 };
 const fx = (n: number) => n.toFixed(1);
 
-const FLIGHT = 2600; // ms from liftoff to the dock
+const FLIGHT = 3400; // ms from liftoff to the dock
+const SCROLL_DELAY = 750; // ms after liftoff before the page starts to scroll
+const BEAT = 1000; // ms per countdown beat: T-3, T-2, T-1 take a real 3 seconds
 
 // The ink of a line of text (its letters, not its line box), from the font's own measurements
 const ink = (el: HTMLElement) => {
@@ -202,19 +204,19 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 		light?.animate([{ scale: 1.6 }, { scale: 1 }], { duration: 300, easing: "ease-out" });
 		if (beat === "1") row.classList.add("arms-back");
 		const up = lifts[i];
-		// A quick shake, mostly sideways, growing a little with each beat
+		// A shake through the beat, mostly sideways, growing a little with each beat
 		rk.animate(
-			[0, 1, 2, 3, 4, 5, 6, 7]
+			Array.from({ length: 16 }, (_, k) => k)
 				.map((k) => ({ translate: `${(k % 2 ? 1 : -1) * (0.35 + i * 0.13)}px ${-up + (k % 3 === 0 ? 0.25 : -0.25)}px` }))
 				.concat({ translate: `0 ${-up}px` }),
-			{ duration: 520, fill: "forwards" },
+			{ duration: BEAT, fill: "forwards" },
 		);
-		await wait(520);
+		await wait(BEAT);
 	}
 	show("Liftoff");
 	row.classList.add("go");
 	flame.style.opacity = "1";
-	setTimeout(() => label.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: "forwards" }).finished.then(() => label.remove()), 700);
+	setTimeout(() => label.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: "forwards" }).finished.then(() => label.remove()), 1000);
 }
 
 async function fly(button: HTMLElement) {
@@ -291,12 +293,12 @@ async function fly(button: HTMLElement) {
 	const flight = ship.animate(frames, { duration: FLIGHT, easing: "linear", fill: "forwards" });
 	const t0 = performance.now();
 
-	// The page glides to the top in the first half; a short orange contrail follows the engine
+	// The page glides to the top in the first half, after a moment's climb; a short orange contrail follows the engine
 	const from = scrollY;
 	const trail: { x: number; y: number }[] = [];
 	const tick = (now: number) => {
 		const t = clamp((now - t0) / FLIGHT);
-		const g = clamp((t - 0.05) / 0.45);
+		const g = clamp((t - SCROLL_DELAY / FLIGHT) / (0.5 - SCROLL_DELAY / FLIGHT));
 		if (g < 1) scrollTo({ top: from * (1 - easeInOut(g)), behavior: "instant" });
 		const p = at(t);
 		const rad = ((p.heading - 90) * Math.PI) / 180;
