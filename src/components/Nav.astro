@@ -1,7 +1,15 @@
 ---
 import { Image } from "astro:assets";
 import { site } from "../content/site";
-import logo from "../assets/brand/logo.png";
+import logoEr from "../assets/brand/logo-er.png";
+import rocket from "../assets/brand/rocket.json";
+
+// The logo's rocket, turned 45° like in the logo art: the viewBox is the turned drawing's bounding box
+const HULL = [[50, 0], [72, 34], [72, 78], [90, 112], [90, 124], [72, 110], [28, 110], [10, 124], [10, 112], [28, 78], [28, 34]];
+const FLAME = [[36, 116], [64, 116], [50, 158]];
+const turned = [...HULL, ...FLAME].map(([x, y]) => [(x - y) * Math.SQRT1_2, (x + y) * Math.SQRT1_2]);
+const [xs, ys] = [turned.map((p) => p[0]), turned.map((p) => p[1])];
+const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
 ---
 
 {/*
@@ -13,7 +21,15 @@ import logo from "../assets/brand/logo.png";
 <header>
 	<nav aria-label="Main">
 		<a class="home" href="/">
-			<Image src={logo} alt={site.name} width={128} densities={[1, 2]} loading="eager" />
+			<Image class="er" src={logoEr} alt={site.name} width={82.5} densities={[1, 2]} loading="eager" />
+			{/* The rocket: the same SVG drawing as every other rocket on the site, so a docking rocket
+			    lands on an identical one */}
+			<svg class="logo-rocket" viewBox={box.map((n) => n.toFixed(2)).join(" ")} aria-hidden="true" data-logo-rocket>
+				<g transform="rotate(45)">
+					<path class="hull" fill-rule="evenodd" d={rocket.hull} />
+					<path class="flame" d={rocket.flame} />
+				</g>
+			</svg>
 		</a>
 		<div class="sky" aria-hidden="true">
 			{/* A bar-wide box that slides right, carrying the invader at its right edge. The script picks
@@ -67,6 +83,8 @@ import logo from "../assets/brand/logo.png";
 		</svg>
 	</nav>
 </header>
+{/* Holds the header's place in the page, since the header itself is fixed */}
+<div class="header-space" aria-hidden="true"></div>
 
 <script>
 	// The first pass is always the classic crab (set in the markup), so it's recognizable. After that,
@@ -93,14 +111,23 @@ import logo from "../assets/brand/logo.png";
 	});
 </script>
 
-<style>
+<style define:vars={{ logoGap: `${rocket.navLogo.gap}px`, logoRocket: `${rocket.navLogo.rocketHeight}px` }}>
 	/* Full-width bar on the page background, with a 1px rule under it */
+	/* Fixed, not sticky: when the page bounces past the top (trackpads, phones), the page moves and the
+	   bar stays put. The spacer below holds its place: the planet (the bar's tallest item) plus the bar's
+	   padding and its 1px rule. */
 	header {
-		position: sticky;
+		position: fixed;
 		top: 0;
+		left: 0;
+		right: 0;
 		z-index: 10;
 		background: var(--bg);
 		border-bottom: var(--border-width) solid var(--border);
+	}
+
+	.header-space {
+		height: calc(60px + 2 * var(--space-3) + var(--border-width));
 	}
 
 	nav {
@@ -114,20 +141,44 @@ import logo from "../assets/brand/logo.png";
 		padding: var(--space-3) var(--gutter);
 	}
 
+	/* [ER] (an image) and the rocket (SVG), sized and spaced as in the logo art (rocket.json navLogo).
+	   --logo scales the whole logo (smaller on phones). */
 	.home {
+		--logo: 1;
 		flex: none;
+		display: flex;
+		align-items: center;
+		gap: calc(var(--logoGap) * var(--logo));
 	}
 
-	.home img {
+	.home > * {
 		display: block;
-		width: 128px;
 		transition:
 			translate 0.2s,
 			filter 0.2s;
 	}
 
+	.er {
+		width: calc(82.5px * var(--logo));
+		height: auto;
+	}
+
+	.logo-rocket {
+		height: calc(var(--logoRocket) * var(--logo));
+		width: auto;
+		overflow: visible;
+	}
+
+	.logo-rocket .hull {
+		fill: var(--text);
+	}
+
+	.logo-rocket .flame {
+		fill: var(--accent);
+	}
+
 	/* The logo is the way home on every page: it brightens and lifts slightly on hover */
-	.home:is(:hover, :focus-visible) img {
+	.home:is(:hover, :focus-visible) > * {
 		translate: 0 -2px;
 		filter: brightness(1.15);
 	}
@@ -339,7 +390,7 @@ import logo from "../assets/brand/logo.png";
 			display: none;
 		}
 
-		.home:is(:hover, :focus-visible) img {
+		.home:is(:hover, :focus-visible) > * {
 			translate: none;
 		}
 
@@ -353,8 +404,12 @@ import logo from "../assets/brand/logo.png";
 			padding-block: var(--space-2);
 		}
 
-		.home img {
-			width: 97px;
+		.header-space {
+			height: calc(44px + 2 * var(--space-2) + var(--border-width)); /* the phone planet and padding */
+		}
+
+		.home {
+			--logo: 0.758; /* 97px instead of 128px wide */
 		}
 
 		.sky {

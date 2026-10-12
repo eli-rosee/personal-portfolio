@@ -10,9 +10,11 @@ Usage (from the repo root, needs Pillow and fontTools, and npm install for the w
 
 Outputs:
     src/assets/brand/wordmark.png      hero name
-    src/assets/brand/logo.png          nav logo
+    src/assets/brand/logo.png          the whole logo, for the link-preview image
+    src/assets/brand/logo-er.png       the nav logo's [ER] (the rocket beside it is SVG, from rocket.json)
     src/assets/brand/headings/*.png    section headings (SectionHeading.astro)
-    src/assets/brand/rocket.json       rocket outline as SVG paths (ClipCard.astro)
+    src/assets/brand/titles/<id>.png   each project's title, for its page (from src/content/projects)
+    src/assets/brand/rocket.json       rocket outline as SVG paths, and the nav logo's rocket size and gap
     public/favicon.ico                 tab icon fallback (stays at the root, where browsers look for it)
     public/assets/favicon.svg          tab icon
     public/assets/apple-touch-icon.png home-screen icon on iPhones and iPads
@@ -114,8 +116,17 @@ logo = row(
     [glyphs("[", MUTED), er, glyphs("]", MUTED), rocket(round(er.height * 0.875))],  # the size of every other rocket on the site
     [bracket_gap, bracket_gap, 70 * SUPERSAMPLE],
 )
-# [ER] keeps its size (65.7px tall at 2x) whatever the rocket adds: the nav shows this at 128px wide
-save(logo, "src/assets/brand/logo.png", round(logo.width * 65.7 / er.height))
+# [ER] keeps its size (65.7px tall at 2x) whatever the rocket adds
+LOGO_SCALE = 65.7 / er.height  # 2x px per supersampled px
+save(logo, "src/assets/brand/logo.png", round(logo.width * LOGO_SCALE))
+# The nav shows [ER] as an image (the font's license) and draws the rocket beside it as SVG, the same
+# drawing as every other rocket on the site, so the rocket that docks into the logo is identical to it
+er_part = row([glyphs("[", MUTED), er, glyphs("]", MUTED)], [bracket_gap, bracket_gap])
+save(er_part, "src/assets/brand/logo-er.png", round(er_part.width * LOGO_SCALE))
+nav_logo = {  # CSS px at the nav's size
+    "rocketHeight": round(er.height * 0.875 * LOGO_SCALE / 2, 2),  # the turned rocket's height, flame included
+    "gap": round(70 * SUPERSAMPLE * LOGO_SCALE / 2, 2),  # from "]" to the rocket
+}
 
 # Section headings: off-white, 21px tall on the page (saved at 2x). One scale for all, so the
 # letters match across headings whatever their ink.
@@ -124,6 +135,16 @@ for word in ["Projects", "About", "Telemetry"]:
     art = glyphs(word.upper(), TEXT)
     save(art, f"src/assets/brand/headings/{word.lower()}.png", round(art.width * heading_scale), TEXT)
 
+# Project titles, for the top of each project page: the same letters as the headings, larger (the capitals
+# 30px tall on the page, saved at 2x). One image per project, named by its id (the file or folder name).
+title_scale = 60 / glyphs("E", TEXT).height
+for md in sorted((ROOT / "src/content/projects").glob("**/*.md")):
+    project_id = md.parent.name if md.stem == "index" else md.stem
+    match = re.search(r'^title:\s*"?(.+?)"?\s*$', md.read_text(), re.M)
+    if match:
+        art = glyphs(match.group(1).upper(), TEXT)
+        save(art, f"src/assets/brand/titles/{project_id}.png", round(art.width * title_scale), TEXT)
+
 # The rocket as SVG paths: the hull with the window cut out (draw it with fill-rule="evenodd"),
 # and the flame
 polygon_path = lambda points: "M" + " ".join(f"{x} {y}" for x, y in points) + "Z"
@@ -131,7 +152,7 @@ cx, cy, r = WINDOW
 hull_path = f"{polygon_path(HULL)} M{cx - r} {cy}a{r} {r} 0 1 0 {2 * r} 0a{r} {r} 0 1 0 {-2 * r} 0Z"
 flame_path = polygon_path(FLAME)
 
-(ROOT / "src/assets/brand/rocket.json").write_text(json.dumps({"hull": hull_path, "flame": flame_path}, indent=2) + "\n")
+(ROOT / "src/assets/brand/rocket.json").write_text(json.dumps({"hull": hull_path, "flame": flame_path, "navLogo": nav_logo}, indent=2) + "\n")
 print("Wrote src/assets/brand/rocket.json")
 
 # Favicons, all the rocket alone.
