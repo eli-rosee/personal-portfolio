@@ -73,20 +73,28 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 				></path>
 			</svg>
 		</div>
-		<svg class="planet" viewBox="0 0 48 48" aria-hidden="true">
-			<g transform="rotate(-20 24 24)">
-				<path class="ring" d="M4 24a20 6 0 0 1 40 0"></path>
-				<circle class="globe" cx="24" cy="24" r="11"></circle>
-				<path class="band" d="M14 21.5q10 3 20 0"></path>
-				<path class="ring" d="M44 24a20 6 0 0 1-40 0"></path>
-			</g>
-		</svg>
+		{/* The planet calls in waves of invaders to shoot down (scripts/arcade.ts) */}
+		<button type="button" class="planet-btn" data-planet>
+			<svg class="planet" viewBox="0 0 48 48" aria-hidden="true">
+				<g transform="rotate(-20 24 24)">
+					<path class="ring" d="M4 24a20 6 0 0 1 40 0"></path>
+					<circle class="globe" cx="24" cy="24" r="11"></circle>
+					<path class="band" d="M14 21.5q10 3 20 0"></path>
+					<path class="ring" d="M44 24a20 6 0 0 1-40 0"></path>
+				</g>
+			</svg>
+			<span class="tooltip label" id="planet-tip" role="tooltip">Defend the planet</span>
+		</button>
 	</nav>
+	{/* The arcade's invaders, bolts, bursts and banners, over the whole bar */}
+	<div class="fx" data-fx aria-hidden="true"></div>
 </header>
 {/* Holds the header's place in the page, since the header itself is fixed */}
 <div class="header-space" aria-hidden="true"></div>
 
 <script>
+	import { initArcade } from "../scripts/arcade";
+
 	// The first pass is always the classic crab (set in the markup), so it's recognizable. After that,
 	// a different kind on each pass, never the same one twice in a row. It switches between passes,
 	// while the invader is invisible.
@@ -101,6 +109,8 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 			if (event.target === run) run.dataset.kind = pick(run.dataset.kind);
 		});
 	}
+
+	initArcade(document.querySelector("header")!);
 
 	// On the home page the logo glides back to the top instead of reloading the page
 	const home = document.querySelector<HTMLAnchorElement>("header .home");
@@ -200,6 +210,12 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 		height: 0;
 		margin: 0 0.5rem 0 12rem; /* the invader appears partway across, well clear of the logo */
 		pointer-events: none;
+		transition: opacity 0.3s;
+	}
+
+	/* Out of the way while a wave plays */
+	.sky.off {
+		opacity: 0;
 	}
 
 	.sky > *,
@@ -341,11 +357,62 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 		}
 	}
 
-	.planet {
+	.planet-btn {
+		--planet: 60px;
+		position: relative;
 		flex: none;
-		width: 60px;
-		height: 60px;
+		display: block;
+		padding: 0;
+		border: 0;
+		background: none;
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.planet-btn:focus-visible {
+		outline: 1px solid var(--accent);
+		outline-offset: 4px;
+	}
+
+	.planet {
+		display: block;
+		width: var(--planet);
+		height: var(--planet);
 		overflow: visible;
+		transition:
+			filter 0.2s,
+			opacity 0.6s,
+			scale 0.6s;
+	}
+
+	/* Hover brightens it, like the logo (not while it fires, which would wash the amber out) */
+	.planet-btn:is(:hover, :focus-visible) .planet:not(.firing) {
+		filter: brightness(1.35);
+	}
+
+	/* The tooltip hangs from the planet's right side (it's at the edge of the bar), its notch under
+	   the planet's middle. Gone from the click that starts a game until the game is over. */
+	.planet-btn > .tooltip {
+		left: auto;
+		right: 0;
+		translate: none;
+		white-space: nowrap;
+	}
+
+	.planet-btn > .tooltip::before {
+		left: auto;
+		right: calc(var(--planet) / 2 - 3.5px);
+	}
+
+	.planet-btn.playing > .tooltip {
+		opacity: 0;
+		visibility: hidden;
+		transition: none;
+	}
+
+	/* Space is the trigger during a game, so no focus ring on the planet */
+	.planet-btn.playing:focus-visible {
+		outline: none;
 	}
 
 	.planet .globe {
@@ -368,6 +435,113 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 	/* The planet lights up amber as it fires */
 	.planet :is(.globe, .ring) {
 		animation-name: planet-flash;
+	}
+
+	/* During a game. !important outranks the skirmish's flash without restarting it, so it stays
+	   in step with the invader: calm silences it, firing is a shot, won the victory's green ring. */
+	.planet:global(.calm) :is(.globe, .ring) {
+		stroke: var(--muted) !important;
+	}
+
+	.planet:global(.firing) :is(.globe, .ring) {
+		stroke: var(--accent) !important;
+	}
+
+	.planet:global(.won) :is(.globe, .ring) {
+		stroke: var(--status) !important;
+	}
+
+	/* Game over: gone at once (its pieces fly off), then it forms again over 0.6s */
+	.planet:global(.shattered) {
+		opacity: 0;
+		scale: 0.6;
+		transition-duration: 0.1s;
+	}
+
+	/* The wave: everything here is made by scripts/arcade.ts and placed with `translate` */
+	.fx {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	/* While a game plays, a click anywhere on the bar fires */
+	header:global(.arcade) {
+		cursor: crosshair;
+	}
+
+	/* An invader, centered on its spot in the lane */
+	.fx :global(.foe) {
+		position: absolute;
+		left: 0;
+		top: 0;
+		padding: 10px;
+		transform: translate(-50%, -50%);
+		line-height: 0;
+	}
+
+	.fx :global(.foe .invader) {
+		display: block;
+		position: static;
+		translate: none;
+	}
+
+	/* An octopus's first hit */
+	.fx :global(.foe.hurt .invader) {
+		fill: var(--accent);
+	}
+
+	.fx :global(.bolt) {
+		position: absolute;
+		left: -0.25rem;
+		top: -1px;
+		width: 0.5rem;
+		height: 2px;
+		background: var(--accent);
+		box-shadow: 0 0 6px var(--accent);
+	}
+
+	.fx :global(.burst) {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: calc(9 * var(--px));
+		height: calc(7 * var(--px));
+		transform: translate(-50%, -50%);
+		fill: var(--accent);
+	}
+
+	/* Wave numbers and the result, centered on their spot */
+	.fx :global(.banner) {
+		position: absolute;
+		left: 0;
+		top: 0;
+		transform: translate(-50%, -50%);
+		padding: 0.2rem calc(0.6rem - 0.4em) 0.2rem 0.6rem; /* less on the right: the tracking trails the last letter */
+		background: var(--bg);
+		font-family: var(--font-label);
+		letter-spacing: 0.4em;
+		text-transform: uppercase;
+		white-space: pre;
+		color: var(--text);
+	}
+
+	.fx :global(.banner.accent) {
+		color: var(--accent);
+	}
+
+	/* The planet's pieces when it breaks */
+	.fx :global(.debris) {
+		position: absolute;
+		left: -1.5px;
+		top: -1.5px;
+		width: 3px;
+		height: 3px;
+		background: var(--muted);
+	}
+
+	.fx :global(.debris.lit) {
+		background: var(--accent);
 	}
 
 	@keyframes planet-flash {
@@ -397,6 +571,15 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 		.planet :is(.globe, .ring) {
 			animation: none;
 		}
+
+		/* No waves: the planet is just a drawing */
+		.planet-btn {
+			cursor: default;
+		}
+
+		.planet-btn > .tooltip {
+			display: none;
+		}
 	}
 
 	@media (max-width: 30rem) {
@@ -418,9 +601,13 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 			margin-left: 4rem;
 		}
 
-		.planet {
-			width: 44px;
-			height: 44px;
+		.planet-btn {
+			--planet: 44px;
+		}
+
+		.fx :global(.banner) {
+			font-size: var(--text-xs);
+			letter-spacing: 0.25em;
 		}
 	}
 </style>
