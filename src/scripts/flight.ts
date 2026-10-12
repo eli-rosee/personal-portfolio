@@ -66,12 +66,14 @@ function drawPath(row: HTMLElement, phrase: HTMLElement) {
 	// The same distance from the first line's letters to the top of the rocket and pad as from their
 	// bottom to the second line's letters
 	const launch = row.querySelector<HTMLElement>(".launch")!;
+	const phone = getComputedStyle(row).flexDirection === "column"; // the launch under the text
+	if (phone) launch.style.setProperty("--shift", "0px");
 	const shift = parseFloat(launch.style.getPropertyValue("--shift") || "0");
 	const ship = row.querySelector<SVGElement>(".rk")!.getBoundingClientRect();
 	const pad = row.querySelector<SVGGraphicsElement>(".pad .base")!.getBoundingClientRect();
 	const top = Math.min(ship.top, pad.top);
 	const bottom = Math.max(ship.bottom, pad.bottom);
-	const offset = (first.top + second.bottom) / 2 - (top + bottom) / 2;
+	const offset = phone ? 0 : (first.top + second.bottom) / 2 - (top + bottom) / 2;
 	launch.style.setProperty("--shift", `${shift + offset}px`);
 
 	const base = row.getBoundingClientRect();
@@ -79,6 +81,49 @@ function drawPath(row: HTMLElement, phrase: HTMLElement) {
 	const X = (x: number) => x - base.left;
 	const Y = (y: number) => y + offset - base.top; // where things are once the shift applies
 	const P = (x: number, y: number) => `${fx(x)} ${fx(y)}`;
+
+	// Brackets around the rocket and the whole pad
+	const p = 7;
+	const a = 6;
+	const x0 = X(Math.min(ship.left, pad.left)) - p;
+	const x1 = X(Math.max(ship.right, pad.right)) + p;
+	const y0 = Y(top) - p;
+	const y1 = Y(bottom) + p;
+	svg.querySelector(".brackets")!.setAttribute(
+		"d",
+		[
+			[x0, y0 + a, x0, y0, x0 + a, y0],
+			[x1 - a, y0, x1, y0, x1, y0 + a],
+			[x0, y1 - a, x0, y1, x0 + a, y1],
+			[x1 - a, y1, x1, y1, x1, y1 - a],
+		]
+			.map(([q, r, s, t, u, v]) => `M${fx(q)} ${fx(r)}L${fx(s)} ${fx(t)}L${fx(u)} ${fx(v)}`)
+			.join(""),
+	);
+
+	// Phones: the launch sits under the text, so the path drops from under the phrase, turns, and runs
+	// level into the brackets' left side, as on desktop
+	if (phone) {
+		// Under the middle of the "t" in "take"
+		const word = phrase.querySelector("em")!.firstChild!;
+		const t = document.createRange();
+		t.setStart(word, 0);
+		t.setEnd(word, 1);
+		const tr = t.getBoundingClientRect();
+		const sx = X(tr.left + tr.width / 2);
+		const sy = Y(second.bottom) + 14;
+		const ym = Y(ship.top + ship.height / 2);
+		const ex = x0 - 9; // the chevron's tip, just outside the brackets
+		const r = 10;
+		const ring = svg.querySelector(".ring")!;
+		ring.setAttribute("r", "3");
+		ring.setAttribute("cx", fx(sx));
+		ring.setAttribute("cy", fx(sy));
+		svg.querySelector(".path")!.setAttribute("d", `M${P(sx, sy + 3)}L${P(sx, ym - r)}Q${P(sx, ym)} ${P(sx + r, ym)}L${P(ex, ym)}`);
+		svg.querySelector(".chevron")!.setAttribute("d", `M${P(ex - 5, ym - 4.5)}L${P(ex, ym)}L${P(ex - 5, ym + 4.5)}`);
+		svg.classList.add("drawn");
+		return;
+	}
 
 	// From beside the phrase, level with the middle of its letters, out past the end of the name
 	const sx = X(ph.right) + 14;
@@ -132,24 +177,6 @@ function drawPath(row: HTMLElement, phrase: HTMLElement) {
 	ring.setAttribute("cy", fx(sy));
 	svg.querySelector(".chevron")!.setAttribute("d", `M${P(ex - 5, end - 4.5)}L${P(ex, end)}L${P(ex - 5, end + 4.5)}`);
 
-	// Brackets around the rocket and the whole pad
-	const p = 7;
-	const a = 6;
-	const x0 = X(Math.min(ship.left, pad.left)) - p;
-	const x1 = X(Math.max(ship.right, pad.right)) + p;
-	const y0 = Y(top) - p;
-	const y1 = Y(bottom) + p;
-	svg.querySelector(".brackets")!.setAttribute(
-		"d",
-		[
-			[x0, y0 + a, x0, y0, x0 + a, y0],
-			[x1 - a, y0, x1, y0, x1, y0 + a],
-			[x0, y1 - a, x0, y1, x0 + a, y1],
-			[x1 - a, y1, x1, y1, x1, y1 - a],
-		]
-			.map(([q, r, s, t, u, v]) => `M${fx(q)} ${fx(r)}L${fx(s)} ${fx(t)}L${fx(u)} ${fx(v)}`)
-			.join(""),
-	);
 	svg.classList.add("drawn");
 }
 
@@ -225,7 +252,8 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 		transition: "opacity .5s ease-in-out",
 	});
 	const light = row.querySelector<SVGElement>(".light-sq");
-	const lifts = [0.2, 0.45, 0.7]; // it barely rises before liftoff
+	const k = rk.getBoundingClientRect().width / 25; // the shake grows with the rocket
+	const lifts = [0.2, 0.45, 0.7].map((l) => l * k); // it barely rises before liftoff
 	for (const [i, beat] of ["3", "2", "1"].entries()) {
 		show(`T-${beat}`);
 		flame.style.opacity = String(0.35 + i * 0.3);
@@ -234,8 +262,8 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 		const up = lifts[i];
 		// A shake through the beat, mostly sideways, growing a little with each beat
 		rk.animate(
-			Array.from({ length: 16 }, (_, k) => k)
-				.map((k) => ({ translate: `${(k % 2 ? 1 : -1) * (0.35 + i * 0.13)}px ${-up + (k % 3 === 0 ? 0.25 : -0.25)}px` }))
+			Array.from({ length: 16 }, (_, j) => j)
+				.map((j) => ({ translate: `${(j % 2 ? 1 : -1) * (0.35 + i * 0.13) * k}px ${-up + (j % 3 === 0 ? 0.25 : -0.25) * k}px` }))
 				.concat({ translate: `0 ${-up}px` }),
 			{ duration: BEAT, fill: "forwards" },
 		);
@@ -295,7 +323,7 @@ async function fly(button: HTMLElement) {
 	ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 
 	// One curve from the pad to the logo: up, swinging left past the logo, then hooking up-right into its
-	// 45° pose. The rocket settles to the logo's size early, while the page scrolls.
+	// 45° pose.
 	const P0 = { x: r0.left + r0.width / 2, y: r0.top + r0.height / 2 };
 	const P3 = { x: target.x, y: target.y };
 	const P1 = { x: P0.x, y: P0.y - innerHeight * 0.5 };
@@ -307,7 +335,8 @@ async function fly(button: HTMLElement) {
 		const x = bez(P0.x, P1.x, P2.x, P3.x, s);
 		const y = bez(P0.y, P1.y, P2.y, P3.y, s);
 		const heading = (Math.atan2(dbez(P0.y, P1.y, P2.y, P3.y, s), dbez(P0.x, P1.x, P2.x, P3.x, s)) * 180) / Math.PI + 90;
-		const scale = 1 + (dock - 1) * easeInOut(clamp((t - 0.08) / 0.4));
+		// The rocket shrinks to the logo's size along the whole flight, in step with the distance covered
+		const scale = 1 + (dock - 1) * s;
 		return { x, y, heading, scale };
 	};
 

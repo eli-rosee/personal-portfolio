@@ -12,15 +12,16 @@ import rocket from "../../assets/brand/rocket.json";
 
 interface Props {
 	next: CollectionEntry<"projects">;
+	scale?: number;
 }
 
-const { next } = Astro.props;
+const { next, scale = 1.6 } = Astro.props;
 const href = `/projects/${next.id}/`;
 ---
 
 <section class="next" aria-labelledby="next-heading">
 	<SectionHeading id="next-heading" text="Next project" />
-	<div class="row">
+	<div class="row" style={`--s: ${scale}`}>
 		<div class="col">
 			<p class="statement big">Next stop: <a class="name" href={href}>{next.data.title} <span class="arr"><ExternalIcon /></span></a></p>
 			<p class="statement small">
@@ -146,7 +147,7 @@ const href = `/projects/${next.id}/`;
 	.launch {
 		all: unset;
 		cursor: pointer;
-		margin-right: 1.5rem;
+		margin-right: calc(21.5px * var(--s) + 7px); /* the brackets' right side on the column's edge (the deck reaches 34 units right of the rocket's center) */
 		translate: 0 var(--shift, 0px); /* centered on the two lines of text (flight.ts) */
 	}
 
@@ -160,10 +161,10 @@ const href = `/projects/${next.id}/`;
 		display: block;
 	}
 
-	/* The logo rocket's size; its engine is dark until the countdown */
+	/* The logo rocket at 1.6x (--s scales the rocket and pad together); its engine is dark until the countdown */
 	.rk {
 		display: block;
-		width: 25px;
+		width: calc(25px * var(--s));
 		overflow: visible;
 	}
 
@@ -185,9 +186,9 @@ const href = `/projects/${next.id}/`;
 	.pad {
 		position: absolute;
 		left: 50%;
-		bottom: -4px;
-		width: 88px;
-		translate: -42px 0;
+		bottom: calc(-4px * var(--s));
+		width: calc(88px * var(--s));
+		translate: calc(-42px * var(--s)) 0;
 		overflow: visible;
 		fill: none;
 		stroke-width: 1;
@@ -228,14 +229,14 @@ const href = `/projects/${next.id}/`;
 		stroke-width: 0.9;
 	}
 
-	/* The service arms swing down against the tower at T-1, at one steady rate; the lower one is clipped
-	   where it would pass the deck */
+	/* The service arms swing down against the tower at T-1, at one steady rate, fading out as they go; the
+	   lower one is clipped where it would pass the deck */
 	.arm {
 		stroke: var(--muted);
 		stroke-opacity: 0.8;
 		transition:
 			rotate 0.8s linear,
-			opacity 0.8s;
+			opacity 1.3s; /* a little slower than the swing: still fading as the rocket lifts off */
 		transform-box: view-box;
 	}
 
@@ -250,7 +251,7 @@ const href = `/projects/${next.id}/`;
 	.row:global(.arms-back) .arm,
 	.row:global(.flying) .arm {
 		rotate: -70deg;
-		opacity: 0.6;
+		opacity: 0;
 	}
 
 	/* The status light on the tower: amber while it waits, green at liftoff */
@@ -316,7 +317,7 @@ const href = `/projects/${next.id}/`;
 		stroke-width: 1.5;
 	}
 
-	/* Phones: the launch sits under the text, the path hidden (no room to arc) */
+	/* Phones: the launch sits under the text, the path coming down to it (flight.ts) */
 	@media (max-width: 47.99rem) {
 		.row {
 			flex-direction: column;
@@ -327,10 +328,6 @@ const href = `/projects/${next.id}/`;
 		.launch {
 			align-self: center;
 			margin: 0;
-		}
-
-		.launch-arrow {
-			display: none;
 		}
 
 		.big {
