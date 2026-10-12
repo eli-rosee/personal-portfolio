@@ -1,0 +1,74 @@
+---
+// The site's buttons: an outlined link, or the amber primary one. `external` opens a new tab and adds
+// the ↗; `tip` hangs the site tooltip under the button (shown on hover and keyboard focus).
+import ExternalIcon from "./ExternalIcon.astro";
+
+interface Props {
+	href: string;
+	primary?: boolean;
+	external?: boolean;
+	tip?: string;
+	tipId?: string; // needs to be unique on the page when there's a tip
+	class?: string;
+}
+
+const { href, primary = false, external = false, tip, tipId, class: className } = Astro.props;
+---
+
+<a
+	class:list={["button", { primary, "has-tip": tip }, className]}
+	href={href}
+	target={external ? "_blank" : undefined}
+	rel={external ? "noopener" : undefined}
+	aria-describedby={tip ? tipId : undefined}
+>
+	<slot />{external && <> <ExternalIcon /></>}
+	{tip && <span class="tooltip label" id={tipId} role="tooltip">{tip}</span>}
+</a>
+
+<style>
+	.button {
+		display: inline-block;
+		padding: 0.9rem 1.75rem;
+		border: var(--border-width) solid var(--border);
+		color: var(--text);
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		font-weight: 700;
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+		white-space: nowrap; /* keeps the new-tab arrow beside its label */
+	}
+
+	/* Optical alignment of the ↗ */
+	.button :global(svg) {
+		margin-left: 0.2em;
+		vertical-align: 0.05em;
+	}
+
+	.button:hover {
+		border-color: var(--muted);
+		text-decoration: none;
+	}
+
+	.primary {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--bg);
+	}
+
+	.primary:hover {
+		background: var(--text);
+		border-color: var(--text);
+	}
+
+	.has-tip {
+		position: relative;
+	}
+
+	/* The site tooltip, not the button's bold */
+	.tooltip {
+		font-weight: 400;
+		white-space: nowrap;
+	}
+</style>

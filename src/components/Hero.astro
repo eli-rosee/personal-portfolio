@@ -2,7 +2,7 @@
 import { Image } from "astro:assets";
 import { site } from "../content/site";
 import wordmark from "../assets/brand/wordmark.png";
-import ExternalIcon from "./ExternalIcon.astro";
+import Button from "./Button.astro";
 ---
 
 {/* Name, one line on what I do, and the three links a recruiter needs, all above the fold */}
@@ -24,11 +24,9 @@ import ExternalIcon from "./ExternalIcon.astro";
 	</p>
 
 	<div class="actions">
-		<a class="button primary" href={site.resume} target="_blank" rel="noopener">
-			Resume (PDF) <ExternalIcon />
-		</a>
-		<a class="button" href={site.github} target="_blank" rel="noopener">GitHub <ExternalIcon /></a>
-		<a class="button" href={site.linkedin} target="_blank" rel="noopener">LinkedIn <ExternalIcon /></a>
+		<Button primary external href={site.resume}>Resume (PDF)</Button>
+		<Button external href={site.github}>GitHub</Button>
+		<Button external href={site.linkedin}>LinkedIn</Button>
 	</div>
 </section>
 
@@ -62,41 +60,6 @@ import ExternalIcon from "./ExternalIcon.astro";
 		margin-top: var(--space-4);
 	}
 
-	.button {
-		display: inline-block;
-		padding: 0.9rem 1.75rem;
-		border: var(--border-width) solid var(--border);
-		color: var(--text);
-		font-family: var(--font-label);
-		font-size: var(--text-sm);
-		font-weight: 700;
-		letter-spacing: var(--tracking-label);
-		text-transform: uppercase;
-		white-space: nowrap; /* keeps the new-tab arrow beside its label */
-	}
-
-	/* New-tab arrow */
-	.button :global(svg) {
-		margin-left: 0.2em;
-		vertical-align: 0.05em;
-	}
-
-	.button:hover {
-		border-color: var(--muted);
-		text-decoration: none;
-	}
-
-	.button.primary {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--bg);
-	}
-
-	.button.primary:hover {
-		background: var(--text);
-		border-color: var(--text);
-	}
-
 	/* Until all three fit on one row (they need ~36rem): Resume full width, the other links side
 	   by side below it, so LinkedIn never wraps onto a row of its own */
 	@media (max-width: 39.99rem) {
@@ -106,12 +69,12 @@ import ExternalIcon from "./ExternalIcon.astro";
 			gap: var(--space-1);
 		}
 
-		.button {
+		.actions > :global(.button) {
 			padding-inline: var(--space-1);
 			text-align: center;
 		}
 
-		.button.primary {
+		.actions > :global(.primary) {
 			grid-column: 1 / -1;
 		}
 	}

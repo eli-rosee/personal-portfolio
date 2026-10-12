@@ -2,8 +2,10 @@
 // A project on the console card: its status in the tab, an image from the project on the screen
 // ("no signal" until there is one), and the whole card linking to the project's page.
 import type { CollectionEntry } from "astro:content";
-import { Image } from "astro:assets";
 import ConsoleCard from "./ConsoleCard.astro";
+import ProjectDisplay from "./ProjectDisplay.astro";
+import { STATUS } from "../scripts/projects";
+import { display as displayOf } from "../scripts/project-files";
 
 interface Props {
 	project: CollectionEntry<"projects">;
@@ -11,14 +13,7 @@ interface Props {
 }
 
 const { project, eager = false } = Astro.props;
-const { number, title, status, summary, stack, display } = project.data;
-
-// Each status's light color, and its plain-English meaning for the tooltip
-const STATUS = {
-	liftoff: { tone: "accent", tip: "In active development" },
-	"in-orbit": { tone: "status", tip: "Completed" },
-	decommissioned: { tone: "muted", tip: "No longer maintained" },
-} as const;
+const { number, title, status, summary, stack } = project.data;
 ---
 
 <ConsoleCard
@@ -30,75 +25,5 @@ const STATUS = {
 	status={{ label: status.replace("-", " "), ...STATUS[status], tipId: `status-tip-${number}` }}
 	style="--summary-lines: 2"
 >
-	<figure class="display">
-		{
-			display ? (
-				<Image
-					src={display.image}
-					alt={display.alt}
-					widths={[400, 640, 960]}
-					sizes="(max-width: 48rem) 100vw, 20rem"
-					loading={eager ? "eager" : "lazy"}
-					style={`object-position: ${display.position}; scale: ${display.zoom}; transform-origin: ${display.position}`}
-				/>
-			) : (
-				<div class="no-signal" aria-hidden="true">
-					<span class="crosshair" />
-				</div>
-			)
-		}
-		{display?.readout && <figcaption class="readout label">{display.readout}</figcaption>}
-		{!display && <span class="readout label" aria-hidden="true">No signal</span>}
-	</figure>
+	<ProjectDisplay display={displayOf(project)} eager={eager} />
 </ConsoleCard>
-
-<style>
-	.display {
-		position: relative;
-		margin: 0;
-		aspect-ratio: 16 / 10;
-	}
-
-	.display img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.readout {
-		position: absolute;
-		right: 0.9rem; /* clear of the cut corner and the dark rim */
-		bottom: 0.75rem;
-		z-index: 2; /* above the card's glass */
-		padding: 0.1rem 0.4rem;
-		background: color-mix(in srgb, var(--bg) 70%, transparent);
-		color: var(--muted);
-		font-size: 0.6rem;
-	}
-
-	/* No image yet: faint static bands and a dim crosshair */
-	.no-signal {
-		position: absolute;
-		inset: 0;
-		background:
-			repeating-linear-gradient(transparent 0 7px, rgb(138 147 166 / 0.05) 7px 9px),
-			radial-gradient(circle at 50% 50%, rgb(37 44 59 / 0.9), var(--bg) 70%);
-	}
-
-	.crosshair {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 2.4rem;
-		height: 2.4rem;
-		translate: -50% -50%;
-		border: 1px solid var(--border);
-		border-radius: 50%;
-		background:
-			linear-gradient(var(--muted), var(--muted)) 50% 0 / 1px 30% no-repeat,
-			linear-gradient(var(--muted), var(--muted)) 50% 100% / 1px 30% no-repeat,
-			linear-gradient(var(--muted), var(--muted)) 0 50% / 30% 1px no-repeat,
-			linear-gradient(var(--muted), var(--muted)) 100% 50% / 30% 1px no-repeat;
-		opacity: 0.6;
-	}
-</style>

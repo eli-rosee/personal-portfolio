@@ -13,36 +13,33 @@ import { getEntry } from "astro:content";
 import { compiledContent, frontmatter } from "../content/about.md";
 import SectionHeading from "./SectionHeading.astro";
 import ClipCard from "./ClipCard.astro";
+import Prose from "./Prose.astro";
+import { linkTooltips, statementHtml } from "../scripts/markdown";
 
 // The clip is optional; the section works without it
 const clip = (await getEntry("clip", "clip"))?.data;
 
-const escapeHtml = (text: string) =>
-	text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
-
-// Punctuation right after the phrase stays on its line, next to the closing bracket
+// The phrase is the launch button; punctuation right after it stays on its line, next to the bracket
 const statement: string | undefined = frontmatter.statement;
-const statementHtml = statement
-	? escapeHtml(statement).replace(
-			/\*([^*]+)\*([.,!?;:]?)/g,
-			'<span class="nowrap"><button type="button" class="launch" data-launch><em>$1</em><span class="tooltip label" aria-hidden="true">Launch the Rocket</span></button>$2</span>',
+const launchHtml = statement
+	? statementHtml(
+			statement,
+			(text) =>
+				`<button type="button" class="launch" data-launch><em>${text}</em><span class="tooltip label" aria-hidden="true">Launch the Rocket</span></button>`,
 		)
 	: undefined;
 
-const proseHtml = (await compiledContent()).replace(
-	/<a href="([^"]*)" title="([^"]*)">([^<]*)<\/a>/g,
-	'<a href="$1">$3<span class="tooltip label" aria-hidden="true">$2</span></a>',
-);
+const proseHtml = linkTooltips(await compiledContent());
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">
 	<SectionHeading id="about-heading" text="About" />
 	<div class:list={["layout", { "has-clip": clip }]}>
-		{statementHtml && <p class="statement" set:html={statementHtml} />}
-		<div class="prose" set:html={proseHtml} />
+		{launchHtml && <p class="statement" set:html={launchHtml} />}
+		<Prose class="about-prose" html={proseHtml} />
 		{clip && <ClipCard clip={clip} />}
 		{/* The dashed flight path from the launch phrase to the rocket, drawn by the script below */}
-		{statementHtml && clip && <svg class="launch-arrow" aria-hidden="true"></svg>}
+		{launchHtml && clip && <svg class="launch-arrow" aria-hidden="true"></svg>}
 	</div>
 </section>
 
@@ -128,35 +125,8 @@ const proseHtml = (await compiledContent()).replace(
 		color: var(--accent);
 	}
 
-	/* Red Hat Text, a touch lighter than --muted so the paragraphs stay easy to read */
-	.prose {
+	.layout > :global(.about-prose) {
 		max-width: 27.5rem;
-		font-family: "Red Hat Text", sans-serif;
-		font-size: 1rem;
-		line-height: 1.85;
-		color: #a3abba;
-	}
-
-	/* Prompts: small bold labels in Red Hat Mono, lighter than the body so they read as headings,
-	   but below the white key phrases */
-	.prose :global(h3) {
-		margin: 2.75rem 0 0.75rem;
-		font-family: "Red Hat Mono", monospace;
-		font-size: 0.74rem;
-		font-weight: 600;
-		line-height: 1.6;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: #b9bdc7;
-	}
-
-	.prose :global(h3:first-child) {
-		margin-top: 0;
-	}
-
-	.prose :global(strong) {
-		font-weight: 600;
-		color: var(--text);
 	}
 
 	/* The launch phrase and the links: amber, framed in amber console brackets instead of an
@@ -172,24 +142,16 @@ const proseHtml = (await compiledContent()).replace(
 		outline-offset: 3px;
 	}
 
-	.statement :global(.nowrap),
-	.prose :global(a) {
+	.statement :global(.nowrap) {
 		white-space: nowrap;
 	}
 
-	.prose :global(a) {
-		position: relative;
-		text-decoration: none;
-	}
-
-	.statement :global(.launch)::before,
-	.prose :global(a)::before {
+	.statement :global(.launch)::before {
 		content: "[";
 		margin-right: 0.1em;
 	}
 
-	.statement :global(.launch)::after,
-	.prose :global(a)::after {
+	.statement :global(.launch)::after {
 		content: "]";
 		margin-left: 0.1em;
 	}
@@ -214,7 +176,7 @@ const proseHtml = (await compiledContent()).replace(
 			max-width: 24rem;
 		}
 
-		.has-clip .prose {
+		.has-clip > :global(.about-prose) {
 			order: 2;
 		}
 	}
@@ -240,7 +202,7 @@ const proseHtml = (await compiledContent()).replace(
 			margin-bottom: 0;
 		}
 
-		.has-clip .prose {
+		.has-clip > :global(.about-prose) {
 			grid-column: 1;
 			grid-row: 5;
 			margin-top: 3.5rem;

@@ -1,0 +1,93 @@
+---
+/*
+ * Written text from Markdown, in the About section's type (the home About, a project's About):
+ *   ### Prompt        a small label over a paragraph
+ *   **key phrase**    set in the text color, above the muted body
+ *   [text](url)       amber console brackets instead of an underline (a title becomes a tooltip)
+ *   - item            a list, each line led by the cards' short muted dash
+ */
+interface Props {
+	html: string;
+	class?: string;
+}
+
+const { html, class: className } = Astro.props;
+---
+
+<div class:list={["prose", className]} set:html={html} />
+
+<style>
+	/* Red Hat Text, a touch lighter than --muted so the paragraphs stay easy to read */
+	.prose {
+		font-family: "Red Hat Text", sans-serif;
+		font-size: 1rem;
+		line-height: 1.85;
+		color: #a3abba;
+	}
+
+	/* Prompts: small bold labels in Red Hat Mono, lighter than the body so they read as headings,
+	   but below the white key phrases */
+	.prose :global(h3) {
+		margin: 2.75rem 0 0.75rem;
+		font-family: "Red Hat Mono", monospace;
+		font-size: 0.74rem;
+		font-weight: 600;
+		line-height: 1.6;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: #b9bdc7;
+	}
+
+	.prose :global(h3:first-child) {
+		margin-top: 0;
+	}
+
+	.prose :global(strong) {
+		font-weight: 600;
+		color: var(--text);
+	}
+
+	.prose :global(p + p) {
+		margin-top: 1em;
+	}
+
+	/* Links: amber, framed in amber console brackets instead of an underline, with a tooltip underneath */
+	.prose :global(a) {
+		position: relative;
+		white-space: nowrap;
+		text-decoration: none;
+	}
+
+	.prose :global(a)::before {
+		content: "[";
+		margin-right: 0.1em;
+	}
+
+	.prose :global(a)::after {
+		content: "]";
+		margin-left: 0.1em;
+	}
+
+	.prose :global(ul) {
+		display: grid;
+		gap: 0.55rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.prose :global(li) {
+		position: relative;
+		padding-left: 1.4rem;
+	}
+
+	.prose :global(li)::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 0.9em;
+		width: 0.6rem;
+		height: 2px;
+		background: var(--muted);
+	}
+</style>

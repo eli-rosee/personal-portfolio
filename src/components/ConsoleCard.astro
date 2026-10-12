@@ -7,10 +7,15 @@
  *   screen    hull edge > bezel > glass, holding whatever the wrapper slots in
  *   text      title (a link, or plain with a dash), summary, hairline, tags
  *
+ * `layout="side"` is the project page's hero: the screen on the left, the title (an h1), summary and
+ * any `actions` slot on the right, and the tags in a darker band along the bottom with their label.
+ * A `title` slot replaces the title's text (the project pages' title art).
+ *
  * Wrappers supply the screen contents and any behavior. Sizes are CSS variables on .panel
  * that a wrapper can override through `style`. Adding .is-active to .panel holds the hover look.
  */
 import ExternalIcon from "./ExternalIcon.astro";
+import Screen from "./Screen.astro";
 
 interface Props {
 	title: string;
@@ -18,6 +23,7 @@ interface Props {
 	tags?: string[];
 	tagsLabel?: string; // what the tag list is, for screen readers
 	href?: string; // the whole card links here; without one, a static dash replaces the ↗
+	external?: boolean; // the link opens in a new tab
 	status?: {
 		label: string;
 		tone: "status" | "accent" | "muted";
@@ -25,13 +31,31 @@ interface Props {
 		tipId?: string;
 	};
 	tabSide?: "left" | "right";
+	layout?: "stack" | "side";
+	plain?: boolean; // the screen shows its content as it is (no grade, glare or scanlines)
 	id?: string;
 	class?: string;
 	style?: string;
 }
 
-const { title, summary, tags, tagsLabel = "Tags", href, status, tabSide = "left", id, class: className, style } =
-	Astro.props;
+const {
+	title,
+	summary,
+	tags,
+	tagsLabel = "Tags",
+	href,
+	external = false,
+	status,
+	tabSide = "left",
+	layout = "stack",
+	plain = false,
+	id,
+	class: className,
+	style,
+} = Astro.props;
+const side = layout === "side";
+const Heading = side ? "h1" : "h3";
+const titleArt = Astro.slots.has("title");
 
 // Keep the tooltip to one or two snug lines: two words or fewer never wrap, and longer notes can
 // only break before the last word (every other space becomes a non-breaking space)
@@ -43,7 +67,7 @@ const tipText =
 
 <div
 	id={id}
-	class:list={["panel", `tone-${status?.tone ?? "muted"}`, { "tab-right": tabSide === "right", "no-tab": !status }, className]}
+	class:list={["panel", `tone-${status?.tone ?? "muted"}`, { "tab-right": tabSide === "right", "no-tab": !status, side }, className]}
 	style={style}
 >
 	{
@@ -76,35 +100,34 @@ const tipText =
 	<slot name="on-top" />
 
 	<article class="card">
-		<div class="viewport">
-			<div class="bezel">
-				<div class="screen">
-					<slot />
-				</div>
-			</div>
-		</div>
+		<Screen plain={plain}>
+			<slot />
+		</Screen>
 
 		<div class="text">
-			<h3>
+			<Heading class="title">
 				{
 					href ? (
-						<a class="title-link" href={href}>
+						<a class="title-link" href={href} target={external ? "_blank" : undefined} rel={external ? "noopener" : undefined}>
 							<span>{title}</span>
 							<ExternalIcon />
 						</a>
+					) : titleArt ? (
+						<slot name="title" />
 					) : (
 						<span class="title-static">
 							{title}
-							<span class="static-mark" aria-hidden="true" />
+							{!side && <span class="static-mark" aria-hidden="true" />}
 						</span>
 					)
 				}
-			</h3>
+			</Heading>
 			{summary && <p class="summary">{summary}</p>}
+			<slot name="actions" />
 		</div>
 
 		{
-			tags && (
+			tags && !side && (
 				<>
 					<hr class="separator" />
 					<ul class="tags label" aria-label={tagsLabel}>
@@ -113,6 +136,18 @@ const tipText =
 						))}
 					</ul>
 				</>
+			)
+		}
+		{
+			tags && side && (
+				<div class="band">
+					<span class="label" aria-hidden="true">{tagsLabel}</span>
+					<ul class="tags label" aria-label={tagsLabel}>
+						{tags.map((tag) => (
+							<li>{tag}</li>
+						))}
+					</ul>
+				</div>
 			)
 		}
 	</article>
@@ -324,99 +359,9 @@ const tipText =
 		padding: var(--frame-w);
 	}
 
-	/*
-	 * Screen: hull edge > bezel > glass, each clipped to the same cut-corner shape.
-	 * A layer inset by p needs a cut about 0.41p smaller to keep the diagonal edges even.
-	 */
-	.viewport,
-	.bezel,
-	.screen {
-		clip-path: polygon(
-			var(--c) 0,
-			calc(100% - var(--c)) 0,
-			100% var(--c),
-			100% calc(100% - var(--c)),
-			calc(100% - var(--c)) 100%,
-			var(--c) 100%,
-			0 calc(100% - var(--c)),
-			0 var(--c)
-		);
-	}
-
-	.viewport {
-		--c: var(--screen-cut);
+	/* The screen (Screen.astro), inset in the card */
+	.card > :global(.viewport) {
 		margin: var(--space-3) var(--space-3) 0;
-		padding: 1px;
-		background: var(--border);
-	}
-
-	.bezel {
-		--c: calc(var(--screen-cut) - 0.41px);
-		padding: var(--bezel-pad);
-		background: var(--bezel);
-	}
-
-	.screen {
-		--c: calc(var(--screen-cut) - 0.41px - 0.41 * var(--bezel-pad));
-		position: relative;
-		overflow: hidden;
-		background: var(--bg);
-	}
-
-	/* The glass's 1px edge, following the bevels: a 1px ring between the screen's outline and the same
-	   shape inset 1px (an inset box-shadow is rectangular, so the clip cut it off at the corners) */
-	.screen::before {
-		--i: 1px;
-		--ci: calc(var(--c) - 0.41px);
-		content: "";
-		position: absolute;
-		inset: 0;
-		z-index: 1;
-		background: var(--frame-line-lit); /* bright enough to read on dark footage, bevels included */
-		pointer-events: none;
-		clip-path: polygon(
-			evenodd,
-			var(--c) 0,
-			calc(100% - var(--c)) 0,
-			100% var(--c),
-			100% calc(100% - var(--c)),
-			calc(100% - var(--c)) 100%,
-			var(--c) 100%,
-			0 calc(100% - var(--c)),
-			0 var(--c),
-			var(--c) 0,
-			calc(var(--i) + var(--ci)) var(--i),
-			var(--i) calc(var(--i) + var(--ci)),
-			var(--i) calc(100% - var(--i) - var(--ci)),
-			calc(var(--i) + var(--ci)) calc(100% - var(--i)),
-			calc(100% - var(--i) - var(--ci)) calc(100% - var(--i)),
-			calc(100% - var(--i)) calc(100% - var(--i) - var(--ci)),
-			calc(100% - var(--i)) calc(var(--i) + var(--ci)),
-			calc(100% - var(--i) - var(--ci)) var(--i),
-			calc(var(--i) + var(--ci)) var(--i)
-		);
-	}
-
-	/* The glass, over the slotted contents: glare across the top, faint scanlines, an optional
-	   tint (--screen-tint) and a dark rim. Wrapper overlays that must stay crisp (labels, buttons)
-	   sit above it with z-index 2. */
-	.screen::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		z-index: 1;
-		background:
-			linear-gradient(135deg, rgb(255 255 255 / 0.09), transparent 32%),
-			repeating-linear-gradient(transparent 0 2px, rgb(0 0 0 / 0.18) 2px 3px),
-			var(--screen-tint, transparent);
-		box-shadow: inset 0 0 2.5rem rgb(0 0 0 / 0.65);
-		pointer-events: none;
-	}
-
-	/* Footage and images, graded to sit in the palette like a console feed */
-	.screen :global(:is(img, video)) {
-		filter: var(--grade);
-		transition: filter 0.2s;
 	}
 
 	.text {
@@ -427,7 +372,7 @@ const tipText =
 		padding: var(--space-3) var(--inset) 1.25rem;
 	}
 
-	h3 {
+	.title {
 		font-size: 1.125rem;
 		letter-spacing: var(--tracking-title);
 		text-transform: uppercase;
@@ -530,7 +475,89 @@ const tipText =
 		--line: var(--frame-line-lit);
 	}
 
-	.panel:is(.is-active, :has(.card:hover, .title-link:focus-visible)) .screen :global(:is(img, video)) {
-		filter: var(--grade-lit);
+	.panel:is(.is-active, :has(.card:hover, .title-link:focus-visible)) {
+		--screen-grade: var(--grade-lit);
+	}
+
+	/*
+	 * Side layout (the project hero): screen | text, the screen a little wider. The screen keeps its
+	 * own height, centered beside the text; the title sits level with its top and the actions level
+	 * with its bottom, the summary between them.
+	 */
+	.side .card {
+		display: grid;
+		grid-template-columns: 1.1fr 1fr;
+		column-gap: 2.75rem;
+	}
+
+	.side .card > :global(.viewport) {
+		align-self: center;
+		margin: 1.5rem 0 1.75rem 1.5rem;
+	}
+
+	.side .text {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 1.1rem;
+		padding: calc(1.5rem + 1.2rem) calc(1.5rem + 1rem) calc(1.75rem + 1.2rem) 0;
+	}
+
+	.side .title {
+		font-size: 1.85rem;
+		line-height: 1.2;
+	}
+
+	.side .summary {
+		color: var(--text);
+		font-size: var(--text-lg);
+		line-height: 1.7;
+	}
+
+	/* The tags' band: inset by the frame so the outline stays unbroken around it, its bottom corners
+	   following the card's bevel */
+	.band {
+		grid-column: 1 / -1;
+		display: flex;
+		align-items: center;
+		gap: 2rem;
+		padding: 0.95rem 2.25rem 1.05rem;
+		background: var(--bezel);
+		border-top: 1px solid var(--frame-line);
+		clip-path: polygon(
+			0 0,
+			100% 0,
+			100% calc(100% - var(--cut) + 1px),
+			calc(100% - var(--cut) + 1px) 100%,
+			calc(var(--cut) - 1px) 100%,
+			0 calc(100% - var(--cut) + 1px)
+		);
+	}
+
+	.band .tags {
+		margin: 0 0 0 calc(-1 * var(--sep));
+		padding: 0;
+		font-size: 0.78rem;
+	}
+
+	@media (max-width: 47.99rem) {
+		.side .card {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.side .card > :global(.viewport) {
+			margin: var(--space-3) var(--space-3) 0;
+		}
+
+		.side .text {
+			padding: var(--space-3) var(--inset) 1.5rem;
+		}
+
+		.band {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.6rem;
+			padding-inline: var(--inset);
+		}
 	}
 </style>

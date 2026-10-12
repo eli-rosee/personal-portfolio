@@ -1,0 +1,90 @@
+---
+// A project's display screen contents: an image from the project ("no signal" until there is one),
+// with an optional readout label. Shown on its card (MissionCard) and at the top of its page.
+import { Image } from "astro:assets";
+import Visual from "./project/Visual.astro";
+import type { Display } from "../scripts/project-files";
+
+interface Props {
+	display?: Display; // from display() in project-files.ts
+	eager?: boolean; // load the image right away (on screen at load)
+	widths?: number[];
+	sizes?: string;
+}
+
+const { display, eager = false, widths = [400, 640, 960], sizes = "(max-width: 48rem) 100vw, 20rem" } = Astro.props;
+---
+
+<figure class="display">
+	{
+		display?.asset.kind === "image" ? (
+			<Image
+				src={display.asset.image}
+				alt={display.alt}
+				widths={widths}
+				sizes={sizes}
+				loading={eager ? "eager" : "lazy"}
+				style={`object-fit: ${display.fit === "whole" ? "contain" : "cover"}; object-position: ${display.position}; scale: ${display.zoom}; transform-origin: ${display.position}`}
+			/>
+		) : display ? (
+			<Visual asset={display.asset} />
+		) : (
+			<div class="no-signal" aria-hidden="true">
+				<span class="crosshair" />
+			</div>
+		)
+	}
+	{display?.readout && <figcaption class="readout label">{display.readout}</figcaption>}
+	{!display && <span class="readout label" aria-hidden="true">No signal</span>}
+</figure>
+
+<style>
+	.display {
+		position: relative;
+		margin: 0;
+		aspect-ratio: 16 / 10;
+	}
+
+	.display img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.readout {
+		position: absolute;
+		right: 0.9rem; /* clear of the cut corner and the dark rim */
+		bottom: 0.75rem;
+		z-index: 2; /* above the card's glass */
+		padding: 0.1rem 0.4rem;
+		background: color-mix(in srgb, var(--bg) 70%, transparent);
+		color: var(--muted);
+		font-size: 0.6rem;
+	}
+
+	/* No image yet: faint static bands and a dim crosshair */
+	.no-signal {
+		position: absolute;
+		inset: 0;
+		background:
+			repeating-linear-gradient(transparent 0 7px, rgb(138 147 166 / 0.05) 7px 9px),
+			radial-gradient(circle at 50% 50%, rgb(37 44 59 / 0.9), var(--bg) 70%);
+	}
+
+	.crosshair {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 2.4rem;
+		height: 2.4rem;
+		translate: -50% -50%;
+		border: 1px solid var(--border);
+		border-radius: 50%;
+		background:
+			linear-gradient(var(--muted), var(--muted)) 50% 0 / 1px 30% no-repeat,
+			linear-gradient(var(--muted), var(--muted)) 50% 100% / 1px 30% no-repeat,
+			linear-gradient(var(--muted), var(--muted)) 0 50% / 30% 1px no-repeat,
+			linear-gradient(var(--muted), var(--muted)) 100% 50% / 30% 1px no-repeat;
+		opacity: 0.6;
+	}
+</style>
