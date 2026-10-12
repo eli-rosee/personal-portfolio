@@ -19,23 +19,15 @@ export const replayAnimation = (el: Element, className: string) => {
 export const renderLive = (render: () => void, target: Element) => {
 	const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 	let onScreen = false;
-	let frame = 0;
-	let last = 0;
+	let timer = 0;
 
-	const loop = (now: number) => {
-		if (now - last >= 50) {
-			last = now;
-			render();
-		}
-		frame = requestAnimationFrame(loop);
-	};
 	const update = () => {
-		cancelAnimationFrame(frame);
-		if (onScreen && !reducedMotion.matches) frame = requestAnimationFrame(loop);
+		clearInterval(timer);
+		timer = window.setInterval(render, onScreen && !reducedMotion.matches ? 50 : 1000);
 	};
 
 	render();
-	setInterval(render, 1000);
+	update();
 	reducedMotion.addEventListener("change", update);
 	new IntersectionObserver(([entry]) => {
 		onScreen = entry.isIntersecting;

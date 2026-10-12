@@ -3,8 +3,9 @@
 // Decorative only: without JavaScript or canvas support the sky is just empty.
 // With reduced motion the stars are drawn once and never move.
 // Kept cheap for phones, where repainting a full-screen canvas behind the page made scrolling
-// stutter: it pauses while the page scrolls, redraws at most 30 times a second, and renders at no
-// more than 2x pixel density (the stars are smaller than a pixel, so more buys nothing).
+// stutter: it pauses while the page scrolls, redraws 30 times a second (and only asks the browser
+// for those frames, so it isn't woken 60 times a second), and renders at no more than 2x pixel
+// density (the stars are smaller than a pixel, so more buys nothing).
 ---
 
 <canvas class="starfield" aria-hidden="true"></canvas>
@@ -30,6 +31,7 @@
 		let width = 0;
 		let height = 0;
 		let frame = 0;
+		let wake = 0;
 		let last = 0;
 		let scrollTimer = 0;
 
@@ -70,9 +72,17 @@
 			}
 		};
 
+		// The next frame is asked for just before it's due (the browser's frame after the timer)
+		const next = () => {
+			wake = window.setTimeout(() => (frame = requestAnimationFrame(tick)), FRAME_MS - 4);
+		};
+
+		const stop = () => {
+			clearTimeout(wake);
+			cancelAnimationFrame(frame);
+		};
+
 		const tick = (now: number) => {
-			frame = requestAnimationFrame(tick);
-			if (now - last < FRAME_MS) return;
 			const dt = Math.min((now - last) / 1000, 0.1); // cap the jump after a long pause
 			last = now;
 			for (const star of stars) {
@@ -81,19 +91,20 @@
 				if (star.x < -star.r) Object.assign(star, makeStar(width + star.r));
 			}
 			draw();
+			next();
 		};
 
 		const start = () => {
-			cancelAnimationFrame(frame);
+			stop();
 			if (!reducedMotion.matches) {
 				last = performance.now();
-				frame = requestAnimationFrame(tick);
+				next();
 			}
 		};
 
 		// Nothing redraws behind the page while it's scrolling
 		const onScroll = () => {
-			cancelAnimationFrame(frame);
+			stop();
 			clearTimeout(scrollTimer);
 			scrollTimer = window.setTimeout(start, SCROLL_REST_MS);
 		};

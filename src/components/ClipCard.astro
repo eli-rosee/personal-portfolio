@@ -121,6 +121,7 @@ const { clip } = Astro.props;
 
 		new IntersectionObserver(
 			([entry]) => {
+				card.classList.toggle("off-screen", !entry.isIntersecting); // the static rests too
 				if (entry.isIntersecting) {
 					if (video.preload === "none") video.preload = "auto"; // a head start on the first click
 					if (wanted && video.paused) video.play().catch(() => {});
@@ -220,23 +221,20 @@ const { clip } = Astro.props;
 		opacity: 0.35;
 	}
 
+	/* Clickable: a click on the rocket launches it; it brightens on hover */
 	.rocket {
 		display: block;
 		width: 25px; /* the same size as the logo's rocket */
 		overflow: visible; /* the flame hangs below the viewBox */
 		transform-box: fill-box;
 		transform-origin: 50% 60%;
+		pointer-events: auto;
+		cursor: pointer;
 	}
 
 	.rocket .hull {
 		fill: var(--text);
 		transition: fill 0.15s;
-	}
-
-	/* Clickable: a click on the rocket launches it; it brightens on hover */
-	.rocket {
-		pointer-events: auto;
-		cursor: pointer;
 	}
 
 	.rocket:hover .hull {
@@ -315,6 +313,10 @@ const { clip } = Astro.props;
 		75% {
 			translate: -18px 61px;
 		}
+	}
+
+	:global(.clip-card.off-screen) .static::before {
+		animation-play-state: paused;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
