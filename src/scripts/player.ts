@@ -5,7 +5,7 @@
  * 2.5 s after that (or after the mouse leaves), taking the cursor with it until the mouse moves again
  * (the bar stays while paused); only one plays at a time; the line scrubs (drag it, and it holds still
  * until it's let go; or the arrow keys on it); the speaker mutes; the brackets go full screen (the
- * whole player, bar and all; Space plays or pauses there). Also gives each card its length ("Sound on ·
+ * whole player, bar and all; Space plays or pauses there). Also gives each card its length ("[Sound on ·]
  * 1:23"). Runs again on the page swapped in after a flight.
  */
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -87,7 +87,7 @@ export function initPlayers(root: ParentNode = document) {
 
 		// The card's length, read from the video itself (some recordings don't say)
 		const length = player.querySelector("[data-length]");
-		const showLength = () => length && known() && (length.textContent = `Sound on · ${time(video.duration)}`);
+		const showLength = () => length && known() && (length.textContent = `${length.hasAttribute("data-sound") ? "Sound on · " : ""}${time(video.duration)}`);
 		if (video.readyState >= 1) showLength();
 		else video.addEventListener("loadedmetadata", showLength, { once: true });
 

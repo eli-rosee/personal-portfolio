@@ -39,6 +39,7 @@ media:
     title: Demo
     # caption: Grey line under the title
     # poster: demo.png    # frame shown before it plays
+    # sound: false        # hides "Sound on" on the card (default: true)
     # wide: true          # spans both columns
   - type: clip            # silent loop: .mp4, .webm or .gif; it plays on the card
     file: clip.mp4
@@ -62,20 +63,15 @@ media:
     # caption: Grey line under the title
     # pdf: deck.pdf       # download
     # wide: true
-  - type: link            # a web page: with a screenshot a card, without one a row
+  - type: link            # a web page: a bar under the cards, opens a new tab
     href: https://example.com
     title: Live site
-    # caption: Grey line under the title
-    # screenshot: site.png
-    # label: Live site    # the card's tab, or the tag on a row
-    # wide: true
-  - type: link            # a file in assets/: a row (or a card with a screenshot)
+    # live: true          # the project running: first, a green Live light, its own button
+    # label: Paper        # the bar's tag (default: Link, or Live)
+  - type: link            # a file in assets/: a bar too
     file: report.pdf
     title: Report
-    # caption: Grey line under the title
-    # screenshot: report.png
-    # label: PDF
-    # wide: true
+    # label: PDF          # (default: the file's extension)
 
 draft: true               # delete to publish
 ---

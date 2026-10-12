@@ -1,8 +1,8 @@
 ---
 /*
  * The top of a project page: the console card laid out sideways (ConsoleCard's side layout). The
- * display screen on the left; the title (in the display font, an image), summary and the code button
- * on the right; the stack in the band along the bottom.
+ * display screen on the left; the title (in the display font, an image), summary, the code button and
+ * the live site's (a media link with `live: true`) on the right; the stack in the band along the bottom.
  */
 import type { CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
@@ -18,7 +18,9 @@ interface Props {
 }
 
 const { project } = Astro.props;
-const { title, status, summary, stack, repo, private: privateCode } = project.data;
+const { title, status, summary, stack, repo, private: privateCode, media } = project.data;
+const live = media?.find((m) => m.type === "link" && m.live && m.href);
+const liveHref = live?.type === "link" ? live.href : undefined;
 
 // The title in Mission Control DCU, rendered by scripts/render-art.py (the font may only be shown as
 // images); plain text until it's rendered
@@ -39,7 +41,7 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 	<ProjectDisplay display={display(project)} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />
 	{titleArt && <Image slot="title" class="title-art" src={titleArt} alt={title} height={30} densities={[1, 2]} loading="eager" />}
 	{
-		(repo || privateCode) && (
+		(repo || privateCode || liveHref) && (
 			<div class="actions" slot="actions">
 				{repo && (
 					<Button primary external href={repo}>
@@ -49,6 +51,11 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 				{!repo && privateCode && (
 					<Button href={request} tip={privateCode} tipId="code-tip">
 						Code on request
+					</Button>
+				)}
+				{liveHref && (
+					<Button external href={liveHref}>
+						Live site
 					</Button>
 				)}
 			</div>
@@ -71,5 +78,20 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 		flex-wrap: wrap;
 		gap: var(--space-2);
 		margin-top: 0.5rem;
+	}
+
+	/* Phones: the buttons side by side, filling the row (as in the home hero); a longer label takes a little more */
+	@media (max-width: 39.99rem) {
+		.actions {
+			display: grid;
+			grid-auto-flow: column;
+			grid-auto-columns: 1fr;
+			gap: var(--space-1);
+		}
+
+		.actions > :global(.button) {
+			padding-inline: var(--space-1);
+			text-align: center;
+		}
 	}
 </style>

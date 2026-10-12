@@ -220,9 +220,9 @@ export type MediaItem = {
 } & (
 	| { type: "image"; asset: Asset; alt: string; shape: "landscape" | "portrait"; fit: "crop" | "whole"; position: string; zoom: number }
 	| { type: "clip"; asset: Asset; shape: "landscape" | "portrait" }
-	| { type: "video"; asset: Asset; poster?: Asset }
+	| { type: "video"; asset: Asset; poster?: Asset; sound: boolean }
 	| { type: "slides"; slides: Asset[]; pdf?: Asset }
-	| { type: "link"; href?: string; screenshot?: Asset; external: boolean }
+	| { type: "link"; href?: string; live: boolean; address?: string }
 );
 
 export function media(project: Project): MediaItem[] {
@@ -252,6 +252,7 @@ export function media(project: Project): MediaItem[] {
 					tab: "Video",
 					asset: find(project, m.file, where, "video"),
 					poster: m.poster ? find(project, m.poster, where, "image") : undefined,
+					sound: m.sound,
 				};
 			case "slides": {
 				const folder = keyOf(slug, m.folder).replace(/\/$/, "") + "/";
@@ -278,10 +279,11 @@ export function media(project: Project): MediaItem[] {
 				return {
 					...base,
 					type: "link",
-					tab: m.label ?? (m.file ? m.file.split(".").pop()!.toUpperCase() : "Link"),
+					tab: m.label ?? (m.live ? "Live" : m.file ? m.file.split(".").pop()!.toUpperCase() : "Link"),
 					href: m.href ?? (file?.kind === "file" ? file.src : undefined),
-					screenshot: m.screenshot ? find(project, m.screenshot, where, "image") : undefined,
-					external: !!m.href,
+					live: m.live,
+					// A live site's address, beside its title: lander.example.dev/sim
+					address: m.live && m.href ? m.href.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "") : undefined,
 				};
 			}
 		}

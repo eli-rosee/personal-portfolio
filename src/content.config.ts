@@ -104,16 +104,18 @@ const projects = defineCollection({
 						}),
 						// a silent loop: .mp4, .webm or .gif; portrait: one column, two rows tall
 						z.object({ type: z.literal("clip"), file, shape: z.enum(["landscape", "portrait"]).default("landscape"), ...card }),
-						z.object({ type: z.literal("video"), file, poster: file.optional(), ...card }), // with sound
+						// with sound; sound: false drops "Sound on" from the card's corner (the length stays)
+						z.object({ type: z.literal("video"), file, poster: file.optional(), sound: z.boolean().default(true), ...card }),
 						// a folder of slide images, in file-name order, and the deck as a PDF to download
 						z.object({ type: z.literal("slides"), folder: file, pdf: file.optional(), ...card }),
-						// a web page (href) or a file (a PDF report); with a screenshot it's a card, without one a row
+						// a web page (href) or a file (a PDF report): a bar under the cards that opens a new tab;
+						// live: the project running somewhere, first, with a green Live light and its own button
 						z.object({
 							type: z.literal("link"),
 							href: z.url().optional(),
 							file: file.optional(),
-							screenshot: file.optional(),
-							label: z.string().optional(), // the tab, or the tag on a row: "Live site", "PDF"
+							live: z.boolean().default(false),
+							label: z.string().optional(), // the bar's tag: "PDF", "Paper"
 							...card,
 						}),
 					]),

@@ -22,9 +22,10 @@ interface Props {
 	fit?: "cover" | "contain";
 	expand?: boolean; // a click off ▶ Play opens the theater (cards only)
 	meta?: boolean; // "Sound on · 1:23" in the corner until it starts (cards only)
+	sound?: boolean; // false: just "1:23"
 }
 
-const { id, asset, poster, title, width = 1200, fit = "contain", expand = false, meta = false } = Astro.props;
+const { id, asset, poster, title, width = 1200, fit = "contain", expand = false, meta = false, sound = true } = Astro.props;
 ---
 
 {
@@ -43,7 +44,11 @@ const { id, asset, poster, title, width = 1200, fit = "contain", expand = false,
 				</svg>
 				Play
 			</button>
-			{meta && <span class="meta label" data-length>Sound on</span>}
+			{meta && (
+				<span class="meta label" data-length data-sound={sound ? "" : undefined}>
+					{sound && "Sound on"}
+				</span>
+			)}
 			<div class="bar label">
 				<button type="button" class="icon" data-pp aria-label="Pause">
 					<svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true">
@@ -105,7 +110,8 @@ const { id, asset, poster, title, width = 1200, fit = "contain", expand = false,
 	}
 
 	.started .poster,
-	.started .meta {
+	.started .meta,
+	.meta:empty {
 		display: none;
 	}
 
@@ -221,7 +227,7 @@ const { id, asset, poster, title, width = 1200, fit = "contain", expand = false,
 		white-space: nowrap;
 		cursor: default;
 		translate: 0 101%;
-		transition: translate 0.25s ease-in;
+		transition: translate 0.4s ease-in;
 	}
 
 	/* Up while paused, or while the mouse moves (or a key is used) over the video */

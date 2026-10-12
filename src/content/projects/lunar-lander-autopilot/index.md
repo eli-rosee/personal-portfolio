@@ -66,10 +66,8 @@ media:
     caption: Five slides, made up.
   - type: link
     href: https://example.com
-    screenshot: site.png
-    label: Live site
+    live: true
     title: Live site
-    caption: example.com · a browser version of the sim
   - type: link
     file: report.pdf
     title: Final report

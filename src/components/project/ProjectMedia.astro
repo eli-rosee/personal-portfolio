@@ -3,8 +3,9 @@
  * A project's Media section: one console card per item, two columns (`wide: true` spans both; an image
  * or clip card with `shape: portrait` is one column wide and two rows tall, packed in beside others). The
  * screens show the media as it is (no grade or glass). A video plays on its card (its bar's bracket icon
- * opens the theater); images, clips and slides open in the theater; a link card opens its page in a new tab. A link without a screenshot is a plain row under
- * the cards (a report, a paper).
+ * opens the theater); images, clips and slides open in the theater. Links are bars under the cards, all one
+ * height, each opening a new tab (a report, a paper); a live site comes first, the same but for a green
+ * Live light in its tag and its address beside the title (it's also a button in the hero).
  */
 import ConsoleCard from "../ConsoleCard.astro";
 import SectionHeading from "../SectionHeading.astro";
@@ -18,8 +19,8 @@ interface Props {
 }
 
 const { items } = Astro.props;
-const cards = items.filter((it) => it.type !== "link" || it.screenshot);
-const rows = items.filter((it) => it.type === "link" && !it.screenshot);
+const cards = items.filter((it) => it.type !== "link");
+const rows = items.flatMap((it) => (it.type === "link" ? [it] : [])).sort((a, b) => Number(b.live) - Number(a.live));
 const slideCount = (n: number) => String(n).padStart(2, "0");
 ---
 
@@ -34,9 +35,7 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 							class:list={["media-card", { wide: it.wide, portrait: (it.type === "image" || it.type === "clip") && it.shape === "portrait" }]}
 							title={it.title}
 							summary={it.caption}
-							href={it.type === "link" ? it.href : undefined}
-							external={it.type === "link" && it.external}
-							status={{ label: it.tab, tone: it.type === "link" ? "status" : "muted" }}
+							status={{ label: it.tab, tone: "muted" }}
 							plain
 						>
 							<div class="frame">
@@ -54,18 +53,11 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 								{/* The poster stays on the card while its player is in the theater */}
 								{it.type === "video" && it.poster && <Visual asset={it.poster} width={it.wide ? 1200 : 640} />}
 								{it.type === "video" && (
-									<Player id={it.id} asset={it.asset} poster={it.poster} title={it.title} width={it.wide ? 1200 : 640} fit="cover" expand meta />
+									<Player id={it.id} asset={it.asset} poster={it.poster} title={it.title} width={it.wide ? 1200 : 640} fit="cover" expand meta sound={it.sound} />
 								)}
 								{it.type === "slides" && <Visual asset={it.slides[0]} width={it.wide ? 1200 : 640} />}
-								{it.type === "link" && it.screenshot && <Visual asset={it.screenshot} width={it.wide ? 1200 : 640} />}
-
-								{it.type === "link" && (
-									<span class="chip label">
-										Open {it.tab.toLowerCase()} <ExternalIcon />
-									</span>
-								)}
 								{it.type === "slides" && <span class="meta label">01 / {slideCount(it.slides.length)}</span>}
-								{it.type !== "link" && it.type !== "video" && (
+								{it.type !== "video" && (
 									<button type="button" class="open" data-theater={it.id} aria-label={`Open ${it.title} larger`} />
 								)}
 							</div>
@@ -77,9 +69,15 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 				<ul class="rows">
 					{rows.map((it) => (
 						<li>
-							<a href={it.href} target="_blank" rel="noopener" class:list={{ missing: !it.href }}>
-								<span class="tag label">{it.tab}</span>
-								<span class="name">{it.title}</span>
+							<a href={it.href} target="_blank" rel="noopener" class:list={{ missing: !it.href, live: it.live }}>
+								<span class="tag label">
+									{it.live && <span class="light" aria-hidden="true" />}
+									{it.tab}
+								</span>
+								<span class="name">
+									{it.title}
+									{it.address && <span class="address">{it.address}</span>}
+								</span>
 								<span class="go label">
 									{it.href ? (
 										<>
@@ -164,39 +162,22 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 	}
 
 
-	.chip {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		z-index: 2;
-		translate: -50% -50%;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6em;
-		padding: 0.55rem 1.1rem;
-		background: color-mix(in srgb, var(--bg) 80%, transparent);
-		border: 1px solid var(--muted);
-		color: var(--text);
-		white-space: nowrap;
-	}
-
-	.chip svg {
-		width: 0.6em;
-		height: 0.7em;
-		fill: var(--accent);
-	}
-
 	.rows {
 		display: grid;
+		grid-auto-rows: 1fr;
 		gap: 0.75rem;
 		margin: 2.5rem 0 0;
 		padding: 0;
 		list-style: none;
 	}
 
+	.rows li {
+		display: grid;
+	}
+
 	.rows a {
 		display: grid;
-		grid-template-columns: auto 1fr auto;
+		grid-template-columns: auto minmax(0, 1fr) auto;
 		gap: 1.5rem;
 		align-items: center;
 		padding: 1rem 1.5rem;
@@ -219,6 +200,25 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 		border: 1px solid var(--border);
 	}
 
+	/* A live site: the same bar, with a green light in its tag (the status color, kept for "live") */
+	.live .tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		border-color: color-mix(in srgb, var(--status) 45%, transparent);
+		color: var(--status);
+	}
+
+	/* Hidden on phones, where the bar is too narrow for it */
+	.address {
+		margin-left: 1.25rem;
+		color: var(--muted);
+		font-family: var(--font-body);
+		font-size: 0.8125rem;
+		letter-spacing: 0;
+		text-transform: none;
+	}
+
 	.name {
 		font-family: var(--font-label);
 		font-size: var(--text-sm);
@@ -230,8 +230,18 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 		color: var(--accent);
 	}
 
-	/* Phones: one column; a portrait card is simply 3:4 */
+	/* Phones: one column; a portrait card is simply 3:4; the bars tighter */
 	@media (max-width: 47.99rem) {
+		.rows a {
+			gap: 1rem;
+			padding-inline: 1rem;
+		}
+
+		.address {
+			display: none;
+		}
+
+
 		.grid {
 			grid-template-columns: minmax(0, 1fr);
 		}
