@@ -10,7 +10,6 @@ Usage (from the repo root, needs Pillow and fontTools, and npm install for the w
 
 Outputs:
     src/assets/brand/wordmark.png      hero name
-    src/assets/brand/logo.png          the whole logo, for the link-preview image
     src/assets/brand/logo-er.png       the nav logo's [ER] (the rocket beside it is SVG, from rocket.json)
     src/assets/brand/headings/*.png    section headings (SectionHeading.astro)
     src/assets/brand/titles/<id>.png   each project's title, for its page (from src/content/projects),
@@ -120,7 +119,6 @@ logo = row(
 )
 # [ER] keeps its size (65.7px tall at 2x) whatever the rocket adds
 LOGO_SCALE = 65.7 / er.height  # 2x px per supersampled px
-save(logo, "src/assets/brand/logo.png", round(logo.width * LOGO_SCALE))
 # The nav shows [ER] as an image (the font's license) and draws the rocket beside it as SVG, the same
 # drawing as every other rocket on the site, so the rocket that docks into the logo is identical to it
 er_part = row([glyphs("[", MUTED), er, glyphs("]", MUTED)], [bracket_gap, bracket_gap])
