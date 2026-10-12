@@ -7,8 +7,11 @@
  *   screen    hull edge > bezel > glass, holding whatever the wrapper slots in
  *   text      title (a link, or plain with a dash), summary, hairline, tags
  *
- * `layout="side"` is the project page's hero: the screen on the left, the title (an h1), summary and
- * any `actions` slot on the right, and the tags in a darker band along the bottom with their label.
+ * `layout="side"` is the project page's hero: the title (an h1) centered across the top, the screen on
+ * the left with the summary and any `actions` slot beside it, and the tags in a darker band along the
+ * bottom with their label. The screen alone sets the card's height: the buttons sit level with its
+ * bottom, and a summary too long for the space steps down in size (scripts/fit-text.ts) rather than
+ * pushing them.
  * A `title` slot replaces the title's text (the project pages' title art).
  *
  * Wrappers supply the screen contents and any behavior. Sizes are CSS variables on .panel
@@ -122,8 +125,10 @@ const tipText =
 					)
 				}
 			</Heading>
-			{summary && <p class="summary">{summary}</p>}
-			<slot name="actions" />
+			<div class="body">
+				{summary && <p class="summary" data-fit={side ? "" : undefined}><span>{summary}</span></p>}
+				<slot name="actions" />
+			</div>
 		</div>
 
 		{
@@ -372,6 +377,11 @@ const tipText =
 		padding: var(--space-3) var(--inset) 1.25rem;
 	}
 
+	/* The summary and actions: part of the text's grid in a stacked card */
+	.body {
+		display: contents;
+	}
+
 	.title {
 		font-size: 1.125rem;
 		letter-spacing: var(--tracking-title);
@@ -480,38 +490,104 @@ const tipText =
 	}
 
 	/*
-	 * Side layout (the project hero): screen | text, the screen a little wider. The screen keeps its
-	 * own height, centered beside the text; the title sits level with its top and the actions level
-	 * with its bottom, the summary between them.
+	 * Side layout (the project hero): the title centered across the top, then screen | text, the
+	 * screen a little wider. The screen alone sets the row's height (the text takes none of its own,
+	 * `contain: size`): the buttons sit level with the screen's outer bottom edge and the summary is
+	 * centered between the glass's top and the buttons, whatever its length; fit-text.ts shrinks one that
+	 * doesn't fit.
 	 */
 	.side .card {
+		--screen-top: 2rem;
+		--screen-bottom: 2.5rem;
+		--glass-inset: calc(2px + var(--bezel-pad)); /* hull edge, bezel and rim, outside the glass */
 		display: grid;
 		grid-template-columns: 1.1fr 1fr;
 		column-gap: 2.75rem;
 	}
 
-	.side .card > :global(.viewport) {
-		align-self: center;
-		margin: 1.5rem 0 1.75rem 1.5rem;
-	}
-
 	.side .text {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		gap: 1.1rem;
-		padding: calc(1.5rem + 1.2rem) calc(1.5rem + 1rem) calc(1.75rem + 1.2rem) 0;
+		display: contents;
 	}
 
 	.side .title {
+		grid-area: 1 / 1 / 2 / -1;
+		padding: 2.25rem 2.5rem 0;
 		font-size: 1.85rem;
 		line-height: 1.2;
+		text-align: center;
 	}
 
+	.side .card > :global(.viewport) {
+		grid-area: 2 / 1;
+		align-self: start;
+		margin: var(--screen-top) 0 var(--screen-bottom) 1.5rem;
+	}
+
+	.side .body {
+		grid-area: 2 / 2;
+		contain: size;
+		display: flex;
+		flex-direction: column;
+		padding: calc(var(--screen-top) + var(--glass-inset)) 2.5rem var(--screen-bottom) 0;
+	}
+
+	/*
+	 * Fills the space from the top of the glass to the top of the buttons. Two spacers share what the
+	 * text leaves, so it's centered; they never drop under --top and --clear, so a long summary stops
+	 * just under the glass's top instead of crowding the buttons (and one that still doesn't fit overflows,
+	 * which fit-text measures; once shrunk, it spreads the lines to fill the space exactly). The
+	 * lines' leading is trimmed so the letters reach the edges.
+	 */
 	.side .summary {
+		/* Room kept under the text, above the buttons: the text's last baseline stays 1.75rem above the
+		   glass's bottom edge (the buttons reach on down to the screen's outer edge) */
+		--clear: calc(1.75rem + var(--glass-inset));
+		--top: 0.375rem; /* and over it, under the top of the glass */
+		flex: 1 1 0;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
 		color: var(--text);
-		font-size: var(--text-lg);
+		font-size: 1.5rem; /* the largest it gets; fit-text steps it down */
 		line-height: 1.7;
+	}
+
+	.side .summary::before,
+	.side .summary::after {
+		content: "";
+		flex: 1 1 0;
+	}
+
+	.side .summary::before {
+		min-height: var(--top);
+	}
+
+	.side .summary::after {
+		min-height: var(--clear);
+	}
+
+	.side .summary > span {
+		flex: none;
+		text-box: trim-both cap alphabetic;
+	}
+
+	/* Too long even at the smallest size: fit-text keeps the lines that fit, ending in "…"; the clip
+	   reaches below the last baseline so the descenders show */
+	.side .summary > span.clamped {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		overflow: clip;
+		overflow-clip-margin: 0.4em;
+	}
+
+	/* Firefox can't trim yet: the same trim as margins, from IBM Plex Mono's metrics (content area
+	   1.3em: ascent 1.025em, descent 0.275em; cap height 0.698em), at whatever line height fit-text sets */
+	@supports not (text-box: trim-both cap alphabetic) {
+		.side .summary > span {
+			display: block;
+			margin-block: calc(0.323em - 0.5lh) calc(0.375em - 0.5lh);
+		}
 	}
 
 	/* The tags' band: inset by the frame so the outline stays unbroken around it, its bottom corners
@@ -545,12 +621,35 @@ const tipText =
 			grid-template-columns: minmax(0, 1fr);
 		}
 
-		.side .card > :global(.viewport) {
-			margin: var(--space-3) var(--space-3) 0;
+		.side .title {
+			padding: 1.75rem var(--inset) 0;
 		}
 
-		.side .text {
+		.side .card > :global(.viewport) {
+			margin: 1.5rem var(--space-3) 0;
+		}
+
+		.side .body {
+			grid-area: 3 / 1;
+			contain: none;
+			gap: 1.5rem;
 			padding: var(--space-3) var(--inset) 1.5rem;
+		}
+
+		/* The body size, and an overlong summary cut to ten lines ("…") */
+		.side .summary {
+			display: block;
+			flex: none;
+			overflow: visible;
+			font-size: var(--text-base);
+		}
+
+		.side .summary > span {
+			display: -webkit-box;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 10;
+			overflow: clip;
+			overflow-clip-margin: 0.4em;
 		}
 
 		.band {

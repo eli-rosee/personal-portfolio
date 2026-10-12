@@ -71,12 +71,15 @@ const panes: Pane[] = [
 	import { initPlayers } from "../../scripts/player";
 	import { playClips } from "../../scripts/clips";
 	import { initFlight } from "../../scripts/flight";
+	import { fitRow, fitText } from "../../scripts/fit-text";
 
 	const init = (root: ParentNode) => {
 		initTheater(root);
 		initPlayers(root);
 		playClips(root);
 		initFlight(root);
+		fitRow(root);
+		fitText(root);
 	};
 	init(document);
 	document.addEventListener("project:swap", (e) => init((e as CustomEvent<HTMLElement>).detail));

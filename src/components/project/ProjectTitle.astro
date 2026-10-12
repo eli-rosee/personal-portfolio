@@ -1,0 +1,53 @@
+---
+/*
+ * A project's title at the top of its page, in the display font (images from scripts/render-art.py):
+ * one line, centered, shrinking to fit a narrower card. Phones switch to the two-line version (a title
+ * of more than one word) when the one line wouldn't fit at its full size.
+ */
+import { Image } from "astro:assets";
+
+interface Props {
+	title: string;
+	id: string; // unique on the page: names this title's phone rule
+	one: ImageMetadata;
+	two?: ImageMetadata;
+}
+
+const { title, id, one, two } = Astro.props;
+// The one line's full width on the page (the art is saved at 2x); narrower than that, phones take two
+const fullWidth = one.width / 2;
+const phoneRule =
+	two &&
+	`@media (max-width: 47.99rem) { @container (max-width: ${fullWidth - 0.5}px) { [data-title="${id}"] img { --one: none; --two: block; } } }`;
+---
+
+<span class="project-title" data-title={id}>
+	<Image class="one" src={one} alt={title} height={one.height / 2} densities={[1, 2]} loading="eager" />
+	{two && <Image class="two" src={two} alt={title} height={two.height / 2} densities={[1, 2]} />}
+</span>
+{phoneRule && <style is:inline set:html={phoneRule} />}
+
+<style>
+	.project-title {
+		display: block;
+		container-type: inline-size;
+	}
+
+	/* Which version shows: the phone rule above flips these */
+	.project-title img {
+		width: auto;
+		max-width: 100%;
+		margin-inline: auto;
+		object-fit: contain;
+	}
+
+	.one {
+		display: var(--one, block);
+		height: 30px;
+	}
+
+	.two {
+		display: var(--two, none);
+		height: auto;
+	}
+</style>

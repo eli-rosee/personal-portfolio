@@ -1,14 +1,15 @@
 ---
 /*
  * The top of a project page: the console card laid out sideways (ConsoleCard's side layout). The
- * display screen on the left; the title (in the display font, an image), summary, the code button and
- * the live site's (a media link with `live: true`) on the right; the stack in the band along the bottom.
+ * title (in the display font, an image) across the top; the display screen on the left; the summary,
+ * the code button and the live site's (a media link with `live: true`) on the right; the stack in the
+ * band along the bottom.
  */
 import type { CollectionEntry } from "astro:content";
-import { Image } from "astro:assets";
 import ConsoleCard from "../ConsoleCard.astro";
 import ProjectDisplay from "../ProjectDisplay.astro";
 import Button from "../Button.astro";
+import ProjectTitle from "./ProjectTitle.astro";
 import { STATUS } from "../../scripts/projects";
 import { display } from "../../scripts/project-files";
 import { site } from "../../content/site";
@@ -23,9 +24,10 @@ const live = media?.find((m) => m.type === "link" && m.live && m.href);
 const liveHref = live?.type === "link" ? live.href : undefined;
 
 // The title in Mission Control DCU, rendered by scripts/render-art.py (the font may only be shown as
-// images); plain text until it's rendered
+// images), with its two-line version for phones; plain text until it's rendered
 const titles = import.meta.glob<{ default: ImageMetadata }>("../../assets/brand/titles/*.png", { eager: true });
 const titleArt = titles[`../../assets/brand/titles/${project.id}.png`]?.default;
+const titleTwo = titles[`../../assets/brand/titles/${project.id}-two.png`]?.default;
 const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request: ${title}`)}`;
 ---
 
@@ -39,10 +41,10 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 	status={{ label: status.replace("-", " "), ...STATUS[status], tipId: "hero-status-tip" }}
 >
 	<ProjectDisplay display={display(project)} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />
-	{titleArt && <Image slot="title" class="title-art" src={titleArt} alt={title} height={30} densities={[1, 2]} loading="eager" />}
+	{titleArt && <ProjectTitle slot="title" title={title} id={project.id} one={titleArt} two={titleTwo} />}
 	{
 		(repo || privateCode || liveHref) && (
-			<div class="actions" slot="actions">
+			<div class="actions" slot="actions" data-fit-row>
 				{repo && (
 					<Button primary external href={repo}>
 						Repo
@@ -64,34 +66,54 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 </ConsoleCard>
 
 <style>
-	.title-art {
-		display: block;
-		height: 30px;
-		width: auto;
-		max-width: 100%;
-		object-fit: contain;
-		object-position: left;
-	}
-
+	/* One row of buttons whenever they fit: fit-text.ts tightens them a step at a time (.fit-1 to
+	   .fit-3) when they don't, and lets them wrap only if even the tightest don't fit */
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2);
-		margin-top: 0.5rem;
 	}
 
-	/* Phones: the buttons side by side, filling the row (as in the home hero); a longer label takes a little more */
+	.actions:global(.one-row) {
+		flex-wrap: nowrap;
+	}
+
+	.actions:global(.fit-1) > :global(.button) {
+		padding-inline: 1rem;
+		letter-spacing: 0.16em;
+	}
+
+	.actions:global(.fit-2) > :global(.button) {
+		padding-inline: 0.75rem;
+		letter-spacing: 0.12em;
+	}
+
+	.actions:global(.fit-3) > :global(.button) {
+		padding-inline: 0.6rem;
+		font-size: 0.8rem;
+		letter-spacing: 0.08em;
+	}
+
+	/* Phones: the buttons fill the row (as in the home hero), a longer label taking more of it, with
+	   less padding; the same steps tighten the lettering */
 	@media (max-width: 39.99rem) {
 		.actions {
-			display: grid;
-			grid-auto-flow: column;
-			grid-auto-columns: 1fr;
 			gap: var(--space-1);
 		}
 
-		.actions > :global(.button) {
+		.actions > :global(.button),
+		.actions:global(.fit-1) > :global(.button) {
+			flex: 1 1 auto;
 			padding-inline: var(--space-1);
 			text-align: center;
+		}
+
+		.actions:global(.fit-2) > :global(.button) {
+			padding-inline: 0.4rem;
+		}
+
+		.actions:global(.fit-3) > :global(.button) {
+			padding-inline: 0.35rem;
 		}
 	}
 </style>
