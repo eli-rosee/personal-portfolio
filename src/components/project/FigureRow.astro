@@ -1,0 +1,105 @@
+---
+/*
+ * Figures in a project's write-up: one, or two or three side by side. Each takes one of two shapes from
+ * its image: landscape (16:9) or portrait (3:4), filled (the edges cut if its shape is in between). Side by
+ * side they share one height. Each is a plain screen (no grade or glass) with its caption under it, and
+ * opens in the theater (the zoom cursor says so).
+ */
+import Screen from "../Screen.astro";
+import Visual from "./Visual.astro";
+import { shapeOf, type Figure } from "../../scripts/project-files";
+
+interface Props {
+	figures: Figure[];
+}
+
+const { figures } = Astro.props;
+const ratio = { landscape: 16 / 9, portrait: 3 / 4 };
+const single = figures.length === 1;
+---
+
+<div class:list={["figures", { single }]}>
+	{
+		figures.map((f) => {
+			const shape = shapeOf(f.asset);
+			return (
+				<figure class:list={["figure", shape]} style={`--ar: ${ratio[shape].toFixed(4)}`}>
+					<button type="button" class="open" data-theater={f.id} aria-label={`Open ${f.caption ?? f.alt ?? "figure"} larger`}>
+						<Screen plain class="figure-screen">
+							<div class="frame">
+								<Visual asset={f.asset} alt={f.alt} width={single ? 900 : 600} />
+							</div>
+						</Screen>
+					</button>
+					{f.caption && <figcaption class="label">{f.caption}</figcaption>}
+				</figure>
+			);
+		})
+	}
+</div>
+
+<style>
+	/* Side by side at one height: each figure's share of the row is its shape's width */
+	.figures {
+		display: flex;
+		gap: 1.25rem;
+		align-items: flex-start;
+	}
+
+	.figure {
+		flex: var(--ar) 1 0;
+		min-width: 0;
+		margin: 0;
+	}
+
+	/* One portrait figure on its own stays narrow, so it doesn't run down the page */
+	.single .figure.portrait {
+		flex: none;
+		width: min(100%, 22rem);
+	}
+
+	.open {
+		all: unset;
+		display: block;
+		width: 100%;
+		cursor: zoom-in;
+	}
+
+	.open:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+	}
+
+	.figures :global(.figure-screen) {
+		--screen-cut: 0.9rem;
+		--bezel-pad: 0.45rem;
+	}
+
+	.figures:not(.single) :global(.figure-screen) {
+		--screen-cut: 0.7rem;
+		--bezel-pad: 0.35rem;
+	}
+
+	.frame {
+		position: relative;
+		aspect-ratio: var(--ar);
+	}
+
+	figcaption {
+		margin-top: 0.65rem;
+		font-size: 0.63rem;
+		line-height: 1.6;
+	}
+
+	@media (max-width: 35.99rem) {
+		.figures {
+			flex-direction: column;
+		}
+
+		.figure,
+		.single .figure.portrait {
+			flex: none;
+			width: 100%;
+		}
+	}
+</style>

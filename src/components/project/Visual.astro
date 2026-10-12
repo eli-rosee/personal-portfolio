@@ -1,0 +1,66 @@
+---
+/*
+ * One of a project's files on a screen, filling it: an image (optimized), a GIF, a silent looping clip,
+ * or, in a draft, a "no signal" gap naming the file that's still missing.
+ * Clips play only while on screen (src/scripts/clips.ts) and hold still with reduced motion.
+ */
+import { Image } from "astro:assets";
+import type { Asset } from "../../scripts/project-files";
+
+interface Props {
+	asset: Asset;
+	alt?: string;
+	width?: number; // the widest the image is shown, in CSS px (2x is made too)
+	position?: string; // object-position
+	zoom?: number;
+	fit?: "cover" | "contain";
+	eager?: boolean;
+}
+
+const { asset, alt = "", width = 900, position = "50% 50%", zoom = 1, fit = "cover", eager = false } = Astro.props;
+const style = `object-fit: ${fit}; object-position: ${position}; scale: ${zoom}; transform-origin: ${position}`;
+---
+
+{asset.kind === "image" && <Image class="visual" src={asset.image} alt={alt} width={width} densities={[1, 2]} loading={eager ? "eager" : "lazy"} style={style} />}
+{asset.kind === "gif" && <img class="visual" src={asset.src} alt={alt} loading={eager ? "eager" : "lazy"} decoding="async" style={style} />}
+{
+	asset.kind === "clip" && (
+		<video class="visual" data-clip src={asset.src} muted loop playsinline preload="metadata" aria-label={alt || undefined} style={style} />
+	)
+}
+{
+	asset.kind === "missing" && (
+		<div class="missing">
+			<span class="label">Missing {asset.path}</span>
+		</div>
+	)
+}
+
+<style>
+	.visual {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	/* A draft's missing file: the cards' "no signal", with the file's name */
+	.missing {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		background:
+			repeating-linear-gradient(transparent 0 7px, rgb(138 147 166 / 0.05) 7px 9px),
+			radial-gradient(circle at 50% 50%, rgb(37 44 59 / 0.9), var(--bg) 70%);
+	}
+
+	.missing .label {
+		position: relative;
+		z-index: 2;
+		padding: 0.25rem 0.6rem;
+		border: 1px dashed var(--muted);
+		color: var(--text);
+		font-size: 0.62rem;
+		text-transform: none;
+	}
+</style>

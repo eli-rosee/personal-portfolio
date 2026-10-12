@@ -1,0 +1,269 @@
+---
+/*
+ * A project's Media section: one console card per item, two columns (`wide: true` spans both; an image
+ * or clip card with `shape: portrait` is one column wide and two rows tall, packed in beside others). The
+ * screens show the media as it is (no grade or glass). Images, clips, videos and slides open in the
+ * theater; a link card opens its page in a new tab. A link without a screenshot is a plain row under
+ * the cards (a report, a paper).
+ */
+import ConsoleCard from "../ConsoleCard.astro";
+import SectionHeading from "../SectionHeading.astro";
+import ExternalIcon from "../ExternalIcon.astro";
+import Visual from "./Visual.astro";
+import type { MediaItem } from "../../scripts/project-files";
+
+interface Props {
+	items: MediaItem[];
+}
+
+const { items } = Astro.props;
+const cards = items.filter((it) => it.type !== "link" || it.screenshot);
+const rows = items.filter((it) => it.type === "link" && !it.screenshot);
+const slideCount = (n: number) => String(n).padStart(2, "0");
+---
+
+{
+	items.length > 0 && (
+		<section class="media" aria-labelledby="media-heading">
+			<SectionHeading id="media-heading" text="Media" />
+			{cards.length > 0 && (
+				<div class="grid">
+					{cards.map((it) => (
+						<ConsoleCard
+							class:list={["media-card", { wide: it.wide, portrait: (it.type === "image" || it.type === "clip") && it.shape === "portrait" }]}
+							title={it.title}
+							summary={it.caption}
+							href={it.type === "link" ? it.href : undefined}
+							external={it.type === "link" && it.external}
+							status={{ label: it.tab, tone: it.type === "link" ? "status" : "muted" }}
+							plain
+						>
+							<div class="frame">
+								{it.type === "image" && (
+									<Visual
+										asset={it.asset}
+										alt={it.alt}
+										width={it.wide ? 1200 : 640}
+										fit={it.fit === "whole" ? "contain" : "cover"}
+										position={it.position}
+										zoom={it.zoom}
+									/>
+								)}
+								{it.type === "clip" && <Visual asset={it.asset} />}
+								{it.type === "video" &&
+									(it.poster ? <Visual asset={it.poster} width={it.wide ? 1200 : 640} /> : <div class="feed" />)}
+								{it.type === "slides" && <Visual asset={it.slides[0]} width={it.wide ? 1200 : 640} />}
+								{it.type === "link" && it.screenshot && <Visual asset={it.screenshot} width={it.wide ? 1200 : 640} />}
+
+								{it.type === "video" && (
+									<span class="chip label">
+										<svg viewBox="0 0 6 7" aria-hidden="true">
+											<path d="M0 0l6 3.5L0 7z" />
+										</svg>
+										Play
+									</span>
+								)}
+								{it.type === "link" && (
+									<span class="chip label">
+										Open {it.tab.toLowerCase()} <ExternalIcon />
+									</span>
+								)}
+								{it.type === "video" && <span class="meta label" data-duration={it.id}>Sound on</span>}
+								{it.type === "slides" && <span class="meta label">01 / {slideCount(it.slides.length)}</span>}
+								{it.type !== "link" && (
+									<button type="button" class="open" data-theater={it.id} aria-label={`Open ${it.title} larger`} />
+								)}
+							</div>
+						</ConsoleCard>
+					))}
+				</div>
+			)}
+			{rows.length > 0 && (
+				<ul class="rows">
+					{rows.map((it) => (
+						<li>
+							<a href={it.href} target="_blank" rel="noopener" class:list={{ missing: !it.href }}>
+								<span class="tag label">{it.tab}</span>
+								<span class="name">{it.title}</span>
+								<span class="go label">
+									{it.href ? (
+										<>
+											Open <ExternalIcon />
+										</>
+									) : (
+										"Missing file"
+									)}
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			)}
+		</section>
+	)
+}
+
+<style>
+	/* dense: a portrait card's neighbours fill in beside it */
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-auto-flow: row dense;
+		gap: 2.5rem 2rem;
+	}
+
+	.grid > :global(.wide) {
+		grid-column: 1 / -1;
+	}
+
+	/* A portrait card: two rows tall, its screen taking the height its text leaves */
+	.grid > :global(.portrait) {
+		grid-row: span 2;
+	}
+
+	.grid > :global(.portrait .viewport) {
+		flex: 1 1 0;
+		min-height: 0;
+	}
+
+	.grid > :global(.portrait .text) {
+		flex-grow: 0;
+	}
+
+	.grid > :global(.portrait :is(.bezel, .rim, .screen)) {
+		height: 100%;
+	}
+
+	.grid > :global(.portrait) .frame {
+		aspect-ratio: auto;
+		height: 100%;
+	}
+
+	.frame {
+		position: relative;
+		aspect-ratio: 16 / 9;
+	}
+
+	/* The whole screen opens the theater; the zoom cursor says so */
+	.open {
+		all: unset;
+		position: absolute;
+		inset: 0;
+		z-index: 4; /* over the card's own link layer */
+		cursor: zoom-in;
+	}
+
+	.open:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -4px;
+	}
+
+	.meta {
+		position: absolute;
+		right: 1rem;
+		bottom: 0.85rem;
+		z-index: 2;
+		padding: 0.1rem 0.45rem;
+		background: color-mix(in srgb, var(--bg) 70%, transparent);
+		font-size: 0.6rem;
+	}
+
+	/* A video without a poster: the cards' "no signal" */
+	.feed {
+		position: absolute;
+		inset: 0;
+		background:
+			repeating-linear-gradient(transparent 0 7px, rgb(138 147 166 / 0.05) 7px 9px),
+			radial-gradient(circle at 50% 50%, rgb(37 44 59 / 0.9), var(--bg) 70%);
+	}
+
+	.chip {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		z-index: 2;
+		translate: -50% -50%;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		padding: 0.55rem 1.1rem;
+		background: color-mix(in srgb, var(--bg) 80%, transparent);
+		border: 1px solid var(--muted);
+		color: var(--text);
+		white-space: nowrap;
+	}
+
+	.chip svg {
+		width: 0.6em;
+		height: 0.7em;
+		fill: var(--accent);
+	}
+
+	.rows {
+		display: grid;
+		gap: 0.75rem;
+		margin: 2.5rem 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.rows a {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		gap: 1.5rem;
+		align-items: center;
+		padding: 1rem 1.5rem;
+		border: 1px solid var(--border);
+		color: var(--text);
+	}
+
+	.rows a:hover {
+		border-color: var(--muted);
+		text-decoration: none;
+	}
+
+	.rows a.missing {
+		border-style: dashed;
+		pointer-events: none;
+	}
+
+	.tag {
+		padding: 0.1rem 0.45rem;
+		border: 1px solid var(--border);
+	}
+
+	.name {
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-title);
+	}
+
+	.go {
+		color: var(--accent);
+	}
+
+	/* Phones: one column; a portrait card is simply 3:4 */
+	@media (max-width: 47.99rem) {
+		.grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.grid > :global(.portrait) {
+			grid-row: auto;
+		}
+
+		.grid > :global(.portrait .viewport) {
+			flex: none;
+		}
+
+		.grid > :global(.portrait :is(.bezel, .rim, .screen)) {
+			height: auto;
+		}
+
+		.grid > :global(.portrait) .frame {
+			aspect-ratio: 3 / 4;
+			height: auto;
+		}
+	}
+</style>

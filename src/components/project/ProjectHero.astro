@@ -1,0 +1,75 @@
+---
+/*
+ * The top of a project page: the console card laid out sideways (ConsoleCard's side layout). The
+ * display screen on the left; the title (in the display font, an image), summary and the code button
+ * on the right; the stack in the band along the bottom.
+ */
+import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
+import ConsoleCard from "../ConsoleCard.astro";
+import ProjectDisplay from "../ProjectDisplay.astro";
+import Button from "../Button.astro";
+import { STATUS } from "../../scripts/projects";
+import { display } from "../../scripts/project-files";
+import { site } from "../../content/site";
+
+interface Props {
+	project: CollectionEntry<"projects">;
+}
+
+const { project } = Astro.props;
+const { title, status, summary, stack, repo, private: privateCode } = project.data;
+
+// The title in Mission Control DCU, rendered by scripts/render-art.py (the font may only be shown as
+// images); plain text until it's rendered
+const titles = import.meta.glob<{ default: ImageMetadata }>("../../assets/brand/titles/*.png", { eager: true });
+const titleArt = titles[`../../assets/brand/titles/${project.id}.png`]?.default;
+const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request: ${title}`)}`;
+---
+
+<ConsoleCard
+	class="project-hero"
+	layout="side"
+	title={title}
+	summary={summary}
+	tags={stack}
+	tagsLabel="Stack"
+	status={{ label: status.replace("-", " "), ...STATUS[status], tipId: "hero-status-tip" }}
+>
+	<ProjectDisplay display={display(project)} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />
+	{titleArt && <Image slot="title" class="title-art" src={titleArt} alt={title} height={30} densities={[1, 2]} loading="eager" />}
+	{
+		(repo || privateCode) && (
+			<div class="actions" slot="actions">
+				{repo && (
+					<Button primary external href={repo}>
+						Repo
+					</Button>
+				)}
+				{!repo && privateCode && (
+					<Button href={request} tip={privateCode} tipId="code-tip">
+						Code on request
+					</Button>
+				)}
+			</div>
+		)
+	}
+</ConsoleCard>
+
+<style>
+	.title-art {
+		display: block;
+		height: 30px;
+		width: auto;
+		max-width: 100%;
+		object-fit: contain;
+		object-position: left;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: 0.5rem;
+	}
+</style>

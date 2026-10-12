@@ -1,14 +1,15 @@
 ---
-import { getCollection } from "astro:content";
 import MissionCard from "./MissionCard.astro";
 import SectionHeading from "./SectionHeading.astro";
+import { getProjects } from "../scripts/projects";
 
-// Published projects, in mission order
-const projects = (await getCollection("projects", ({ data }) => !data.draft)).sort(
-	(a, b) => a.data.number - b.data.number,
-);
+// The projects, in mission order (drafts too while developing)
+const projects = await getProjects();
 ---
 
+{/* Hidden until there's a project to show */}
+{
+	projects.length > 0 && (
 <section id="projects" class="section" aria-labelledby="projects-heading">
 	<SectionHeading id="projects-heading" text="Projects" />
 	<div class="grid">
@@ -17,6 +18,8 @@ const projects = (await getCollection("projects", ({ data }) => !data.draft)).so
 		{projects.map((project, i) => <MissionCard project={project} eager={i < 2} />)}
 	</div>
 </section>
+	)
+}
 
 <style>
 	.grid {

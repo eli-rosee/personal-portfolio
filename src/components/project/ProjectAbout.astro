@@ -1,0 +1,111 @@
+---
+/*
+ * A project's About: the statement (its *phrase* in amber), then the write-up's sections, each heading
+ * in a label column beside its text and figures (src/scripts/project-files.ts splits the Markdown).
+ */
+import SectionHeading from "../SectionHeading.astro";
+import Prose from "../Prose.astro";
+import FigureRow from "./FigureRow.astro";
+import type { Section } from "../../scripts/project-files";
+import { statementHtml } from "../../scripts/markdown";
+
+interface Props {
+	statement?: string;
+	sections: Section[];
+}
+
+const { statement, sections } = Astro.props;
+---
+
+{
+	(statement || sections.length > 0) && (
+		<section class="about" aria-labelledby="about-heading">
+			<SectionHeading id="about-heading" text="About" />
+			{statement && <p class="statement" set:html={statementHtml(statement)} />}
+			<div class="sections">
+				{sections.map((s) => (
+					<>
+						{s.heading && <h3 class="prompt">{s.heading}</h3>}
+						<div class="body">
+							{s.blocks.map((b) => (b.kind === "text" ? <Prose class="project-prose" html={b.html} /> : <FigureRow figures={b.figures} />))}
+						</div>
+					</>
+				))}
+			</div>
+		</section>
+	)
+}
+
+<style>
+	.statement {
+		max-width: 44rem;
+		margin-bottom: 3.5rem;
+		font-family: var(--font-label);
+		font-size: 1.2rem;
+		line-height: 1.45;
+		letter-spacing: -0.01em;
+		color: var(--text);
+	}
+
+	.statement :global(em) {
+		font-style: normal;
+		color: var(--accent);
+	}
+
+	.statement :global(.nowrap) {
+		white-space: nowrap;
+	}
+
+	/* Headings in a label column beside their sections */
+	.sections {
+		display: grid;
+		grid-template-columns: 13rem minmax(0, 1fr);
+		column-gap: 3rem;
+		row-gap: 2.25rem;
+	}
+
+	/* The About prompts' type (Prose.astro), as the label */
+	.prompt {
+		grid-column: 1;
+		padding-top: 0.35rem;
+		font-family: "Red Hat Mono", monospace;
+		font-size: 0.74rem;
+		font-weight: 600;
+		line-height: 1.6;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: #b9bdc7;
+	}
+
+	.body {
+		grid-column: 2;
+		display: grid;
+		gap: 1.5rem;
+		max-width: 44rem;
+	}
+
+	.body > :global(.project-prose) {
+		font-size: 0.9375rem;
+	}
+
+	@media (max-width: 47.99rem) {
+		.sections {
+			grid-template-columns: minmax(0, 1fr);
+			row-gap: 0;
+		}
+
+		.prompt,
+		.body {
+			grid-column: 1;
+		}
+
+		.prompt {
+			margin: 2.25rem 0 0.75rem;
+			padding: 0;
+		}
+
+		.prompt:first-child {
+			margin-top: 0;
+		}
+	}
+</style>

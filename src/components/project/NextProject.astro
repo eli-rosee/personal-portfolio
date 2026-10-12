@@ -1,0 +1,393 @@
+---
+/*
+ * The end of a project page: "Next stop: <name> ↗" (a plain link), and "or [take the scenic route]",
+ * which counts down and flies the rocket off its launchpad, up the page and into the logo while the
+ * next project fades in under it (src/scripts/flight.ts). The dashed flight path from the phrase to
+ * the rocket is drawn by the same script.
+ */
+import type { CollectionEntry } from "astro:content";
+import SectionHeading from "../SectionHeading.astro";
+import ExternalIcon from "../ExternalIcon.astro";
+import rocket from "../../assets/brand/rocket.json";
+
+interface Props {
+	next: CollectionEntry<"projects">;
+}
+
+const { next } = Astro.props;
+const href = `/projects/${next.id}/`;
+---
+
+<section class="next" aria-labelledby="next-heading">
+	<SectionHeading id="next-heading" text="Next project" />
+	<div class="row">
+		<div class="col">
+			<p class="statement big">Next stop: <a class="name" href={href}>{next.data.title} <span class="arr"><ExternalIcon /></span></a></p>
+			<p class="statement small">
+				or <button type="button" class="phrase" data-launch={href}><em>take the scenic route</em><span class="tooltip label" aria-hidden="true">Launch the Rocket</span></button>
+			</p>
+		</div>
+		<button class="launch" type="button" data-launch={href} aria-label={`Launch to ${next.data.title}`}>
+			<span class="stand">
+				<svg class="rk" viewBox="0 0 100 124" aria-hidden="true"><path class="flame" d={rocket.flame} /><path class="hull" d={rocket.hull} /></svg>
+				{/* The launchpad, drawn around the rocket's feet (0, 0): a slab deck, a lattice tower on the right
+				    with two service arms and a status light, a propellant sphere on the left */}
+				<svg class="pad" viewBox="-42 -40 88 44" aria-hidden="true">
+					<clipPath id="above-deck"><rect x="-30" y="-50" width="80" height="51.5" /></clipPath>
+					<g class="base">
+						<g class="tower">
+							<path class="rails" d="M25 0V-36M30 0V-36M24 -36H31" />
+							<path class="lattice" d="M25 -36L30 -30L25 -24L30 -18L25 -12L30 -6L25 0M30 -36L25 -30L30 -24L25 -18L30 -12L25 -6L30 0" />
+							<g clip-path="url(#above-deck)"><path class="arm a1" d="M25 -22H6.5" /><path class="arm a2" d="M25 -12H7.5" /></g>
+						</g>
+						<rect class="slab" x="-17" y="0" width="51" height="3.5" rx="1.75" />
+						<g class="tank">
+							<path class="slab" d="M-38.75 0H-14V3.5H-38.75A1.75 1.75 0 0 1 -38.75 0Z" />
+							<circle class="sphere" cx="-30" cy="-10" r="6.5" />
+							<path class="legs" d="M-34 -5L-35.5 0M-26 -5L-24.5 0" />
+							<path class="pipe" d="M-24.2 -7.2Q-21.6 -4.4 -18 -4.4H-9.4" />
+						</g>
+						<rect class="light-sq" x="26" y="-31.5" width="3" height="3" />
+					</g>
+				</svg>
+			</span>
+		</button>
+		<svg class="launch-arrow" aria-hidden="true"></svg>
+	</div>
+</section>
+
+<style>
+	.next {
+		padding: 6rem 0 2rem;
+	}
+
+	.row {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.col {
+		display: grid;
+		gap: 0.7rem;
+	}
+
+	.statement {
+		font-family: var(--font-label);
+		line-height: 1.45;
+		letter-spacing: -0.01em;
+		color: var(--muted);
+	}
+
+	.big {
+		font-size: 1.5rem;
+	}
+
+	.small {
+		font-size: 1rem;
+	}
+
+	.name {
+		color: var(--text);
+		white-space: nowrap;
+	}
+
+	.name:hover {
+		text-decoration: none;
+	}
+
+	.arr {
+		display: inline-block;
+		color: var(--muted);
+		transition: color 0.15s;
+	}
+
+	.arr :global(svg) {
+		width: 1em;
+		height: 1em;
+		vertical-align: -0.1em;
+	}
+
+	.name:is(:hover, :focus-visible) .arr {
+		color: var(--text);
+	}
+
+	/* The launch phrase: the home About's amber bracketed phrase */
+	.phrase {
+		all: unset;
+		position: relative;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.phrase em {
+		font-style: normal;
+		color: var(--accent);
+	}
+
+	.phrase::before {
+		content: "[";
+		margin-right: 0.1em;
+		color: var(--accent);
+	}
+
+	.phrase::after {
+		content: "]";
+		margin-left: 0.1em;
+		color: var(--accent);
+	}
+
+	.phrase:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+	}
+
+	.launch {
+		all: unset;
+		cursor: pointer;
+		margin-right: 1.5rem;
+		translate: 0 var(--shift, 0px); /* centered on the two lines of text (flight.ts) */
+	}
+
+	.launch:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 10px;
+	}
+
+	.stand {
+		position: relative;
+		display: block;
+	}
+
+	/* The logo rocket's size; its engine is dark until the countdown */
+	.rk {
+		display: block;
+		width: 25px;
+		overflow: visible;
+	}
+
+	.rk .hull {
+		fill: var(--text);
+		fill-rule: evenodd;
+		transition: fill 0.15s;
+	}
+
+	.rk .flame {
+		fill: var(--accent);
+		opacity: 0;
+	}
+
+	.row:has(:is(.phrase, .launch):is(:hover, :focus-visible)) .rk .hull {
+		fill: #fff;
+	}
+
+	.pad {
+		position: absolute;
+		left: 50%;
+		bottom: -4px;
+		width: 88px;
+		translate: -42px 0;
+		overflow: visible;
+		fill: none;
+		stroke-width: 1;
+	}
+
+	.rails {
+		stroke: var(--muted);
+		stroke-opacity: 0.8;
+	}
+
+	.lattice {
+		stroke: var(--muted);
+		stroke-opacity: 0.35;
+		stroke-width: 0.75;
+	}
+
+	.slab {
+		fill: var(--frame-line-lit);
+		stroke: none;
+	}
+
+	.sphere {
+		fill: var(--surface);
+		stroke: var(--muted);
+		stroke-opacity: 0.85;
+	}
+
+	.legs {
+		stroke: var(--muted);
+		stroke-opacity: 0.7;
+		stroke-width: 0.9;
+	}
+
+	.pipe {
+		fill: none;
+		stroke: var(--muted);
+		stroke-opacity: 0.55;
+		stroke-width: 0.9;
+	}
+
+	/* The service arms swing down against the tower at T-1, at one steady rate; the lower one is clipped
+	   where it would pass the deck */
+	.arm {
+		stroke: var(--muted);
+		stroke-opacity: 0.8;
+		transition:
+			rotate 0.5s linear,
+			opacity 0.5s;
+		transform-box: view-box;
+	}
+
+	.a1 {
+		transform-origin: 25px -22px;
+	}
+
+	.a2 {
+		transform-origin: 25px -12px;
+	}
+
+	.row:global(.arms-back) .arm,
+	.row:global(.flying) .arm {
+		rotate: -70deg;
+		opacity: 0.6;
+	}
+
+	/* The status light on the tower: amber while it waits, green at liftoff */
+	.light-sq {
+		fill: #ffb54d;
+		filter: drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 4px rgb(242 165 65 / 0.6));
+		transition:
+			fill 0.2s,
+			filter 0.2s;
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+
+	.row:global(.go) .light-sq,
+	.row:global(.flying) .light-sq {
+		fill: #8fdc93;
+		filter: drop-shadow(0 0 2px var(--status)) drop-shadow(0 0 4px rgb(123 196 127 / 0.6));
+	}
+
+	/* The flight path (the home About's look): muted dashes, a pad ring, target brackets, a chevron */
+	.launch-arrow {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+		fill: none;
+		stroke-width: 1.25;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		opacity: 0;
+		transition: opacity 0.4s;
+	}
+
+	.launch-arrow:global(.drawn) {
+		opacity: 1;
+	}
+
+	.row:global(.flying) .launch-arrow {
+		opacity: 0 !important;
+	}
+
+	.launch-arrow :global(.path) {
+		stroke: var(--muted);
+		stroke-opacity: 0.8;
+		stroke-dasharray: 5 5;
+	}
+
+	.launch-arrow :global(.ring) {
+		stroke: var(--muted);
+	}
+
+	.launch-arrow :global(.brackets) {
+		stroke: var(--text);
+		stroke-opacity: 0.7;
+		stroke-linecap: square;
+	}
+
+	.launch-arrow :global(.chevron) {
+		stroke: var(--text);
+		stroke-opacity: 0.85;
+		stroke-width: 1.5;
+	}
+
+	/* Phones: the launch sits under the text, the path hidden (no room to arc) */
+	@media (max-width: 47.99rem) {
+		.row {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 4rem;
+		}
+
+		.launch {
+			align-self: center;
+			margin: 0;
+		}
+
+		.launch-arrow {
+			display: none;
+		}
+
+		.big {
+			font-size: 1.2rem;
+		}
+	}
+</style>
+
+<style is:global>
+	/* Made by flight.ts: the countdown over the pad, the flying rocket and its contrail */
+	.countdown {
+		position: absolute;
+		z-index: 45;
+		translate: -50% -100%;
+		color: var(--accent);
+		font-family: var(--font-label);
+		font-size: 1.15rem;
+		font-weight: 700;
+		letter-spacing: var(--tracking-title);
+		text-transform: uppercase;
+		white-space: nowrap;
+		pointer-events: none;
+	}
+
+	.ship {
+		position: fixed;
+		z-index: 40;
+		overflow: visible;
+		pointer-events: none;
+		will-change: transform;
+	}
+
+	.ship .hull {
+		fill: var(--text);
+		fill-rule: evenodd;
+	}
+
+	.ship .flame {
+		fill: var(--accent);
+		opacity: 1;
+		transform-box: fill-box;
+		transform-origin: 50% 0;
+		animation: flame-flicker 0.12s steps(2) infinite;
+	}
+
+	@keyframes flame-flicker {
+		50% {
+			transform: scaleY(0.8);
+		}
+	}
+
+	.contrail {
+		position: fixed;
+		inset: 0;
+		z-index: 39;
+		width: 100vw;
+		height: 100vh;
+		pointer-events: none;
+	}
+</style>
