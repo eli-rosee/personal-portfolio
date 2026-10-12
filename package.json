@@ -11,14 +11,18 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "art": "python3 scripts/render-art.py"
+    "art": "python3 scripts/render-art.py",
+    "new-project": "node scripts/new-project.mjs"
   },
   "dependencies": {
+    "@astrojs/markdown-satteri": "^0.4.2",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/red-hat-mono": "^5.3.0",
     "@fontsource/red-hat-text": "^5.3.0",
     "@fontsource/space-mono": "^5.3.0",
-    "astro": "^7.3.4"
+    "@types/js-yaml": "^4.0.9",
+    "astro": "^7.3.4",
+    "js-yaml": "^4.3.2"
   },
   "allowScripts": {
     "esbuild": true
