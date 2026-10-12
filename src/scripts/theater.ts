@@ -34,7 +34,7 @@ export function initTheater(root: ParentNode = document) {
 	const showSlide = (pane: HTMLElement, n: number) => {
 		const { slides } = slideOf(pane);
 		slides.forEach((s, i) => (s.hidden = i !== n));
-		pane.querySelector("[data-slide-count]")!.textContent = `${pad(n + 1)} / ${pad(slides.length)}`;
+		field("slide-count").textContent = `${pad(n + 1)} / ${pad(slides.length)}`;
 	};
 
 	// About and Media sit side by side when both rows fit in full, otherwise stacked
@@ -66,6 +66,11 @@ export function initTheater(root: ParentNode = document) {
 		field("title").textContent = pane.dataset.title ?? "";
 		field("caption").textContent = pane.dataset.caption ?? "";
 		field("hint").textContent = pane.dataset.hint ?? "";
+		// A deck shows its counter and PDF in the hint's corner
+		dialog.classList.toggle("on-slides", !!pane.querySelector(".slide"));
+		const pdf = field("deck-pdf") as HTMLAnchorElement;
+		pdf.hidden = !pane.dataset.deckPdf;
+		if (pane.dataset.deckPdf) pdf.href = pane.dataset.deckPdf;
 
 		dialog.querySelectorAll<HTMLElement>("[data-go]").forEach((t) => {
 			const on = t.dataset.go === pane.dataset.pane;
@@ -112,11 +117,15 @@ export function initTheater(root: ParentNode = document) {
 	dialog.querySelectorAll<HTMLElement>("[data-go]").forEach((t) =>
 		t.addEventListener("click", () => show(panes.findIndex((p) => p.dataset.pane === t.dataset.go))),
 	);
+	const touch = matchMedia("(pointer: coarse)").matches;
 	dialog.querySelectorAll<HTMLElement>("[data-step]").forEach((b) =>
 		b.addEventListener("click", () => {
 			const pane = panes[current];
 			const { slides, now } = slideOf(pane);
-			showSlide(pane, Math.min(slides.length - 1, Math.max(0, now + Number(b.dataset.step))));
+			// On a touch screen a tap anywhere on the slide moves forward (a swipe goes back)
+			const by = b.classList.contains("half") && touch ? 1 : Number(b.dataset.step);
+			// The slide's halves and the ‹ › loop inside the deck: past the last slide is the first again
+			showSlide(pane, (now + by + slides.length) % slides.length);
 		}),
 	);
 	dialog.addEventListener("keydown", (e) => {

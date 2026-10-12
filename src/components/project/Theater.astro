@@ -7,7 +7,8 @@
  * Images take one of two screen shapes (landscape 16:9, portrait 3:4), tall clips 9:16 (phone video);
  * everything is shown whole. Arrow keys, the strip, or a swipe move between items; with a mouse, a click
  * zooms an image; a click pauses or resumes a clip; a video's player (Player.astro) is carried over
- * from its card, playing on, and back again on close. Each thumbnail says what it is. Esc, Close or a click
+ * from its card, playing on, and back again on close. A deck shows its counter ‹ 03 / 15 › and PDF in the
+ * hint's corner; a click on a slide's left or right half steps it, looping (a tap moves forward). Each thumbnail says what it is. Esc, Close or a click
  * outside closes it. src/scripts/theater.ts runs it.
  */
 import Screen from "../Screen.astro";
@@ -25,7 +26,6 @@ interface Props {
 }
 
 const { panes } = Astro.props;
-const pad = (n: number) => String(n).padStart(2, "0");
 // A tall clip is phone video, 9:16; a tall image gets the portrait screen, 3:4
 const isClip = (p: Pane) => p.kind === "visual" && p.asset.kind === "clip";
 const shape = (p: Pane) => {
@@ -67,6 +67,7 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 								data-caption={p.caption ?? ""}
 								data-shape={shape(p)}
 								data-hint={hint(p)}
+								data-deck-pdf={p.kind === "slides" && p.pdf?.kind === "file" ? p.pdf.src : undefined}
 								hidden
 							>
 								{p.kind === "visual" && <Visual asset={p.asset} alt={p.alt} width={1600} fit="contain" />}
@@ -80,22 +81,9 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 												<Visual asset={s} width={1600} fit="contain" />
 											</div>
 										))}
-										<div class="slide-bar label">
-											<button type="button" data-step="-1" aria-label="Previous slide">
-												‹
-											</button>
-											<span class="tabular" data-slide-count>
-												01 / {pad(p.slides.length)}
-											</span>
-											<button type="button" data-step="1" aria-label="Next slide">
-												›
-											</button>
-										</div>
-										{p.pdf?.kind === "file" && (
-											<a class="pdf label" href={p.pdf.src} download>
-												PDF ↓
-											</a>
-										)}
+										{/* A click on the slide's left or right half steps it (the counter's ‹ › do the same) */}
+										<span class="half prev" data-step="-1" aria-hidden="true" />
+										<span class="half next" data-step="1" aria-hidden="true" />
 									</div>
 								)}
 							</div>
@@ -111,6 +99,21 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 						<span class="hint-box">
 							<span class="label hint" data-hint />
 							<span class="label hint sizer" aria-hidden="true">Click to pause</span>
+						</span>
+						{/* A deck's counter and its PDF take the hint's place */}
+						<span class="deck label">
+							<span class="stepper">
+								<button type="button" data-step="-1" aria-label="Previous slide">
+									‹
+								</button>
+								<span class="tabular" data-slide-count />
+								<button type="button" data-step="1" aria-label="Next slide">
+									›
+								</button>
+							</span>
+							<a data-deck-pdf download>
+								PDF ↓
+							</a>
 						</span>
 					</div>
 				</div>
@@ -362,49 +365,93 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 		cursor: pointer;
 	}
 
-	.slide-bar {
+	/* A deck: the slide's halves step it. The cursor is a small square with ‹ or › in it (the system's
+	   resize arrows read as "enlarge"). Quick clicks never select the slide. */
+	.half {
 		position: absolute;
-		left: 1rem;
-		bottom: 0.85rem;
-		z-index: 2;
+		top: 0;
+		bottom: 0;
+		z-index: 1;
+		width: 50%;
+	}
+
+	.half.prev {
+		left: 0;
+		cursor:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Crect x='0.5' y='0.5' width='27' height='27' fill='%230B0E14' fill-opacity='0.85' stroke='%23E6E1D6'/%3E%3Cpath d='M16.5 8.5 11 14l5.5 5.5' fill='none' stroke='%23E6E1D6' stroke-width='1.6'/%3E%3C/svg%3E")
+				14 14,
+			pointer;
+	}
+
+	.half.next {
+		right: 0;
+		cursor:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Crect x='0.5' y='0.5' width='27' height='27' fill='%230B0E14' fill-opacity='0.85' stroke='%23E6E1D6'/%3E%3Cpath d='M11.5 8.5 17 14l-5.5 5.5' fill='none' stroke='%23E6E1D6' stroke-width='1.6'/%3E%3C/svg%3E")
+				14 14,
+			pointer;
+	}
+
+	.col > :global(.stage) {
+		user-select: none;
+		-webkit-user-select: none;
+	}
+
+	/* No tap flash on phones */
+	.half {
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.slide :global(img) {
+		-webkit-user-drag: none;
+	}
+
+	/* The deck's counter ‹ 03 / 15 › and PDF ↓, in the hint's corner */
+	.deck {
+		display: none;
+		align-items: baseline;
+		gap: 1.75rem;
+		white-space: nowrap;
+	}
+
+	:global(.theater.on-slides) .deck {
 		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		padding: 0.15rem 0.3rem;
-		background: color-mix(in srgb, var(--bg) 75%, transparent);
-		border: 1px solid var(--border);
-		color: var(--text);
-		font-size: 0.65rem;
 	}
 
-	.slide-bar button {
+	:global(.theater.on-slides) .hint-box {
+		display: none;
+	}
+
+	.stepper {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.9rem;
+		color: var(--text);
+	}
+
+	.deck button,
+	.deck a {
 		all: unset;
+		-webkit-tap-highlight-color: transparent;
 		cursor: pointer;
-		padding: 0 0.5rem;
-		font-size: 1rem;
-		line-height: 1.3;
+		color: var(--muted);
+		font-family: var(--font-label);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+	}
+
+	.deck button {
+		padding: 0 0.15rem;
+		font-size: 0.95rem;
+		line-height: 1;
+	}
+
+	.deck :is(button, a):is(:hover, :focus-visible) {
 		color: var(--text);
 	}
 
-	.slide-bar button:focus-visible {
-		outline: 2px solid var(--accent);
-	}
-
-	.pdf {
-		position: absolute;
-		right: 1rem;
-		bottom: 0.85rem;
-		z-index: 2;
-		padding: 0.3rem 0.6rem;
-		background: color-mix(in srgb, var(--bg) 75%, transparent);
-		border: 1px solid var(--border);
-		color: var(--text);
-		font-size: 0.65rem;
-	}
-
-	.pdf:hover {
-		border-color: var(--muted);
-		text-decoration: none;
+	.deck a[hidden] {
+		display: none;
 	}
 
 	/* The strip: centered in the window, in the same place for every item; About figures, then Media */
@@ -563,6 +610,28 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 
 		.c-br {
 			display: none;
+		}
+
+		/* A deck keeps its counter and PDF, on their own row between the screen and the title */
+		:global(.theater.on-slides) .c-br {
+			display: block;
+			position: absolute;
+			top: 100%;
+			left: 0;
+			right: 0;
+			justify-self: stretch;
+		}
+
+		.deck {
+			justify-content: space-between;
+		}
+
+		.stepper button {
+			padding: 0.25rem 0.5rem;
+		}
+
+		:global(.theater.on-slides) .c-bl {
+			padding-top: 3.25rem;
 		}
 
 		.caption {
