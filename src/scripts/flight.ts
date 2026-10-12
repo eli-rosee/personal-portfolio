@@ -285,6 +285,7 @@ async function fly(button: HTMLElement) {
 	if (html.classList.contains("in-flight")) return; // one flight at a time
 	html.classList.add("in-flight");
 	const ready = prepare(url);
+	ready.catch(() => {}); // handled where it's awaited, after the countdown
 
 	const row = button.closest<HTMLElement>(".row")!;
 	const rk = row.querySelector<SVGSVGElement>(".rk")!;
@@ -378,7 +379,14 @@ async function fly(button: HTMLElement) {
 
 	// Halfway: the next project crossfades in under the rocket (opacity only; it's already laid out)
 	await wait(FLIGHT * 0.5);
-	const { old, incoming, title } = await ready;
+	let next: Awaited<typeof ready>;
+	try {
+		next = await ready;
+	} catch {
+		location.href = url; // the next page couldn't be fetched: go there the ordinary way
+		return;
+	}
+	const { old, incoming, title } = next;
 	old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 550, easing: "ease-in", fill: "forwards" });
 	await incoming.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 700, easing: "ease-out", fill: "forwards" }).finished;
 	old.remove();
@@ -386,6 +394,7 @@ async function fly(button: HTMLElement) {
 	incoming.removeAttribute("style");
 	document.title = title;
 	history.pushState(null, "", url);
+	shownPath = location.pathname;
 	document.dispatchEvent(new CustomEvent("project:swap", { detail: incoming }));
 
 	await flight.finished;
@@ -418,5 +427,7 @@ export function initFlight(root: ParentNode = document) {
 	});
 }
 
-// Back and forward after a flight: the page is whatever the address now says
-addEventListener("popstate", () => location.reload());
+// Back and forward after a flight: the page is whatever the address now says (a step that only
+// changes the #hash stays on this page)
+let shownPath = location.pathname;
+addEventListener("popstate", () => location.pathname !== shownPath && location.reload());

@@ -40,6 +40,7 @@ export function initTheater(root: ParentNode = document) {
 	// About and Media sit side by side when both rows fit in full, otherwise stacked
 	const strip = dialog.querySelector<HTMLElement>(".strip");
 	const fit = () => {
+		if (!dialog.open) return; // measured again when it opens
 		if (!strip || matchMedia("(max-width: 40rem)").matches) return dialog.classList.remove("stacked");
 		const rows = [...strip.querySelectorAll<HTMLElement>(".thumbs")];
 		const gap = parseFloat(getComputedStyle(strip).columnGap) || 0;
