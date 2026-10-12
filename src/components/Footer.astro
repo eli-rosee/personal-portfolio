@@ -1,13 +1,16 @@
 ---
 // Telemetry: three live readouts (ISS position, Voyager 1's distance, server uptime), then
-// "Powered by Astro" with my email beside it (and a copy button). Each readout stays hidden until it has real data, so a failure (or no
-// JavaScript) just leaves it out; with none, the whole section hides.
+// "Powered by Astro" with my email beside it (and a copy button). Each readout stays hidden until it
+// has real data, so a failure (or no JavaScript) just leaves it out; with none, the whole section hides.
 import SectionHeading from "./SectionHeading.astro";
 import Readout from "./Readout.astro";
-
-// The project pages leave out the telemetry; just the credit line
-const { telemetry = true } = Astro.props as { telemetry?: boolean };
 import { site } from "../content/site";
+
+interface Props {
+	telemetry?: boolean; // false on the project pages: just the credit line
+}
+
+const { telemetry = true } = Astro.props;
 ---
 
 <footer>
@@ -298,8 +301,7 @@ import { site } from "../content/site";
 		white-space: normal;
 	}
 
-	/* Well clear of the telemetry, centered */
-	/* One centered line: the credit, then the address and its copy button (wraps on narrow screens) */
+	/* Well clear of the telemetry. One centered line: the credit, then the address and its copy button (wraps on narrow screens) */
 	.credit {
 		display: flex;
 		flex-wrap: wrap;
@@ -333,9 +335,6 @@ import { site } from "../content/site";
 		letter-spacing: 0;
 		text-transform: none;
 		text-decoration: none;
-	}
-
-	.credit .email {
 		color: var(--muted);
 	}
 

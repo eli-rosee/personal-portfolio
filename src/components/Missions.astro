@@ -10,14 +10,15 @@ const projects = await getProjects();
 {/* Hidden until there's a project to show */}
 {
 	projects.length > 0 && (
-<section id="projects" class="section" aria-labelledby="projects-heading">
-	<SectionHeading id="projects-heading" text="Projects" />
-	<div class="grid">
-		{/* The first row (two cards) is on screen at load on desktop, so its images load right away. On phones
-		    the second is below the fold; the audit flags that, but one small image early is the cheaper miss */}
-		{projects.map((project, i) => <MissionCard project={project} eager={i < 2} />)}
-	</div>
-</section>
+		<section id="projects" class="section" aria-labelledby="projects-heading">
+			<SectionHeading id="projects-heading" text="Projects" />
+			<div class="grid">
+				{/* The first row (two cards) is on screen at load on desktop, so its images load right away. On
+				    phones the second is below the fold; the audit flags that, but one small image early is the
+				    cheaper miss */}
+				{projects.map((project, i) => <MissionCard project={project} eager={i < 2} />)}
+			</div>
+		</section>
 	)
 }
 
