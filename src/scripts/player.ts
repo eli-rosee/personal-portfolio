@@ -24,16 +24,37 @@ export function initPlayers(root: ParentNode = document) {
 		// (and its events come about 4 times a second), so between changes it runs on the clock.
 		const fill = track.querySelector<HTMLElement>(".fill")!;
 		const knob = track.querySelector<HTMLElement>(".knob")!;
-		let last = { t: -1, at: 0 };
-		const line = (now?: number) => {
-			let t = video.currentTime;
-			if (now !== undefined) {
-				if (t !== last.t) last = { t, at: now };
-				else t = last.t + ((now - last.at) / 1000) * video.playbackRate;
-			}
+		let scrubbing = false;
+		const timeText = player.querySelector("[data-time]")!;
+		const draw = (t: number) => {
 			const at = known() ? Math.min(1, t / video.duration) : 0;
 			fill.style.width = `${at * 100}%`;
 			knob.style.left = `${at * 100}%`;
+			timeText.textContent = `${time(t)} / ${known() ? time(video.duration) : "0:00"}`;
+		};
+		// Between changes it runs on the clock, but only once the time is moving (a video takes a moment
+		// to get going after Play), never more than a quarter second ahead, and never backwards
+		let last = { t: -1, at: 0 };
+		let moving = false;
+		let shown = 0;
+		const restart = () => {
+			last = { t: -1, at: 0 };
+			moving = false;
+			shown = 0;
+		};
+		video.addEventListener("play", restart);
+		video.addEventListener("seeking", restart);
+		const line = (now?: number) => {
+			let t = video.currentTime;
+			if (now !== undefined) {
+				if (t !== last.t) {
+					moving = last.t >= 0;
+					last = { t, at: now };
+				} else if (moving) t = Math.min(last.t + ((now - last.at) / 1000) * video.playbackRate, last.t + 0.25);
+				t = Math.max(t, shown);
+				shown = t;
+			}
+			draw(t);
 		};
 		const glide = (now: number) => {
 			if (video.paused) return line();
@@ -43,11 +64,10 @@ export function initPlayers(root: ParentNode = document) {
 		video.addEventListener("play", () => requestAnimationFrame(glide));
 
 		const paint = () => {
-			// While it plays, the frame loop moves the line
-			if (video.paused) line();
+			// While it plays the frame loop moves the line, and while it's dragged the mouse does
+			if (video.paused && !scrubbing) line();
 			track.setAttribute("aria-valuenow", String(Math.round(video.currentTime)));
 			if (known()) track.setAttribute("aria-valuemax", String(Math.round(video.duration)));
-			player.querySelector("[data-time]")!.textContent = `${time(video.currentTime)} / ${known() ? time(video.duration) : "0:00"}`;
 			player.classList.toggle("paused", video.paused);
 			player.classList.toggle("playing", !video.paused);
 			player.classList.toggle("muted", video.muted);
@@ -58,8 +78,9 @@ export function initPlayers(root: ParentNode = document) {
 			video.addEventListener(e, paint),
 		);
 		// One video with sound at a time: starting this one pauses any other
+		// The poster gives way once there's a frame to show (on Play, not before)
+		video.addEventListener("playing", () => player.classList.add("started"));
 		video.addEventListener("play", () => {
-			player.classList.add("started");
 			document.querySelectorAll<HTMLVideoElement>("[data-player] video").forEach((v) => v !== video && v.pause());
 		});
 		paint();
@@ -121,25 +142,43 @@ export function initPlayers(root: ParentNode = document) {
 		video.addEventListener("ended", wake);
 
 		// Scrubbing: press anywhere on the line and drag; it holds still while the button is down and plays
-		// on when it's let go, if it was playing. Arrow keys step 5 s.
+		// on when it's let go, if it was playing. Arrow keys step 5 s. The line follows the mouse at once;
+		// the picture is sought one seek at a time (each new one would cancel the last before it showed a
+		// frame), always to where the mouse is now.
 		let resume = false;
+		let target: number | null = null;
+		let busy = false;
+		const next = () => {
+			if (target === null) return void (busy = false);
+			busy = true;
+			video.currentTime = target;
+			target = null;
+		};
+		video.addEventListener("seeked", next);
 		const seek = (e: PointerEvent) => {
 			const r = track.getBoundingClientRect();
 			if (!known()) return;
-			video.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * video.duration;
-			paint();
+			target = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * video.duration;
+			draw(target);
+			if (!busy) next();
 		};
 		track.addEventListener("pointerdown", (e) => {
 			track.setPointerCapture(e.pointerId);
 			resume = !video.paused;
+			scrubbing = true;
+			busy = false;
 			player.classList.add("scrubbing");
 			video.pause();
 			seek(e);
 		});
 		track.addEventListener("pointermove", (e) => track.hasPointerCapture(e.pointerId) && seek(e));
 		const release = () => {
-			if (!player.classList.contains("scrubbing")) return;
+			if (!scrubbing) return;
+			scrubbing = false;
 			player.classList.remove("scrubbing");
+			// Whatever's still waiting goes at once, so it plays from where it was let go
+			if (target !== null) video.currentTime = target;
+			target = null;
 			if (resume) video.play().catch(() => {});
 		};
 		track.addEventListener("pointerup", release);

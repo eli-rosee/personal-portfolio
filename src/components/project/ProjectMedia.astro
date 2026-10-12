@@ -51,6 +51,8 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 									/>
 								)}
 								{it.type === "clip" && <Visual asset={it.asset} />}
+								{/* The poster stays on the card while its player is in the theater */}
+								{it.type === "video" && it.poster && <Visual asset={it.poster} width={it.wide ? 1200 : 640} />}
 								{it.type === "video" && (
 									<Player id={it.id} asset={it.asset} poster={it.poster} title={it.title} width={it.wide ? 1200 : 640} fit="cover" expand meta />
 								)}

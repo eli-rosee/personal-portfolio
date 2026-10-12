@@ -6,13 +6,12 @@
  * held still and centered, in two groups: About (the write-up's figures) and Media (the cards).
  * Images take one of two screen shapes (landscape 16:9, portrait 3:4), tall clips 9:16 (phone video);
  * everything is shown whole. Arrow keys, the strip, or a swipe move between items; with a mouse, a click
- * zooms an image; a click pauses or resumes a clip; a video plays with its own bar (Player.astro), from
- * where its card left off, and the card picks up where the theater left off. Each thumbnail says what it is. Esc, Close or a click
+ * zooms an image; a click pauses or resumes a clip; a video's player (Player.astro) is carried over
+ * from its card, playing on, and back again on close. Each thumbnail says what it is. Esc, Close or a click
  * outside closes it. src/scripts/theater.ts runs it.
  */
 import Screen from "../Screen.astro";
 import Visual from "./Visual.astro";
-import Player from "./Player.astro";
 import { shapeOf, type Asset } from "../../scripts/project-files";
 
 export type Pane = { id: string; group: "About" | "Media"; title: string; caption?: string; alt?: string } & (
@@ -72,7 +71,8 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 							>
 								{p.kind === "visual" && <Visual asset={p.asset} alt={p.alt} width={1600} fit="contain" />}
 								{isClip(p) && <span class="paused label">❚❚ Paused</span>}
-								{p.kind === "video" && <Player id={p.id} asset={p.asset} poster={p.poster} title={p.title} width={1600} />}
+								{/* A video's player is carried in from its card (theater.ts); a draft's missing file shows here */}
+								{p.kind === "video" && p.asset.kind !== "clip" && <Visual asset={p.asset} />}
 								{p.kind === "slides" && (
 									<div class="slides" data-slides>
 										{p.slides.map((s, n) => (

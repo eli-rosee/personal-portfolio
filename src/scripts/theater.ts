@@ -1,7 +1,7 @@
 /*
  * The project page's theater (src/components/project/Theater.astro): opening an item, moving between
  * items (arrow keys, the strip, a swipe), stepping slides, zooming a still image with a mouse, and
- * handing a video's place between its card and the theater. Runs again on the page swapped in after
+ * carrying a video between its card and the theater. Runs again on the page swapped in after
  * a flight (`root` is the new <main>).
  */
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -13,9 +13,18 @@ export function initTheater(root: ParentNode = document) {
 	const field = (name: string) => dialog.querySelector<HTMLElement>(`[data-${name}]:not([data-pane])`)!;
 	let current = 0;
 
-	// A video's player on its card, outside the theater
-	const cardVideo = (id?: string) =>
-		[...root.querySelectorAll<HTMLVideoElement>(`[data-player="${id}"] video`)].find((v) => !dialog.contains(v));
+	// A video has one player, which lives on its card and is carried into the theater while it's shown
+	// there: the same video, playing on, with nothing to load or keep in step. Its card spot, by id:
+	const homes = new Map<string, HTMLElement>();
+	root.querySelectorAll<HTMLElement>("[data-player]").forEach((p) => homes.set(p.dataset.player!, p.parentElement!));
+	const playerOf = (pane: HTMLElement) => root.querySelector<HTMLElement>(`[data-player="${pane.dataset.pane}"]`);
+	// Players back to their cards, except the one in `keep`; `pause` stops them on the way
+	const sendHome = (keep: HTMLElement | null, pause: boolean) =>
+		dialog.querySelectorAll<HTMLElement>("[data-player]").forEach((p) => {
+			if (keep?.contains(p)) return;
+			if (pause) p.querySelector("video")!.pause();
+			homes.get(p.dataset.player!)?.append(p);
+		});
 
 	// Inside a deck, which slide is showing
 	const slideOf = (pane: HTMLElement) => {
@@ -43,7 +52,9 @@ export function initTheater(root: ParentNode = document) {
 	const show = (index: number, fromEnd = false) => {
 		current = (index + panes.length) % panes.length;
 		const pane = panes[current];
-		dialog.querySelectorAll("video").forEach((v) => v.pause());
+		// Moving on stops what was playing; a video moved away from goes back to its card
+		sendHome(pane, true);
+		dialog.querySelectorAll("video").forEach((v) => !pane.contains(v) && v.pause());
 		panes.forEach((p) => (p.hidden = p !== pane));
 		dialog.classList.remove("zoomed");
 		dialog.dataset.shape = pane.dataset.shape;
@@ -66,8 +77,13 @@ export function initTheater(root: ParentNode = document) {
 		pane.querySelectorAll<HTMLImageElement>("img[loading=lazy]").forEach((img) => (img.loading = "eager"));
 		pane.classList.remove("is-paused");
 		pane.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => v.play().catch(() => {}));
-		// A video plays at once (getting here took a click)
-		pane.querySelector<HTMLVideoElement>("[data-player] video")?.play().catch(() => {});
+		// A video's player comes over from its card (still playing, if it was) and plays (getting here took
+		// a click)
+		const player = playerOf(pane);
+		if (player) {
+			if (player.parentElement !== pane) pane.append(player);
+			player.querySelector("video")!.play().catch(() => {});
+		}
 	};
 
 	// Inside a deck the arrows step the slides; past either end they move on to the next item
@@ -85,15 +101,9 @@ export function initTheater(root: ParentNode = document) {
 			e.preventDefault();
 			const index = panes.findIndex((p) => p.dataset.pane === el.dataset.theater);
 			if (index < 0) return;
-			// From a card's player: the video carries on from the same moment
-			const card = el.closest("[data-player]")?.querySelector("video");
-			const video = panes[index].querySelector<HTMLVideoElement>("[data-player] video");
-			if (card && video) {
-				card.pause();
-				video.currentTime = card.currentTime;
-			}
-			// Nothing plays on behind the theater
-			root.querySelectorAll<HTMLVideoElement>("[data-player] video").forEach((v) => !dialog.contains(v) && v.pause());
+			// Nothing plays on behind the theater (a video opened from its own card comes along instead)
+			const own = el.closest("[data-player]");
+			root.querySelectorAll<HTMLElement>("[data-player]").forEach((p) => p !== own && p.querySelector("video")!.pause());
 			dialog.showModal();
 			fit();
 			show(index);
@@ -130,16 +140,9 @@ export function initTheater(root: ParentNode = document) {
 		if (t === dialog || t.classList.contains("stagebox")) dialog.close();
 	});
 	dialog.addEventListener("close", () => {
-		dialog.querySelectorAll("video").forEach((v) => v.pause());
-		// Each card picks up where its video was left in the theater
-		dialog.querySelectorAll<HTMLElement>("[data-player]").forEach((p) => {
-			const video = p.querySelector("video")!;
-			const card = cardVideo(p.dataset.player);
-			if (card && video.currentTime > 0) {
-				card.currentTime = video.currentTime;
-				card.closest("[data-player]")!.classList.add("started");
-			}
-		});
+		dialog.querySelectorAll<HTMLVideoElement>("video:not([data-player] video)").forEach((v) => v.pause());
+		// A video goes back to its card as it is, playing or paused, at the same moment
+		sendHome(null, false);
 		dialog.classList.remove("zoomed");
 	});
 
