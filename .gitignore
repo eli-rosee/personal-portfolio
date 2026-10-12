@@ -29,10 +29,15 @@ design/fonts/
 # editor settings
 .vscode/
 
-# private files in public/assets/, put on the server by hand and never committed: the resume,
-# the About clip and its poster, and status.json (written by the server at startup; the local
-# copy is a fake for development)
-public/assets/Eli-Rose-Resume.pdf
-public/assets/climb.mp4
-public/assets/climb.jpg
+# files copied to the server by hand and never committed: the resume(s), the About clip and its
+# poster. Everything in public/files/ is served at /files/.
+public/files/
+
+# written by the server (scripts/rebuild.sh); the local copy is a fake for development
 public/assets/status.json
+
+# project videos stay out of the repo: they live in each project's assets/ folder locally and are
+# copied to the server by hand (see PLAN.md)
+src/content/projects/*/assets/**/*.mp4
+src/content/projects/*/assets/**/*.webm
+src/content/projects/*/assets/**/*.mov
