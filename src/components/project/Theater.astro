@@ -44,7 +44,7 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 
 {
 	panes.length > 0 && (
-		<dialog class="theater" data-theater-dialog aria-label="Media viewer">
+		<dialog class="theater" data-theater-dialog aria-label="Media viewer" tabindex="-1">
 			<div class="stagebox">
 				<div class="col">
 					<div class="corner c-tl">
@@ -160,6 +160,11 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 
 	.theater[open] {
 		display: grid;
+	}
+
+	/* The theater holds the focus when it opens; a ring around the whole screen would say nothing */
+	.theater:focus {
+		outline: none;
 	}
 
 	.theater::backdrop {

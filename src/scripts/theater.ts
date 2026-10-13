@@ -109,6 +109,8 @@ export function initTheater(root: ParentNode = document) {
 			// Opening the theater pauses every video, the one coming along from its card too
 			root.querySelectorAll<HTMLVideoElement>("[data-player] video").forEach((v) => v.pause());
 			dialog.showModal();
+			// The focus goes to the theater itself, not Close (which Space would press), so Space plays a video
+			dialog.focus();
 			fit();
 			show(index);
 		}),
