@@ -14,7 +14,7 @@ export function initTheater(root: ParentNode = document) {
 	let current = 0;
 
 	// A video has one player, which lives on its card and is carried into the theater while it's shown
-	// there: the same video, playing on, with nothing to load or keep in step. Its card spot, by id:
+	// there: the same video, at the same moment, with nothing to load or keep in step. Its card spot, by id:
 	const homes = new Map<string, HTMLElement>();
 	root.querySelectorAll<HTMLElement>("[data-player]").forEach((p) => homes.set(p.dataset.player!, p.parentElement!));
 	const playerOf = (pane: HTMLElement) => root.querySelector<HTMLElement>(`[data-player="${pane.dataset.pane}"]`);
@@ -50,10 +50,6 @@ export function initTheater(root: ParentNode = document) {
 	};
 	addEventListener("resize", fit);
 
-	// Videos the theater started (rather than carried in already playing from their card): closing the
-	// theater stops them, so none plays on with sound behind it
-	const started = new Set<HTMLVideoElement>();
-
 	const show = (index: number, fromEnd = false) => {
 		current = (index + panes.length) % panes.length;
 		const pane = panes[current];
@@ -87,14 +83,11 @@ export function initTheater(root: ParentNode = document) {
 		pane.querySelectorAll<HTMLImageElement>("img[loading=lazy]").forEach((img) => (img.loading = "eager"));
 		pane.classList.remove("is-paused");
 		pane.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => v.play().catch(() => {}));
-		// A video's player comes over from its card (still playing, if it was) and plays (getting here took
-		// a click)
+		// A video's player comes over from its card at the same moment, paused (▶ Play or a click starts it)
 		const player = playerOf(pane);
 		if (player) {
 			if (player.parentElement !== pane) pane.append(player);
-			const video = player.querySelector("video")!;
-			if (video.paused) started.add(video);
-			video.play().catch(() => {});
+			player.querySelector("video")!.pause();
 		}
 	};
 
@@ -113,9 +106,8 @@ export function initTheater(root: ParentNode = document) {
 			e.preventDefault();
 			const index = panes.findIndex((p) => p.dataset.pane === el.dataset.theater);
 			if (index < 0) return;
-			// Nothing plays on behind the theater (a video opened from its own card comes along instead)
-			const own = el.closest("[data-player]");
-			root.querySelectorAll<HTMLElement>("[data-player]").forEach((p) => p !== own && p.querySelector("video")!.pause());
+			// Opening the theater pauses every video, the one coming along from its card too
+			root.querySelectorAll<HTMLVideoElement>("[data-player] video").forEach((v) => v.pause());
 			dialog.showModal();
 			fit();
 			show(index);
@@ -157,10 +149,8 @@ export function initTheater(root: ParentNode = document) {
 	});
 	dialog.addEventListener("close", () => {
 		dialog.querySelectorAll<HTMLVideoElement>("video:not([data-player] video)").forEach((v) => v.pause());
-		started.forEach((v) => v.pause());
-		started.clear();
-		// A video goes back to its card at the same moment (playing on, if it came in playing)
-		sendHome(null, false);
+		// A video goes back to its card at the same moment, paused
+		sendHome(null, true);
 		dialog.classList.remove("zoomed");
 	});
 
