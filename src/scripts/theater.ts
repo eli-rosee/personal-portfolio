@@ -50,6 +50,10 @@ export function initTheater(root: ParentNode = document) {
 	};
 	addEventListener("resize", fit);
 
+	// Videos the theater started (rather than carried in already playing from their card): closing the
+	// theater stops them, so none plays on with sound behind it
+	const started = new Set<HTMLVideoElement>();
+
 	const show = (index: number, fromEnd = false) => {
 		current = (index + panes.length) % panes.length;
 		const pane = panes[current];
@@ -88,7 +92,9 @@ export function initTheater(root: ParentNode = document) {
 		const player = playerOf(pane);
 		if (player) {
 			if (player.parentElement !== pane) pane.append(player);
-			player.querySelector("video")!.play().catch(() => {});
+			const video = player.querySelector("video")!;
+			if (video.paused) started.add(video);
+			video.play().catch(() => {});
 		}
 	};
 
@@ -151,7 +157,9 @@ export function initTheater(root: ParentNode = document) {
 	});
 	dialog.addEventListener("close", () => {
 		dialog.querySelectorAll<HTMLVideoElement>("video:not([data-player] video)").forEach((v) => v.pause());
-		// A video goes back to its card as it is, playing or paused, at the same moment
+		started.forEach((v) => v.pause());
+		started.clear();
+		// A video goes back to its card at the same moment (playing on, if it came in playing)
 		sendHome(null, false);
 		dialog.classList.remove("zoomed");
 	});

@@ -311,6 +311,8 @@ async function fly(button: HTMLElement) {
 	const html = document.documentElement;
 	if (html.classList.contains("in-flight")) return; // one flight at a time
 	html.classList.add("in-flight");
+	// A video with sound stops at launch (it would play on through the countdown and cut out mid-flight)
+	document.querySelectorAll<HTMLVideoElement>("[data-player] video").forEach((v) => v.pause());
 	const ready = prepare(url);
 	ready.catch(() => {}); // handled where it's awaited, after the countdown
 
