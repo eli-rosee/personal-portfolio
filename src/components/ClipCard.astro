@@ -177,7 +177,9 @@ const { clip } = Astro.props;
 			min-height: 0;
 		}
 
-		:global(.clip-card .text) {
+		/* One step more specific than ConsoleCard's .text, which the production build can put after
+		   this rule */
+		:global(.clip-card .card > .text) {
 			flex-grow: 0;
 		}
 
