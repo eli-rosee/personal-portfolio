@@ -572,6 +572,14 @@ const tipText =
 		text-box: trim-both cap alphabetic;
 	}
 
+	/* Hidden until fit-text has sized it (with the font loaded), so it never shows at the wrong size first.
+	   Without JavaScript there's no "js" class and it shows as it is. Phones never resize it. */
+	@media (min-width: 48rem) {
+		:global(html.js) .side .summary:not(:global(.fitted)) > span {
+			visibility: hidden;
+		}
+	}
+
 	/* Too long even at the smallest size: fit-text keeps the lines that fit, ending in "…"; the clip
 	   reaches below the last baseline so the descenders show */
 	.side .summary > span.clamped {

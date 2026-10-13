@@ -73,16 +73,23 @@ const panes: Pane[] = [
 	import { initFlight } from "../../scripts/flight";
 	import { fitRow, fitText } from "../../scripts/fit-text";
 
-	const init = (root: ParentNode) => {
+	// Sizing (the hero's buttons and summary) and wiring (everything interactive). After a flight the next
+	// page is sized while it's still invisible ("project:prepare"), so it fades in at its final size, and
+	// wired once it has replaced this one ("project:swap").
+	const fit = (root: ParentNode) => {
+		fitRow(root);
+		fitText(root);
+	};
+	const wire = (root: ParentNode) => {
 		initTheater(root);
 		initPlayers(root);
 		playClips(root);
 		initFlight(root);
-		fitRow(root);
-		fitText(root);
 	};
-	init(document);
-	document.addEventListener("project:swap", (e) => init((e as CustomEvent<HTMLElement>).detail));
+	fit(document);
+	wire(document);
+	document.addEventListener("project:prepare", (e) => fit((e as CustomEvent<HTMLElement>).detail));
+	document.addEventListener("project:swap", (e) => wire((e as CustomEvent<HTMLElement>).detail));
 </script>
 
 <style>

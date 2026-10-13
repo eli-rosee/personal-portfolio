@@ -10,6 +10,9 @@
  * step tighter at a time (.fit-1 to .fit-3, styled by the row's component), and wrapping only when
  * even the tightest doesn't fit.
  *
+ * The box is marked .fitted once it has been fitted with the fonts loaded; until then the card keeps
+ * its text hidden.
+ *
  * The box holds one element (the text, its leading trimmed by CSS) between two spacers; their
  * min-heights are the room kept clear over and under the text.
  */
@@ -67,7 +70,10 @@ export function fitText(root: ParentNode) {
 		};
 		// The box's size comes from the card, not the text, so resizing the text doesn't refire this
 		new ResizeObserver(fit).observe(el);
-		document.fonts.ready.then(fit);
+		document.fonts.ready.then(() => {
+			fit();
+			el.classList.add("fitted");
+		});
 	});
 }
 
