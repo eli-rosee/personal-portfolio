@@ -231,7 +231,7 @@ const href = `/projects/${next.id}/`;
 		stroke-width: 0.9;
 		transition:
 			rotate 0.4s cubic-bezier(0.55, 0, 1, 0.45), /* falling: slow off the rocket, then faster */
-			opacity 1.4s; /* lingers on the deck after the fall, gone well before liftoff */
+			opacity 1s 0.9s; /* rests on the deck 0.5s after the fall, then fades, gone just before liftoff */
 		transform-box: view-box;
 		transform-origin: -24.2px -7.2px;
 	}
