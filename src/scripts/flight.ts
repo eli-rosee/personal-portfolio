@@ -2,11 +2,11 @@
  * The project page's ending (src/components/project/NextProject.astro). The dashed flight path from
  * "[take the scenic route]" to the rocket on its launchpad; and the flight: a T-3 countdown on the pad,
  * then one continuous climb up the page into the logo, while the page glides to the top and the next
- * project fades in under the rocket. The rocket docks in the logo with a burst of its engine.
+ * project fades in under the rocket. The rocket docks in the logo.
  *
- * The next page is fetched and laid out before it's shown, then its <main> replaces this one, and a
- * "project:swap" event lets the page's scripts set up the new content. With reduced motion the link
- * just opens the next page.
+ * The next page is fetched, laid out and sized ("project:prepare") before it's shown, then its <main>
+ * replaces this one, and a "project:swap" event lets the page's scripts wire up the new content. With
+ * reduced motion the link just opens the next page.
  */
 
 const NS = "http://www.w3.org/2000/svg";
@@ -182,8 +182,27 @@ function drawPath(row: HTMLElement, phrase: HTMLElement) {
 
 // The next page, made ready before it's shown: its <main> parsed, any styles it needs added, laid out
 // out of sight over the current one, and its images decoded, so the crossfade itself is only opacity
+// The next page's HTML, fetched and parsed ahead (the parse is the slowest part, and on a phone it froze
+// the countdown): as the end of the page comes into view, in idle time
+const parsed = new Map<string, Promise<Document>>();
+const load = (url: string) => {
+	let doc = parsed.get(url);
+	if (!doc) {
+		doc = fetch(url)
+			.then((r) => (r.ok ? r.text() : Promise.reject(new Error(`${r.status} ${url}`))))
+			.then((html) => new DOMParser().parseFromString(html, "text/html"));
+		doc.catch(() => parsed.delete(url)); // tried again at the click
+		parsed.set(url, doc);
+	}
+	return doc;
+};
+const whenIdle = (fn: () => void) => ("requestIdleCallback" in window ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 200));
+
 async function prepare(url: string) {
-	const doc = new DOMParser().parseFromString(await (await fetch(url)).text(), "text/html");
+	const doc = await load(url);
+	// After the countdown's first frame: T-3 is up and the shake (on the compositor) carries on through
+	// the work below, instead of everything waiting for it
+	await new Promise((r) => requestAnimationFrame(() => setTimeout(r)));
 	const have = new Set([...document.querySelectorAll("style[data-vite-dev-id]")].map((s) => s.getAttribute("data-vite-dev-id")));
 	doc.querySelectorAll("style[data-vite-dev-id]").forEach((s) => {
 		if (!have.has(s.getAttribute("data-vite-dev-id"))) document.head.append(s.cloneNode(true));
@@ -207,8 +226,14 @@ async function prepare(url: string) {
 		zIndex: "1",
 	});
 	old.after(incoming);
-	incoming.querySelectorAll("img").forEach((i) => (i.loading = "eager"));
-	await Promise.all([...incoming.querySelectorAll("img")].map((i) => i.decode().catch(() => {})));
+	// Only what's on its first screen is seen during the crossfade; the rest loads as it normally would
+	const fold = incoming.getBoundingClientRect().top + innerHeight;
+	const seen = [...incoming.querySelectorAll("img")].filter((i) => !i.closest("dialog") && i.getBoundingClientRect().top < fold);
+	seen.forEach((i) => (i.loading = "eager"));
+	// Sized now (its summary and buttons fit to the card), so it fades in as it will stay
+	document.dispatchEvent(new CustomEvent("project:prepare", { detail: incoming }));
+	await Promise.all(seen.map((i) => i.decode().catch(() => {})));
+	await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); // the sizing's first pass
 	return { old, incoming, title: doc.title };
 }
 
@@ -230,8 +255,8 @@ function logoRocketPose(svg: SVGSVGElement, pageUnit: number) {
 }
 
 // T-3, T-2, T-1 over the pad while the engine throttles up and the rocket strains, shaking a little
-// harder each beat; the service arms swing away at T-1, the status light flashes each beat and turns
-// green at "Liftoff", and the flight starts right then
+// harder each beat; the fuel line drops away at T-2 and the service arms swing away at T-1, the status
+// light flashes each beat and turns green at "Liftoff", and the flight starts right then
 async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 	const flame = rk.querySelector<SVGElement>(".flame")!;
 	const label = document.createElement("span");
@@ -258,13 +283,15 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 		show(`T-${beat}`);
 		flame.style.opacity = String(0.35 + i * 0.3);
 		light?.animate([{ scale: 1.6 }, { scale: 1 }], { duration: 300, easing: "ease-out" });
+		if (beat === "2") row.classList.add("fuel-off");
 		if (beat === "1") row.classList.add("arms-back");
 		const up = lifts[i];
-		// A shake through the beat, mostly sideways, growing a little with each beat
+		// A shake through the beat, mostly sideways, growing a little with each beat. A transform, not
+		// `translate`: on an <svg> only a transform runs off the main thread
 		rk.animate(
 			Array.from({ length: 16 }, (_, j) => j)
-				.map((j) => ({ translate: `${(j % 2 ? 1 : -1) * (0.35 + i * 0.13) * k}px ${-up + (j % 3 === 0 ? 0.25 : -0.25) * k}px` }))
-				.concat({ translate: `0 ${-up}px` }),
+				.map((j) => ({ transform: `translate(${(j % 2 ? 1 : -1) * (0.35 + i * 0.13) * k}px, ${-up + (j % 3 === 0 ? 0.25 : -0.25) * k}px)` }))
+				.concat({ transform: `translate(0, ${-up}px)` }),
 			{ duration: BEAT, fill: "forwards" },
 		);
 		await wait(BEAT);
@@ -311,6 +338,7 @@ async function fly(button: HTMLElement) {
 	});
 	document.body.append(ship);
 	rk.style.visibility = "hidden";
+	rk.querySelector<SVGElement>(".flame")!.style.animation = "none"; // hidden, so its flicker can stop
 	// The logo's rocket leaves as this one takes off; it's back when the flight docks
 	navRocket.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 250, easing: "ease-in", fill: "forwards" });
 
@@ -353,6 +381,7 @@ async function fly(button: HTMLElement) {
 	// The page glides to the top in the first half, after a moment's climb; a short orange contrail follows the engine
 	const from = scrollY;
 	const trail: { x: number; y: number }[] = [];
+	let drawn: number[] | null = null; // the box last drawn in, the only part that needs clearing
 	const tick = (now: number) => {
 		const t = clamp((now - t0) / FLIGHT);
 		const g = clamp((t - SCROLL_DELAY / FLIGHT) / (0.5 - SCROLL_DELAY / FLIGHT));
@@ -361,7 +390,10 @@ async function fly(button: HTMLElement) {
 		const rad = ((p.heading - 90) * Math.PI) / 180;
 		trail.push({ x: p.x - Math.cos(rad) * r0.height * 0.42 * p.scale, y: p.y - Math.sin(rad) * r0.height * 0.42 * p.scale });
 		if (trail.length > 11) trail.shift();
-		ctx.clearRect(0, 0, innerWidth, innerHeight);
+		if (drawn) ctx.clearRect(drawn[0], drawn[1], drawn[2] - drawn[0], drawn[3] - drawn[1]);
+		const xs = trail.map((q) => q.x);
+		const ys = trail.map((q) => q.y);
+		drawn = [Math.min(...xs) - 3, Math.min(...ys) - 3, Math.max(...xs) + 3, Math.max(...ys) + 3]; // plus the line's width
 		const fade = 1 - clamp((t - 0.75) / 0.2);
 		for (let i = 1; i < trail.length; i++) {
 			const a = i / trail.length;
@@ -399,19 +431,9 @@ async function fly(button: HTMLElement) {
 
 	await flight.finished;
 	canvas.remove();
-	// At the dock the logo's own rocket takes the ship's place, in the same pose, and fires its engine once
+	// At the dock the logo's own rocket takes the ship's place, in the same pose
 	navRocket.getAnimations().forEach((a) => a.cancel());
-	navRocket.style.opacity = "1";
 	ship.remove();
-	const flame = navRocket.querySelector<SVGElement>(".flame");
-	if (flame) {
-		Object.assign(flame.style, { transformBox: "fill-box", transformOrigin: "50% 0" });
-		await flame.animate([{ transform: "scaleY(1)" }, { transform: "scaleY(1.7)", offset: 0.2 }, { transform: "scaleY(1)" }], {
-			duration: 600,
-			easing: "ease-out",
-		}).finished;
-	}
-	navRocket.style.opacity = "";
 	html.classList.remove("in-flight");
 }
 
@@ -424,6 +446,16 @@ export function initFlight(root: ParentNode = document) {
 		const draw = () => drawPath(row, button);
 		new ResizeObserver(draw).observe(row);
 		document.fonts.ready.then(draw);
+		if (reduce) return; // the link just opens the page
+		const ahead = new IntersectionObserver(
+			([entry]) => {
+				if (!entry.isIntersecting) return;
+				ahead.disconnect();
+				whenIdle(() => load(button.dataset.launch!).catch(() => {}));
+			},
+			{ rootMargin: "800px" },
+		);
+		ahead.observe(row);
 	});
 }
 

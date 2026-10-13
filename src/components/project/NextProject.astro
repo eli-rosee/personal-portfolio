@@ -222,11 +222,24 @@ const href = `/projects/${next.id}/`;
 		stroke-width: 0.9;
 	}
 
+	/* The fuel line lets go of the rocket at T-2 and drops toward the deck, pivoting where it leaves the
+	   tank (14° brings its free end down to the deck, beside the left fin), fading out like the arms */
 	.pipe {
 		fill: none;
 		stroke: var(--muted);
 		stroke-opacity: 0.55;
 		stroke-width: 0.9;
+		transition:
+			rotate 0.4s cubic-bezier(0.55, 0, 1, 0.45), /* falling: slow off the rocket, then faster */
+			opacity 0.7s; /* a little slower than the fall, as the arms' fade is than their swing */
+		transform-box: view-box;
+		transform-origin: -24.2px -7.2px;
+	}
+
+	.row:global(.fuel-off) .pipe,
+	.row:global(.flying) .pipe {
+		rotate: 14deg;
+		opacity: 0;
 	}
 
 	/* The service arms swing down against the tower at T-1, at one steady rate, fading out as they go; the
@@ -377,6 +390,12 @@ const href = `/projects/${next.id}/`;
 		50% {
 			transform: scaleY(0.8);
 		}
+	}
+
+	/* The page under the flight ignores the pointer: content gliding under a still mouse would otherwise be
+	   hit-tested and restyled for hover every frame */
+	html.in-flight :is(main, footer) {
+		pointer-events: none;
 	}
 
 	.contrail {
