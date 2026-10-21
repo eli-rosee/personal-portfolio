@@ -2,7 +2,7 @@
 title: "Satellite Particle Filter"
 number: 1                 # order on the home page
 status: in-orbit           # liftoff (in progress) · in-orbit (done) · decommissioned
-summary: Created a localization algorithm to help locate a lost crew before time ran out.
+summary: Created a localization algorithm to help locate a lost crew and initiate a rescue mission before time ran out.
 stack: [Localization, Kinematic Bicycle Model, Python]
 
 # The screen on the card and the page. Delete the block for a "no signal" screen.
