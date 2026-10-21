@@ -19,13 +19,11 @@ private: Course policy keeps it private · email me   # "Code on request": email
 
 # Facts under the top card. The note is the grey line under the value (optional).
 readouts:
-  - label: My role
-    value: Role
-    note: One line on what I owned
-  - label: The team
-    value: Team
-  - label: Timeline
-    value: Jan 2026 → Mar 2026
+  - label: OMSCS Course
+    value: 'Robotics: AI Techniques'
+    note: Class Project
+  - label: When
+    value: Oct 2026
 
 # Opens the About section. *Asterisks* make a phrase amber.
 statement: One line on the project, with *one phrase* in amber.
