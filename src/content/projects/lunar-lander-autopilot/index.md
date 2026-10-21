@@ -9,7 +9,6 @@ display:
   image: display.png
   alt: The lander's altitude against range, the filtered path in amber
   crop: 50% 60%
-  readout: Sim run 42
 
 repo: https://github.com/eli-rosee/lunar-lander-autopilot
 
@@ -44,18 +43,15 @@ media:
     caption: A tall clip, filmed on a phone.
   - type: image
     file: photo.png
-    alt: The bench rig
     title: Bench rig
     caption: Lorem ipsum dolor sit amet.
   - type: image
     file: leg-2.png
-    alt: The second leg test
     shape: portrait
     title: Leg test 2
     caption: A portrait card, two rows tall.
   - type: image
     file: before.png
-    alt: The descent before tuning
     fit: whole
     title: Before tuning
     caption: A 4:3 image shown whole.

@@ -1,6 +1,6 @@
 ---
-// A project's display screen contents: an image from the project ("no signal" until there is one),
-// with an optional readout label. Shown on its card (MissionCard) and at the top of its page.
+// A project's display screen contents: an image from the project ("no signal" until there is one).
+// Shown on its card (MissionCard) and at the top of its page.
 import { Image } from "astro:assets";
 import Visual from "./project/Visual.astro";
 import type { Display } from "../scripts/project-files";
@@ -34,7 +34,6 @@ const { display, eager = false, widths = [400, 640, 960], sizes = "(max-width: 4
 			</div>
 		)
 	}
-	{display?.readout && <figcaption class="readout label">{display.readout}</figcaption>}
 	{!display && <span class="readout label" aria-hidden="true">No signal</span>}
 </figure>
 
@@ -51,6 +50,7 @@ const { display, eager = false, widths = [400, 640, 960], sizes = "(max-width: 4
 		object-fit: cover;
 	}
 
+	/* The "No signal" label in the screen's corner */
 	.readout {
 		position: absolute;
 		right: 0.9rem; /* clear of the cut corner and the dark rim */

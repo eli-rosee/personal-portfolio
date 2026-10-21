@@ -129,11 +129,11 @@ export const shapeOf = (asset: Asset): "landscape" | "portrait" => {
 
 /* ---------- The display screen ---------- */
 
-export type Display = { asset: Asset; alt: string; fit: "crop" | "whole"; position: string; zoom: number; readout?: string };
+export type Display = { asset: Asset; alt: string; fit: "crop" | "whole"; position: string; zoom: number };
 
 export const display = (project: Project): Display | undefined => {
 	const d = project.data.display;
-	return d && { alt: d.alt ?? project.data.title, fit: d.fit, position: d.crop, zoom: d.zoom, readout: d.readout, asset: find(project, d.image, "display", "image") };
+	return d && { alt: project.data.title, fit: d.fit, position: d.crop, zoom: d.zoom, asset: find(project, d.image, "display", "image") };
 };
 
 /* ---------- The write-up ---------- */
@@ -237,7 +237,7 @@ export function media(project: Project): MediaItem[] {
 					type: "image",
 					tab: "Image",
 					asset: find(project, m.file, where, "image"),
-					alt: m.alt,
+					alt: m.title, // screen readers hear the card's title
 					shape: m.shape,
 					fit: m.fit,
 					position: m.crop,

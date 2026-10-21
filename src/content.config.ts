@@ -74,8 +74,6 @@ const projects = defineCollection({
 			display: z
 				.object({
 					image: file,
-					alt: z.string().optional(), // defaults to the title
-					readout: z.string().optional(), // small label on the screen
 					fit,
 					crop,
 					zoom,
@@ -95,7 +93,6 @@ const projects = defineCollection({
 						z.object({
 							type: z.literal("image"),
 							file,
-							alt: z.string().default(""),
 							shape: z.enum(["landscape", "portrait"]).default("landscape"), // portrait: one column, two rows tall
 							fit,
 							crop,
