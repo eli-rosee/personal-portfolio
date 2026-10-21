@@ -39,8 +39,10 @@
 	--space-12: 6rem;
 
 	/* Layout */
-	--page-max: 1060px;
 	--gutter: clamp(1rem, 5vw, 6.5rem);
+	/* A page block's widest, gutters included. The content stops at 916px (its width at 1440) and the
+	   gutters sit outside it, so a wider screen never narrows the content. */
+	--page-max: calc(57.25rem + 2 * var(--gutter));
 	/* Short space that joins two blocks on the home page: under the hero, and above a section
 	   that follows another, so the gaps above and below the mission cards match */
 	--section-seam: clamp(0.75rem, 2.25vw, 1.75rem);
