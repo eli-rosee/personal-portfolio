@@ -51,7 +51,7 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 					</Button>
 				)}
 				{!repo && privateCode && (
-					<Button href={request} tip={privateCode} tipId="code-tip">
+					<Button primary href={request} tip={privateCode} tipId="code-tip">
 						Code on request
 					</Button>
 				)}
@@ -71,7 +71,15 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
+		justify-content: center;
 		gap: var(--space-2);
+	}
+
+	/* Beside the screen: centered from the screen's right edge to the text's, reaching back over the gap */
+	@media (min-width: 48rem) {
+		.actions {
+			margin-left: calc(-1 * var(--column-gap));
+		}
 	}
 
 	.actions:global(.one-row) {

@@ -504,9 +504,10 @@ const tipText =
 		--screen-top: 2rem;
 		--screen-bottom: 2.5rem;
 		--glass-inset: calc(2px + var(--bezel-pad)); /* hull edge, bezel and rim, outside the glass */
+		--column-gap: 2.75rem; /* between the screen and the text */
 		display: grid;
 		grid-template-columns: 1.1fr 1fr;
-		column-gap: 2.75rem;
+		column-gap: var(--column-gap);
 	}
 
 	.side .text {
@@ -532,27 +533,26 @@ const tipText =
 		contain: size;
 		display: flex;
 		flex-direction: column;
-		padding: calc(var(--screen-top) + var(--glass-inset)) 2.5rem var(--screen-bottom) 0;
+		padding: 0 2.5rem var(--screen-bottom) 0;
 	}
 
 	/*
-	 * Fills the space from the top of the glass to the top of the buttons. Two spacers share what the
-	 * text leaves, so it's centered; they never drop under --top and --clear, so a long summary stops
-	 * just under the glass's top instead of crowding the buttons (and one that still doesn't fit overflows,
-	 * which fit-text measures; once shrunk, it spreads the lines to fill the space exactly). The
+	 * Fills the space from the bottom of the title to the top of the buttons. Two spacers share what the
+	 * text leaves, so it's centered between them; they never drop under --top and --clear, so a long
+	 * summary stops just under the glass's top instead of crowding the buttons (and one that still doesn't
+	 * fit overflows, which fit-text measures; once shrunk, it spreads the lines to fill the space exactly). The
 	 * lines' leading is trimmed so the letters reach the edges.
 	 */
 	.side .summary {
 		/* Room kept under the text, above the buttons: the text's last baseline stays 1.75rem above the
 		   glass's bottom edge (the buttons reach on down to the screen's outer edge) */
 		--clear: calc(1.75rem + var(--glass-inset));
-		--top: 0.375rem; /* and over it, under the top of the glass */
+		--top: calc(var(--screen-top) + var(--glass-inset) + 0.375rem); /* and over it: 0.375rem under the top of the glass */
 		flex: 1 1 0;
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		color: var(--text);
 		font-size: 1.5rem; /* the largest it gets; fit-text steps it down */
 		line-height: 1.7;
 	}
