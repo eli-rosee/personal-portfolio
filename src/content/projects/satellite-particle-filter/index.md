@@ -1,22 +1,20 @@
 ---
-title: "blank"
-number: 2                 # order on the home page
-status: liftoff           # liftoff (in progress) · in-orbit (done) · decommissioned
-summary: One or two sentences, shown on the card and at the top of the page.
-stack: [Python, C++]
+title: "Satellite Particle Filter"
+number: 1                 # order on the home page
+status: in-orbit           # liftoff (in progress) · in-orbit (done) · decommissioned
+summary: Created a localization algorithm to help locate a lost crew before time ran out.
+stack: [Localization, Kinematic Bicycle Model, Python]
 
 # The screen on the card and the page. Delete the block for a "no signal" screen.
 display:
-  image: display.png
-  # alt: What the image shows, for screen readers (default: the title)
+  image: project_image.png
   # fit: whole            # show the whole image, with dark bars (default: crop, filling the screen)
-  # crop: top             # part kept in view: center (default), top, bottom, left, right, top left...
-  # zoom: 1.3             # zoom in around the crop point (1 = none)
-  # readout: Run 42       # small label in the screen's corner
+  crop: right             # part kept in view: center (default), top, bottom, left, right, top left...
+  zoom: 1.3             # zoom in around the crop point (1 = none)
 
 # The code button. Keep one, or neither:
-repo: https://github.com/eli-rosee/blank
-# private: Course policy keeps it private · email me   # "Code on request": emails me; this is its tooltip.
+# repo: https://github.com/eli-rosee/blank
+private: Course policy keeps it private · email me   # "Code on request": emails me; this is its tooltip.
 #                                                      # Coursework uses this line; write your own reason otherwise.
 
 # Facts under the top card. The note is the grey line under the value (optional).
@@ -51,7 +49,6 @@ media:
     file: photo.png
     title: Photo
     # caption: Grey line under the title
-    # alt: What the image shows, for screen readers
     # shape: portrait     # a tall card, two rows high (default: landscape)
     # fit: whole          # show all of it, with dark bars (default: crop, filling the card)
     # crop: top           # with crop: the part kept in view
