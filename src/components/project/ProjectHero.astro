@@ -51,7 +51,7 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 					</Button>
 				)}
 				{!repo && privateCode && (
-					<Button primary href={request} tip={privateCode} tipId="code-tip">
+					<Button href={request} tip={privateCode} tipId="code-tip">
 						Code on request
 					</Button>
 				)}
