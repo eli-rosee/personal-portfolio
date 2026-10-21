@@ -9,7 +9,8 @@
  * line under the lane says how to fire, until the first hit. Clearing the third wave
  * wins: bursts across the bar and the planet's ring turns green. An invader touching the planet ends
  * the game: the invader is gone in the impact, the rest fade away, and the planet breaks apart, then
- * forms again. The skirmish returns on its next pass. Esc quits. Off with reduced motion.
+ * forms again. The skirmish returns on its next pass. Esc quits. Off with reduced motion, and on touch
+ * screens (tapping fast zooms the page, and the planet is a small target).
  */
 const WAVES = [
 	{ count: 8, crossing: 3.6, gap: [750, 1150] },
@@ -44,7 +45,7 @@ export function initArcade(header: HTMLElement) {
 	const fx = header.querySelector<HTMLElement>("[data-fx]");
 	const home = header.querySelector<HTMLElement>(".home");
 	if (!button || !planet || !sky || !run || !fx || !home) return;
-	if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+	if (matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) {
 		button.disabled = true;
 		return;
 	}

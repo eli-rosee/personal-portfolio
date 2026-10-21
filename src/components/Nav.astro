@@ -389,6 +389,16 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 		outline-offset: 4px;
 	}
 
+	/* No waves (reduced motion, or a touch screen; scripts/arcade.ts disables it): the planet is just a
+	   drawing */
+	.planet-btn:disabled {
+		cursor: default;
+	}
+
+	.planet-btn:disabled > .tooltip {
+		display: none;
+	}
+
 	.planet {
 		position: relative;
 		display: block;
@@ -401,7 +411,7 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 	}
 
 	/* Hover brightens it, like the logo (not while it fires, which would wash the amber out) */
-	.planet-btn:is(:hover, :focus-visible) .planet:not(.firing) {
+	.planet-btn:not(:disabled):is(:hover, :focus-visible) .planet:not(.firing) {
 		filter: brightness(1.35);
 	}
 
@@ -612,15 +622,6 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 		}
 
 		.planet .lit {
-			display: none;
-		}
-
-		/* No waves: the planet is just a drawing */
-		.planet-btn {
-			cursor: default;
-		}
-
-		.planet-btn > .tooltip {
 			display: none;
 		}
 	}
