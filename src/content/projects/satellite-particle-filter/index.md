@@ -14,7 +14,7 @@ display:
 
 # The code button. Keep one, or neither:
 # repo: https://github.com/eli-rosee/blank
-private: Course policy keeps it private · email me   # "Code on request": emails me; this is its tooltip.
+private: Private per course policy                   # "Code on request": emails me; this is its tooltip.
 #                                                      # Coursework uses this line; write your own reason otherwise.
 
 # Facts under the top card. The note is the grey line under the value (optional).
