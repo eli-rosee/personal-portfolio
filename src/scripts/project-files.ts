@@ -7,7 +7,8 @@
  *   text, **bold**, links      the section's text (src/components/Prose.astro)
  *   ![alt](file "Caption")     on a line of its own: a framed figure under the text. Images, GIFs and
  *                              .mp4 / .webm clips (silent loops). Two or three such lines together (no
- *                              blank line between) sit side by side at one height.
+ *                              blank line between) sit side by side at one height. {effects=true} after
+ *                              it adds the screen's grade and glass.
  *   <!-- notes -->             left out of the page
  *
  * Every file lives in the project's assets/ folder, named by its path there ("plot.png", "slides/"). In a draft a missing file becomes a labeled gap on the
@@ -129,11 +130,11 @@ export const shapeOf = (asset: Asset): "landscape" | "portrait" => {
 
 /* ---------- The display screen ---------- */
 
-export type Display = { asset: Asset; alt: string; fit: "crop" | "whole"; position: string; zoom: number };
+export type Display = { asset: Asset; alt: string; fit: "crop" | "whole"; position: string; zoom: number; effects: boolean };
 
 export const display = (project: Project): Display | undefined => {
 	const d = project.data.display;
-	return d && { alt: project.data.title, fit: d.fit, position: d.crop, zoom: d.zoom, asset: find(project, d.image, "display", "image") };
+	return d && { alt: project.data.title, fit: d.fit, position: d.crop, zoom: d.zoom, effects: d.effects, asset: find(project, d.image, "display", "image") };
 };
 
 /* ---------- The write-up ---------- */
@@ -143,6 +144,7 @@ export interface Figure {
 	alt: string;
 	caption?: string;
 	asset: Asset;
+	effects: boolean;
 }
 export type Block = { kind: "text"; html: string } | { kind: "figures"; figures: Figure[] };
 export interface Section {
@@ -150,7 +152,7 @@ export interface Section {
 	blocks: Block[];
 }
 
-const FIGURE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+"([^"]*)")?\s*\)$/;
+const FIGURE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+"([^"]*)")?\s*\)(\{effects=true\})?$/;
 let markdown: Awaited<ReturnType<typeof createSatteriMarkdownProcessor>> | undefined;
 const render = async (text: string) => {
 	markdown ??= await createSatteriMarkdownProcessor();
@@ -193,6 +195,7 @@ export async function writeUp(project: Project): Promise<Section[]> {
 						alt: m![1] || m![3] || "", // without its own alt text, a figure is described by its caption
 						caption: m![3],
 						asset: find(project, m![2], "in the write-up", "visual"),
+						effects: Boolean(m![4]),
 					})),
 				});
 			} else if (lines.some((l) => /!\[[^\]]*\]\(/.test(l))) {
@@ -218,10 +221,10 @@ export type MediaItem = {
 	wide: boolean;
 	tab: string; // what it is, in the card's tab
 } & (
-	| { type: "image"; asset: Asset; alt: string; shape: "landscape" | "portrait"; fit: "crop" | "whole"; position: string; zoom: number }
-	| { type: "clip"; asset: Asset; shape: "landscape" | "portrait" }
-	| { type: "video"; asset: Asset; poster?: Asset; sound: boolean }
-	| { type: "slides"; slides: Asset[]; pdf?: Asset }
+	| { type: "image"; asset: Asset; alt: string; shape: "landscape" | "portrait"; fit: "crop" | "whole"; position: string; zoom: number; effects: boolean }
+	| { type: "clip"; asset: Asset; shape: "landscape" | "portrait"; effects: boolean }
+	| { type: "video"; asset: Asset; poster?: Asset; sound: boolean; effects: boolean }
+	| { type: "slides"; slides: Asset[]; pdf?: Asset; effects: boolean }
 	| { type: "link"; href?: string; live: boolean; address?: string }
 );
 
@@ -242,17 +245,19 @@ export function media(project: Project): MediaItem[] {
 					fit: m.fit,
 					position: m.crop,
 					zoom: m.zoom,
+					effects: m.effects,
 				};
 			case "clip":
-				return { ...base, type: "clip", tab: "Clip", asset: find(project, m.file, where, "visual"), shape: m.shape };
+				return { ...base, type: "clip", tab: "Clip", asset: find(project, m.file, where, "visual"), shape: m.shape, effects: m.effects };
 			case "video":
 				return {
 					...base,
 					type: "video",
 					tab: "Video",
 					asset: find(project, m.file, where, "video"),
-					poster: m.poster ? find(project, m.poster, where, "image") : undefined,
+					poster: m.thumbnail ? find(project, m.thumbnail, where, "image") : undefined,
 					sound: m.sound,
+					effects: m.effects,
 				};
 			case "slides": {
 				const folder = keyOf(slug, m.folder).replace(/\/$/, "") + "/";
@@ -270,6 +275,7 @@ export function media(project: Project): MediaItem[] {
 					tab: "Slides",
 					slides,
 					pdf: m.pdf ? find(project, m.pdf, where, "file") : undefined,
+					effects: m.effects,
 				};
 			}
 			case "link": {

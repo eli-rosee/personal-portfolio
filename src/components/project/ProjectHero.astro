@@ -22,6 +22,7 @@ const { project } = Astro.props;
 const { title, status, summary, stack, repo, private: privateCode, media } = project.data;
 const live = media?.find((m) => m.type === "link" && m.live && m.href);
 const liveHref = live?.type === "link" ? live.href : undefined;
+const shown = display(project);
 
 // The title in Mission Control DCU, rendered by scripts/render-art.py (the font may only be shown as
 // images), with its two-line version for phones; plain text until it's rendered
@@ -39,8 +40,9 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 	tags={stack}
 	tagsLabel="Stack"
 	status={{ label: status.replace("-", " "), ...STATUS[status], tipId: "hero-status-tip" }}
+	plain={shown?.effects === false}
 >
-	<ProjectDisplay display={display(project)} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />
+	<ProjectDisplay display={shown} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />
 	{titleArt && <ProjectTitle slot="title" title={title} id={project.id} one={titleArt} two={titleTwo} />}
 	{
 		(repo || privateCode || liveHref) && (

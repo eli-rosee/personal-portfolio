@@ -14,6 +14,7 @@ interface Props {
 
 const { project, eager = false } = Astro.props;
 const { number, title, status, summary, stack } = project.data;
+const shown = displayOf(project);
 ---
 
 <ConsoleCard
@@ -24,6 +25,7 @@ const { number, title, status, summary, stack } = project.data;
 	href={`/projects/${project.id}/`}
 	status={{ label: status.replace("-", " "), ...STATUS[status], tipId: `status-tip-${number}` }}
 	style="--summary-lines: 2"
+	plain={shown?.effects === false}
 >
-	<ProjectDisplay display={displayOf(project)} eager={eager} />
+	<ProjectDisplay display={shown} eager={eager} />
 </ConsoleCard>

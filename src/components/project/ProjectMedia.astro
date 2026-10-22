@@ -2,7 +2,7 @@
 /*
  * A project's Media section: one console card per item, two columns (`wide: true` spans both; an image
  * or clip card with `shape: portrait` is one column wide and two rows tall, packed in beside others). The
- * screens show the media as it is (no grade or glass). A video plays on its card (its bar's bracket icon
+ * screens show the media as it is unless `effects: true` (the grade and glass). A video plays on its card (its bar's bracket icon
  * opens the theater); images, clips and slides open in the theater. Links are bars under the cards, all one
  * height, each opening a new tab (a report, a paper); a live site comes first, the same but for a green
  * Live light in its tag and its address beside the title (it's also a button in the hero).
@@ -19,7 +19,7 @@ interface Props {
 }
 
 const { items } = Astro.props;
-const cards = items.filter((it) => it.type !== "link");
+const cards = items.flatMap((it) => (it.type === "link" ? [] : [it]));
 const rows = items.flatMap((it) => (it.type === "link" ? [it] : [])).sort((a, b) => Number(b.live) - Number(a.live));
 const slideCount = (n: number) => String(n).padStart(2, "0");
 ---
@@ -36,7 +36,7 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 							title={it.title}
 							summary={it.caption}
 							status={{ label: it.tab, tone: "muted" }}
-							plain
+							plain={!it.effects}
 						>
 							<div class="frame">
 								{it.type === "image" && (

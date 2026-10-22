@@ -57,6 +57,8 @@ const card = { title: z.string(), caption: z.string().optional(), wide: z.boolea
 const fit = z.enum(["crop", "whole"]).default("crop");
 const crop = z.string().default("center"); // the part kept in view: center, top, bottom, left, right, "top left", "30% 70%"
 const zoom = z.number().min(1).default(1); // 1.5 = 150%, zoomed in around the crop point
+// The screen's grade and glass (glare, scanlines, dark rim): on for the display, off for media cards unless asked for
+const effects = z.boolean().default(false);
 
 const projects = defineCollection({
 	loader: projectFolders("./src/content/projects"),
@@ -77,6 +79,7 @@ const projects = defineCollection({
 					fit,
 					crop,
 					zoom,
+					effects: effects.default(true),
 				})
 				.optional(),
 			// The readouts under the top card, like the footer's telemetry (up to four)
@@ -97,14 +100,15 @@ const projects = defineCollection({
 							fit,
 							crop,
 							zoom,
+							effects,
 							...card,
 						}),
 						// a silent loop: .mp4, .webm or .gif; portrait: one column, two rows tall
-						z.object({ type: z.literal("clip"), file, shape: z.enum(["landscape", "portrait"]).default("landscape"), ...card }),
+						z.object({ type: z.literal("clip"), file, shape: z.enum(["landscape", "portrait"]).default("landscape"), effects, ...card }),
 						// with sound; sound: false drops "Sound on" from the card's corner (the length stays)
-						z.object({ type: z.literal("video"), file, poster: file.optional(), sound: z.boolean().default(true), ...card }),
+						z.object({ type: z.literal("video"), file, thumbnail: file.optional(), sound: z.boolean().default(true), effects, ...card }),
 						// a folder of slide images, in file-name order, and the deck as a PDF to download
-						z.object({ type: z.literal("slides"), folder: file, pdf: file.optional(), ...card }),
+						z.object({ type: z.literal("slides"), folder: file, pdf: file.optional(), effects, ...card }),
 						// a web page (href) or a file (a PDF report): a bar under the cards that opens a new tab;
 						// live: the project running somewhere, first, with a green Live light and its own button
 						z.object({
