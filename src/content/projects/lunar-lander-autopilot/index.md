@@ -175,6 +175,8 @@ order
   Approach · How it works
   Alternatives considered (opt)
   The hard part · What went wrong · A bug worth mentioning
+  What went well (opt)
+  Where I got lucky (opt)
   Trade-offs (opt)
   Results · Outcome · Final result
   What I'd change · Future work
