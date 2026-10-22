@@ -4,8 +4,8 @@ import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Starfield from "../../components/Starfield.astro";
-import Readout from "../../components/Readout.astro";
 import ProjectHero from "../../components/project/ProjectHero.astro";
+import ProjectReadouts from "../../components/project/ProjectReadouts.astro";
 import ProjectAbout from "../../components/project/ProjectAbout.astro";
 import ProjectMedia from "../../components/project/ProjectMedia.astro";
 import Theater, { type Pane } from "../../components/project/Theater.astro";
@@ -49,15 +49,7 @@ const panes: Pane[] = [
 			<span>[ER] returns home</span>
 		</p>
 		<ProjectHero project={project} />
-		{
-			readouts && readouts.length > 0 && (
-				<dl class="readouts">
-					{readouts.map((r) => (
-						<Readout label={r.label} value={r.value} note={r.note} />
-					))}
-				</dl>
-			)
-		}
+		<ProjectReadouts readouts={readouts} />
 		<ProjectAbout statement={statement} sections={sections} />
 		<ProjectMedia items={items} />
 		<NextProject next={next} />
@@ -128,20 +120,5 @@ const panes: Pane[] = [
 
 	.project > :global(:is(.about, .media)) {
 		margin-top: 6rem;
-	}
-
-	/* The readouts under the hero, inset to line up with the ends of its bottom bevels */
-	.readouts {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		gap: 1.5rem 2rem;
-		margin: 0;
-		padding: 2.5rem 14px 0;
-	}
-
-	.readouts :global(.sub) {
-		max-width: 20rem;
-		white-space: normal;
 	}
 </style>

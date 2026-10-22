@@ -1,0 +1,88 @@
+---
+/*
+ * The readouts under a project's hero, with equal space between their values (each label and note centered
+ * on its value) and an inset at the ends while there's room. Long readouts eat the inset first.
+ */
+import Readout from "../Readout.astro";
+
+interface Props {
+	readouts?: { label: string; value: string; note?: string }[];
+}
+
+const { readouts = [] } = Astro.props;
+---
+
+{
+	readouts.length > 0 && (
+		<dl class="readouts">
+			{readouts.map((r) => (
+				<Readout label={r.label} value={r.value} note={r.note} />
+			))}
+		</dl>
+	)
+}
+
+<style>
+	/* Lined up with the ends of the hero's bottom bevels; on phones they wrap, left-aligned */
+	.readouts {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 1.5rem 2rem;
+		margin: 0;
+		padding: 2.5rem 14px 0;
+	}
+
+	.readouts :global(.sub) {
+		max-width: 20rem;
+		white-space: normal;
+	}
+
+	/* Equal space between the values. An empty spacer at each end holds up to --inset while there's room
+	   and gives way first when the readouts are long; the negative margin cancels the gaps beside the
+	   spacers, so with no inset left the readouts reach the ends of the bevels. */
+	@media (min-width: 48rem) {
+		.readouts {
+			--inset: 4rem;
+			--gap: 2rem;
+			flex-wrap: nowrap;
+			justify-content: normal;
+			column-gap: var(--gap);
+			margin-inline: calc(-1 * var(--gap));
+		}
+
+		.readouts::before,
+		.readouts::after {
+			content: "";
+			flex: 0 1 var(--inset);
+		}
+
+		.readouts > :global(.cell) {
+			flex: none;
+			justify-items: center;
+			text-align: center;
+		}
+
+		.readouts > :global(.cell + .cell) {
+			margin-left: auto;
+		}
+
+		/* Only the value sizes a readout: the label and note are centered on it, a long label spilling out
+		   evenly on both sides and a note wrapping to the value's width */
+		.readouts :global(:is(.label, .sub)) {
+			justify-self: stretch;
+			contain: inline-size;
+		}
+
+		.readouts :global(.label) {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.readouts :global(.label .light) {
+			flex: none;
+			vertical-align: 0;
+		}
+	}
+</style>
