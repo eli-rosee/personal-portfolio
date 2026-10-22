@@ -19,9 +19,10 @@ private: Private per course policy                   # "Code on request": emails
 
 # Facts under the top card. The note is the grey line under the value (optional).
 readouts:
-  - label: OMSCS Course
+  - label: OMSCS Course Project
     value: 'Robotics: AI Techniques'
-    note: Class Project
+  - label: Team
+    value: 'Solo'
   - label: When
     value: Oct 2026
 
