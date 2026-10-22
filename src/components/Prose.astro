@@ -1,7 +1,7 @@
 ---
 /*
  * Written text from Markdown, in the About section's type (the home About, a project's About):
- *   ### Prompt        a small label over a paragraph
+ *   ### Prompt        a label over a paragraph
  *   **key phrase**    set in the text color, above the muted body
  *   [text](url)       amber console brackets instead of an underline (a title becomes a tooltip)
  *   - item            a list, each line led by the cards' short muted dash
@@ -25,17 +25,16 @@ const { html, class: className } = Astro.props;
 		color: #a3abba;
 	}
 
-	/* Prompts: small bold labels in Red Hat Mono, lighter than the body so they read as headings,
-	   but below the white key phrases */
+	/* Prompts: light white Red Hat Mono, like the project pages' About headings (ProjectAbout.astro) */
 	.prose :global(h3) {
-		margin: 2.75rem 0 0.75rem;
+		margin: 3.5rem 0 0.75rem;
 		font-family: "Red Hat Mono", monospace;
-		font-size: 0.74rem;
-		font-weight: 600;
+		font-size: 0.875rem;
+		font-weight: 300;
 		line-height: 1.6;
-		letter-spacing: 0.16em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: #b9bdc7;
+		color: var(--text);
 	}
 
 	.prose :global(h3:first-child) {

@@ -1,7 +1,9 @@
 ---
 /*
  * A project's About: the statement (its *phrase* in amber), then the write-up's sections, each heading
- * in a label column beside its text and figures (src/scripts/project-files.ts splits the Markdown).
+ * in a label column beside its text and figures (src/scripts/project-files.ts splits the Markdown). A
+ * section's first paragraph is its takeaway, in the home About lead's Space Mono, with the heading level
+ * with it; the rest is dim, so heading > takeaway > detail (matching About.astro).
  */
 import SectionHeading from "../SectionHeading.astro";
 import Prose from "../Prose.astro";
@@ -56,36 +58,57 @@ const { statement, sections } = Astro.props;
 		white-space: nowrap;
 	}
 
-	/* Headings in a label column beside their sections */
+	/* Headings in a label column beside their sections, with plenty of air between sections */
 	.sections {
+		--prompt-size: 0.875rem;
+		--takeaway-size: 0.9rem;
+		--takeaway-leading: 1.6;
 		display: grid;
 		grid-template-columns: 13rem minmax(0, 1fr);
 		column-gap: 3rem;
-		row-gap: 2.25rem;
+		row-gap: 5rem;
 	}
 
-	/* The About prompts' type (Prose.astro), as the label */
+	/* Level with the middle of the takeaway's first line */
 	.prompt {
 		grid-column: 1;
-		padding-top: 0.35rem;
+		padding-top: calc((var(--takeaway-size) * var(--takeaway-leading) - var(--prompt-size) * 1.6) / 2);
 		font-family: "Red Hat Mono", monospace;
-		font-size: 0.74rem;
-		font-weight: 600;
+		font-size: var(--prompt-size);
+		font-weight: 300;
 		line-height: 1.6;
-		letter-spacing: 0.16em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: #b9bdc7;
+		color: var(--text);
 	}
 
 	.body {
 		grid-column: 2;
 		display: grid;
-		gap: 1.5rem;
+		gap: 1.25rem;
 		max-width: 44rem;
 	}
 
 	.body > :global(.project-prose) {
-		font-size: 0.9375rem;
+		color: #7c8494;
+	}
+
+	/* The takeaway, and the detail close under it */
+	.body > :global(.project-prose:first-child > p:first-child) {
+		margin-bottom: 0.6rem;
+		font-family: var(--font-label);
+		font-size: var(--takeaway-size);
+		line-height: var(--takeaway-leading);
+		letter-spacing: -0.01em;
+		color: var(--text);
+	}
+
+	.body > :global(.project-prose:first-child > p:first-child strong) {
+		font-weight: 700;
+	}
+
+	.body > :global(.project-prose:first-child > p:first-child + *) {
+		margin-top: 0;
 	}
 
 	@media (max-width: 47.99rem) {
@@ -100,7 +123,7 @@ const { statement, sections } = Astro.props;
 		}
 
 		.prompt {
-			margin: 2.25rem 0 0.75rem;
+			margin: 3.5rem 0 0.75rem;
 			padding: 0;
 		}
 

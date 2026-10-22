@@ -5,7 +5,8 @@
  *
  * Markdown conventions in about.md:
  *   statement: "... *phrase* ..."   the phrase is amber and launches the rocket on the clip card
- *   ### Prompt                      a small label over each paragraph
+ *   ### Prompt                      a label over each paragraph (the project pages' heading)
+ *   first sentence                  each paragraph's lead, in the statement's Space Mono (scripts/markdown.ts)
  *   **key phrase**                  set in the text color, above the muted body
  *   [text](#target "Tip")           a bracketed link with a tooltip
  */
@@ -14,7 +15,7 @@ import { compiledContent, frontmatter } from "../content/about.md";
 import SectionHeading from "./SectionHeading.astro";
 import ClipCard from "./ClipCard.astro";
 import Prose from "./Prose.astro";
-import { linkTooltips, statementHtml } from "../scripts/markdown";
+import { leadSentences, linkTooltips, statementHtml } from "../scripts/markdown";
 
 // The clip is optional; the section works without it
 const clip = (await getEntry("clip", "clip"))?.data;
@@ -29,7 +30,7 @@ const launchHtml = statement
 		)
 	: undefined;
 
-const proseHtml = linkTooltips(await compiledContent());
+const proseHtml = leadSentences(linkTooltips(await compiledContent()));
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">
@@ -55,7 +56,7 @@ const proseHtml = linkTooltips(await compiledContent());
 </script>
 
 <style>
-	/* One rhythm: 3.5rem after the statement, 2.75rem between parts, 0.75rem from a prompt to its paragraph */
+	/* One rhythm: 3.5rem after the statement and between parts, 0.75rem from a prompt to its paragraph */
 	.layout {
 		position: relative;
 		display: grid;
@@ -125,8 +126,22 @@ const proseHtml = linkTooltips(await compiledContent());
 		color: var(--accent);
 	}
 
+	/* The body a step dimmer than elsewhere, so the heading, then the lead, then the rest read in that order */
 	.layout > :global(.about-prose) {
 		max-width: 27.5rem;
+		color: #7c8494;
+	}
+
+	/* Each paragraph's lead sentence in the statement's voice: the line to read if you read nothing else */
+	.layout :global(.lead) {
+		font-family: var(--font-label);
+		font-size: 0.9rem;
+		letter-spacing: -0.01em;
+		color: var(--text);
+	}
+
+	.layout :global(.lead strong) {
+		font-weight: 700;
 	}
 
 	/* The launch phrase and the links: amber, framed in amber console brackets instead of an
@@ -212,7 +227,7 @@ const proseHtml = linkTooltips(await compiledContent());
 			grid-column: 2;
 			grid-row: 4 / 6;
 			max-width: 22rem;
-			margin-block: calc((3.5rem + (1.6 - 1) * 0.74rem / 2) / 2 + 6px) calc((1.85 - 1) * 1rem / 2);
+			margin-block: calc((3.5rem + (1.6 - 1) * 0.875rem / 2) / 2 + 6px) calc((1.85 - 1) * 1rem / 2);
 			/* Sits a few pixels lower at the same size; a translate moves nothing else */
 			translate: 0 6px;
 		}
