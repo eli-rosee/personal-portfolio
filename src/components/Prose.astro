@@ -5,6 +5,7 @@
  *   **key phrase**    set in the text color, above the muted body
  *   [text](url)       amber console brackets instead of an underline (a title becomes a tooltip)
  *   - item            a list, each line led by the cards' short muted dash
+ *   - **Label:** text a list item with a bold label, a little extra space after its colon
  */
 interface Props {
 	html: string;
@@ -46,7 +47,7 @@ const { html, class: className } = Astro.props;
 		color: var(--text);
 	}
 
-	.prose :global(p + p) {
+	.prose :global(:is(p, ul) + :is(p, ul)) {
 		margin-top: 1em;
 	}
 
@@ -78,6 +79,11 @@ const { html, class: className } = Astro.props;
 	.prose :global(li) {
 		position: relative;
 		padding-left: 1.4rem;
+	}
+
+	/* A list item's bold label (listLabels in scripts/markdown.ts): a wider gap after its colon */
+	.prose :global(strong.term) {
+		margin-right: 0.4em;
 	}
 
 	.prose :global(li)::before {

@@ -15,7 +15,7 @@ import { compiledContent, frontmatter } from "../content/about.md";
 import SectionHeading from "./SectionHeading.astro";
 import ClipCard from "./ClipCard.astro";
 import Prose from "./Prose.astro";
-import { leadSentences, linkTooltips, statementHtml } from "../scripts/markdown";
+import { leadSentences, linkTooltips, listLabels, statementHtml } from "../scripts/markdown";
 
 // The clip is optional; the section works without it
 const clip = (await getEntry("clip", "clip"))?.data;
@@ -30,7 +30,7 @@ const launchHtml = statement
 		)
 	: undefined;
 
-const proseHtml = leadSentences(linkTooltips(await compiledContent()));
+const proseHtml = listLabels(leadSentences(linkTooltips(await compiledContent())));
 ---
 
 <section id="about" class="section" aria-labelledby="about-heading">

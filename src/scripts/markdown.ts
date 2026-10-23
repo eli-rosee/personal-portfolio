@@ -12,6 +12,9 @@ export const linkTooltips = (html: string) =>
 		'<a href="$1">$3<span class="tooltip label" aria-hidden="true">$2</span></a>',
 	);
 
+// A list item led by a bold label, - **Label:** text, gets <strong class="term"> so CSS can set the gap after it
+export const listLabels = (html: string) => html.replace(/<li>(\s*(?:<p>)?)<strong>([^<]*:)<\/strong>/g, '<li>$1<strong class="term">$2</strong>');
+
 // Each paragraph's first sentence in a <span class="lead"> (the whole paragraph when it's one sentence).
 // A sentence ends at . ! or ? before a space and a capital, so "M.S. in" doesn't end one.
 export const leadSentences = (html: string) =>

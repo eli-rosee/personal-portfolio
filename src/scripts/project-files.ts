@@ -17,7 +17,7 @@
 import type { CollectionEntry } from "astro:content";
 import { readFileSync } from "node:fs";
 import { createSatteriMarkdownProcessor } from "@astrojs/markdown-satteri";
-import { linkTooltips } from "./markdown";
+import { linkTooltips, listLabels } from "./markdown";
 
 type Project = CollectionEntry<"projects">;
 
@@ -156,7 +156,7 @@ const FIGURE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+"([^"]*)")?\s*\)(\{effects=true\}
 let markdown: Awaited<ReturnType<typeof createSatteriMarkdownProcessor>> | undefined;
 const render = async (text: string) => {
 	markdown ??= await createSatteriMarkdownProcessor();
-	return linkTooltips((await markdown.render(text)).code);
+	return listLabels(linkTooltips((await markdown.render(text)).code));
 };
 
 export async function writeUp(project: Project): Promise<Section[]> {
