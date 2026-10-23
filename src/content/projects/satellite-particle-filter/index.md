@@ -220,7 +220,8 @@ Passing took **7 of 10** in each part, so both cleared the bar.
 
 **Those numbers aren't fixed.** The filter is random by design, the autograder's test cases differ from the local ones, and a slower CPU leaves less headroom under the 15-second limit. The same code can pass a case on one run and **miss it on the next**.
 
-If I did it again, I'd change two things:
+If I did it again, I'd change three things:
 
-- **Fuzz only a fraction:** Duplicates are identical, so jittering every one of them **injects randomness right when the filter is trying to converge**. Even with the cloud almost on top of the satellite, it can take several steps to close in. Fuzzing a fraction would let the converged particles stay put.
-- **Add threading:** Splitting the work across threads would fit **more particles under the CPU limit**, so the filter could account for more possible positions before it converges for good.
+- **Fractional fuzzing:** Jitter a set fraction of the particles instead of every duplicate. Duplicates are identical, so fuzzing all of them **injects randomness right when the filter is trying to converge**. Even with the cloud almost on top of the satellite, it can take several steps to close in.
+- **Shrink on convergence:** Drop particles only once the cluster is tight enough, not on a fixed schedule. The filter would **stop committing before it's actually confident**.
+- **Random particles:** Each step, add a few fresh particles, **weighted toward the cluster but able to land anywhere** in the box. If the cloud converges on the wrong point, the ones near the true position can potentially win the weighting and **pull it back**.
