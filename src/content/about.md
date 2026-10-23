@@ -18,4 +18,4 @@ This site and my capstone are [self-hosted](#uptime "See uptime"). They live on 
 
 ### What I do for fun
 
-I'm a climber. I've bouldered outdoors for over four years, and I've fallen in love with the climbing in Northwest Arkansas.
+I'm a climber. I've bouldered outdoors for over **four years**, and I've fallen in love with the climbing in Northwest Arkansas.
