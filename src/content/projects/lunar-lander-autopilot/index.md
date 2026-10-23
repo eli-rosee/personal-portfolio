@@ -153,14 +153,18 @@ write-up (files go in assets/)
   **bold**
   [text](url "tooltip")
   - list
+  - **Label:** text (the gap after the colon is set by the site)
+  blank line = new paragraph; extra blank lines or spaces add nothing
+  &ensp; or &emsp; = a one-off wider space
   line\ (line break)
   ![alt](file "caption") on its own line
     2–3 in a row sit side by side
     {effects=true} right after it adds the image effects
 
 writing
-  5–7 sections, 40–100 words each, 250–600 in all
-  first paragraph = the takeaway: one sentence, set a size up; **bold** its key fact
+  4–5 sections, 80–200 words each, 400–750 in all
+  depth over breadth: the first lines carry the skim, the paragraphs carry the detail
+  first paragraph = the takeaway: one sentence
   one idea per paragraph, 2–4 sentences
   "I" for what you did, "we" only for the team
   numbers over adjectives: a count, a time, a size or a score beats "fast" or "robust"
