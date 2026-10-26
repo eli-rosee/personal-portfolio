@@ -12,7 +12,7 @@
 const NS = "http://www.w3.org/2000/svg";
 const PAD_GAP = 14; // px from the phrase to the pad ring
 const NOSE_GAP = 13; // px from the chevron's tip to the rocket's nose
-const TEXT_GAP = 8; // px the arc keeps clear of the statement's lines
+const TEXT_GAP = { x: 18, y: 12 }; // px the arc keeps clear of the statement's lines, at their ends and above/below
 const BRACKET = { pad: 7, arm: 6 }; // px around the rocket; length of each corner's arms
 
 const unit = (x: number, y: number): [number, number] => {
@@ -81,22 +81,31 @@ export function initLaunchArrow(
 		const lead = clamp(dist * (below ? 0.42 : 0.48), 30, below ? 90 : 110);
 		const drop = clamp(dist * (below ? 0.42 : 0.58), 30, 110);
 		const lines = lineRects(statement).map((r) => [
-			r.left - base.left - TEXT_GAP,
-			r.top - base.top - TEXT_GAP,
-			r.right - base.left + TEXT_GAP,
-			r.bottom - base.top + TEXT_GAP,
+			r.left - base.left - TEXT_GAP.x,
+			r.top - base.top - TEXT_GAP.y,
+			r.right - base.left + TEXT_GAP.x,
+			r.bottom - base.top + TEXT_GAP.y,
 		]);
 		const hits = (pts: number[][]) =>
-			Array.from({ length: 41 }, (_, i) => cubic(pts, i / 40)).filter(([x, y]) =>
+			Array.from({ length: 81 }, (_, i) => cubic(pts, i / 80)).filter(([x, y]) =>
 				lines.some(([l, t, r, b]) => x > l && x < r && y > t && y < b),
 			).length;
-		// The first shape that clears the text; failing that, the one that touches it least
-		const rises = below ? [0] : [1.2, 0.8, 0.45, 0.1];
+		// The first shape that clears the text; failing that, the one that touches it least. Beside, a
+		// long first line can block every rise, so the later shapes leave level or dipping slightly and reach
+		// further right before climbing: past the line's end they can still arc up over the rocket.
+		// A level start is preferred over a dip, then a taller arc. Each shape is [rise, drop scale,
+		// lead scale].
+		const fallbacks = [0, -0.08, -0.15].flatMap((rise) =>
+			[1.6, 1.3, 1, 0.8].flatMap((fall) => [2.2, 1.6, 1].map((reach) => [rise, fall, reach])),
+		);
+		const shapes = below ? [[0, 1, 1]] : [[1.2, 1, 1], [0.8, 1, 1], [0.45, 1, 1], [0.1, 1, 1], ...fallbacks];
 		let pts: number[][] = [];
 		let fewest = Infinity;
-		for (const rise of rises) {
+		for (const [rise, fall, reach] of shapes) {
 			const [tx, ty] = below ? unit(clamp((ex - sx) / dist, -0.3, 0.3), 1) : unit(1, -rise);
-			const shape = [[sx, sy], [sx + tx * lead, sy + ty * lead], [ex, ey - drop], [ex, ey]];
+			// Never past three quarters of the way to the rocket, or the top of the arc kinks
+			const out = below ? lead : Math.min(lead * reach, ((ex - sx) * 0.75) / tx);
+			const shape = [[sx, sy], [sx + tx * out, sy + ty * out], [ex, ey - drop * fall], [ex, ey]];
 			const n = hits(shape);
 			if (n < fewest) [pts, fewest] = [shape, n];
 			if (!n) break;
