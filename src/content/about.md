@@ -1,16 +1,16 @@
 ---
 # The statement that opens the About section, in its own row above the text and the clip card.
 # Wrap a phrase in *asterisks* to set it in amber.
-statement: "I'm fascinated by software that interacts with *the physical world*"
+statement: "I build software that senses *the physical world*."
 ---
 
 ### Where I started
 
-I started in data. For my senior capstone, I built a large-scale data ingestion and analysis pipeline for Formula 1 telemetry in collaboration with a **General Motorsports** data science team.
+I started in real-world data. For my senior capstone, I built a large-scale data ingestion and analysis pipeline for Formula 1 telemetry in collaboration with a **General Motorsports** data science team.
 
 ### What I'm doing now
 
-I'm a grad student at Georgia Tech. I'm in the online M.S. in Computer Science, focusing on **robotics**, **perception**, and **machine learning**. I build projects through coursework and on my own, and work part time at Geek Squad.
+I'm a grad student at Georgia Tech. I'm in the online M.S. in Computer Science, focusing on **robotics**, **perception**, and **machine learning**. Most recently I built probabilistic filters that localize objects from noisy sensor data. I’m looking for a full-time software engineering role where I can keep building systems that interact with the real world.
 
 ### Where this runs
 
