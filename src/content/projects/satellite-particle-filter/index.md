@@ -109,6 +109,7 @@ write-up (files go in assets/)
   **bold**
   [text](url "tooltip")
   - list
+  1. steps in order (numbered 01, 02, …)
   - **Label:** text (the gap after the colon is set by the site)
   blank line = new paragraph; extra blank lines or spaces add nothing
   &ensp; or &emsp; = a one-off wider space
@@ -141,87 +142,42 @@ order
   Results · Outcome · Final result
   What I'd change · Future work
 -->
-
 ## The problem
 
-I built a particle filter that finds a lost satellite to within **0.01 AU**.
+A galactic group of heroes has just warped back into our solar system.
 
-The satellite could be anywhere in an **8 × 8 AU** box around the sun. **Nothing tells the filter where it is.** All it gets each timestep is a sensor reading, plus the steering and distance the satellite just flew.
+It is our job, as mission control, to locate their spaceship for recovery. We are given limited resources to do so (we have government funding to thank for that), and only get **15 seconds of CPU time to localize within 0.01 AU of the ship**. The grid is 8 AU x 8 AU, and the crew only has 300 days of supplies to survive on their own, giving us 300 attempts at localization.
 
-- **Part A:** a single gravimeter reading, the combined pull of every planet.
-- **Part B:** the percent illumination of each planet as seen from the satellite.
+## Approach
 
-Part B has the added challenge of transmitting an **SOS message** to the home planet. Only after **10 successful transmissions** can the crew fully relay their position.
+The approach I implemented was a particle filter.
 
-The budget is tight. The crew's supplies last **300 days**, one timestep each, and the whole test case gets **15 seconds** of CPU. A test passes only when the estimate lands inside 0.01 AU with **both limits met**, or in Part B, once all 10 transmissions are through.
+In Part A of this project, I developed an algorithm to localize the crew based on the gravity forces their ship was experiencing. Because a single gravity reading could match many different locations, a particle filter is uniquely equipped for this job, as it can **simultaneously track all possible locations of the ship**. If a Kalman filter were used, it would most likely converge on a single, incorrect guess.
 
-## How it works
+In Part B, it was also a localization challenge, but we additionally had to calculate the bearing to our home planet (using atan2) and **send 10 successful transmissions to mission control**. This had the added challenge of localizing based on the percent illumination of each planet, as seen from the ship, forcing me to combine the error from each planet's observed illumination into a single weight for each particle.
 
-One loop per timestep: **weigh, resample, fuzz, move, estimate**.
+## The core algorithm
 
-It starts with **2,000 particles** scattered uniformly across the box, each one a guess at (x, y, θ). Every heading begins tangent to a circle around the sun, θ = atan2(y, x) + π/2, so each particle starts out **already in orbit** instead of wasting steps learning which way to fly.
+Every timestep, the following steps were taken:
 
-- **Weigh:** A **Gaussian likelihood** compares each particle's predicted reading with the real one.
-- **Resample:** Sebastian Thrun's **resampling wheel** draws the next generation in O(N), versus O(N log N) for ordinary weighted sampling.
-- **Fuzz:** Only duplicates get jittered, by up to ±0.05 AU and ±0.03 rad. **The originals hold their ground** while the copies explore.
-- **Move:** Every particle advances with the **kinematic bicycle model**.
-- **Estimate:** The **cloud's mean** is the answer. In Part B, an atan2 from it to the home planet gives the SOS bearing.
+1. **Weigh:** Each particle is evaluated using a Gaussian distribution for how likely it is the satellite's real position.
+2. **Resample:** Sebastian Thrun's provided resampling wheel draws new particles in O(N), as opposed to O(N log N) for ordinary weighted sampling.
+3. **Fuzz:** Duplicates have a slight offset added to them to keep guesses from converging incorrectly.
+4. **Move:** Every particle is simulated with the kinematic bicycle model. An orbit, as it turns out, is just a very long left hand turn.
+5. **Estimate:** This is calculated by using the mean of every simulated particle. In Part B, an atan2 from the satellite location estimate to the home planet gives the bearing to send an SOS signal.
 
-The motion model is the core of the filter. **The satellite is simulated as a bicycle**, and every particle moves through the same five equations each step:
+## Where I went wrong
 
-- **Turning radius:** R = L / tan(α). The ship's length L and the steering angle α set how tight the turn is.
-- **Center of the turn:** cx = x − R sin θ, cy = y + R cos θ. Step R from the particle, perpendicular to its heading, to find the circle it's turning around: **the sun**.
-- **Arc angle:** β = d / R. How far around that circle a step of distance d carries it.
-- **New position:** x′ = cx + R sin(θ + β), y′ = cy − R cos(θ + β). The point β further around the circle.
-- **New heading:** θ′ = (θ + β) mod 2π. The heading turns by the same angle, wrapped to one revolution.
+My initial variance values were wildly incorrect.
 
-Put the sun at the center of that circle and the orbit falls right out. **An orbit, it turns out, is just a very long left turn.**
+For Part A, they were roughly **5 orders of magnitude too high** (10⁻⁸), and after I determined the variance value was the source of my error, I managed to decrease it to a workable value (10⁻¹³). For Part B, the readings switched to a standard percentage scale (0–100), which also caused issues until I corrected my variance to 10.
 
-<!--
-  GIF slot: one full run, the particles closing in on the satellite
--->
+I also exploited the CPU run time constraint. I frontloaded a lot of my calculation to the initial batch of particles, and reduced the count by 100 particles every timestep until I reached a group of 250 guesses. Doing this allowed me to pass the CPU constraint comfortably, while taking longer on earlier timesteps. The risk is that if the particle count is low before they're close to the ship, **the filter can sometimes fail**, and this did happen on a few of the test cases. In the real world, this frontloading shortcut would not work due to standardized time step lengths.
 
-## What went wrong
-
-The likelihood's **standard deviation** was the hardest part to get right.
-
-My first value was sized for ordinary numbers, and gravity at interplanetary distances is **anything but**. Every particle's likelihood came out **nearly identical**. The weights went flat, resampling degenerated into a **random shuffle**, and the cloud drifted wherever the noise took it.
-
-Too tight fails just as badly, in the other direction. A handful of particles take all the weight, the rest round to zero, and the cloud **collapses onto one wrong guess** before it has looked around.
-
-The fix was **matching the deviation to each sensor's scale**. Part A only converged at a variance of **10⁻¹³**. Illumination runs from 0 to 100, so Part B operated well at **10**.
-
-That's the same filter, tuned **14 orders of magnitude** apart. If Part A's variance were **a millimeter**, Part B's would stretch **two-thirds of the way to the sun**.
-
-<!--
-  GIF slot: variance set wrong vs. tuned
-  GIF slot: initial sd set wrong vs. tuned
--->
-
-## Trade-offs
-
-I **pared** the particle count down from **2,000** to **250**.
-
-Each timestep sheds 100 particles until it hits the floor. The filter spends its CPU early, when it knows the least, and coasts once the cloud has settled. **That speed has a cost.**
-
-The cloud commits fast. If it pares down while it's still far from the satellite, **there's no way back**: with only ±0.05 AU of fuzz, the survivors can't jitter far enough to find the true position again.
-
-<!--
-  GIF slot: a failed test case, the cloud pared down in the wrong place and unable to recover
--->
-
-**I also got lucky with the grader.** It only counts total time, so spending it unevenly cost nothing. A real flight computer runs on a fixed cycle where every step gets the same budget, and **this shortcut wouldn't fly**.
+In the future, I would love to implement a way to **decrease the particle count based on the level of convergence** the filter has experienced, as opposed to a flat rate that can fail on certain test cases. This would allow for fewer initial particles as well, making the filter overall more efficient.
 
 ## Results
 
-**18 of 20** on the autograder: 8 of 10 in Part A, all 10 in Part B.
+My filter scored 18 out of 20 on the autograder.
 
-Passing took **7 of 10** in each part, so both cleared the bar.
-
-**Those numbers aren't fixed.** The filter is random by design, the autograder's test cases differ from the local ones, and a slower CPU leaves less headroom under the 15-second limit. The same code can pass a case on one run and **miss it on the next**.
-
-If I did it again, I'd change three things:
-
-- **Fractional fuzzing:** Jitter a set fraction of the particles instead of every duplicate. Duplicates are identical, so fuzzing all of them **injects randomness right when the filter is trying to converge**. Even with the cloud almost on top of the satellite, it can take several steps to close in.
-- **Shrink on convergence:** Drop particles only once the cluster is tight enough, not on a fixed schedule. The filter would **stop committing before it's actually confident**.
-- **Random particles:** Each step, add a few fresh particles, **weighted toward the cluster but able to land anywhere** in the box. If the cloud converges on the wrong point, the ones near the true position can potentially win the weighting and **pull it back**.
+**8 of 10 in Part A, and 10/10 in Part B**. Passing required 7 of 10 in each part. Because the filter is random by design, these numbers can vary from run to run.
