@@ -142,6 +142,7 @@ write-up (files go in assets/)
   **bold**
   [text](url "tooltip")
   - list
+  1. steps in order (numbered 01, 02, …)
   - **Label:** text (the gap after the colon is set by the site)
   blank line = new paragraph; extra blank lines or spaces add nothing
   &ensp; or &emsp; = a one-off wider space

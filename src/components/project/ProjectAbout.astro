@@ -61,7 +61,7 @@ const { statement, sections } = Astro.props;
 	/* Headings in a label column beside their sections, with plenty of air between sections */
 	.sections {
 		--prompt-size: 0.875rem;
-		--takeaway-size: 0.9rem;
+		--takeaway-size: 1.05rem;
 		--takeaway-leading: 1.6;
 		display: grid;
 		grid-template-columns: 13rem minmax(0, 1fr);
@@ -95,7 +95,7 @@ const { statement, sections } = Astro.props;
 
 	/* The takeaway, and the detail close under it */
 	.body > :global(.project-prose:first-child > p:first-child) {
-		margin-bottom: 0.6rem;
+		margin-bottom: 1.25rem;
 		font-family: var(--font-label);
 		font-size: var(--takeaway-size);
 		line-height: var(--takeaway-leading);
@@ -105,6 +105,7 @@ const { statement, sections } = Astro.props;
 
 	.body > :global(.project-prose:first-child > p:first-child strong) {
 		font-weight: 700;
+		color: inherit;
 	}
 
 	.body > :global(.project-prose:first-child > p:first-child + *) {

@@ -2,10 +2,11 @@
 /*
  * Written text from Markdown, in the About section's type (the home About, a project's About):
  *   ### Prompt        a label over a paragraph
- *   **key phrase**    set in the text color, above the muted body
+ *   **key phrase**    in a soft white, above the muted body and under the leads
  *   [text](url)       amber console brackets instead of an underline (a title becomes a tooltip)
  *   - item            a list, each line led by the cards' short muted dash
- *   - **Label:** text a list item with a bold label, a little extra space after its colon
+ *   1. step           a list in order, each line led by a muted mono step number (01, 02, …)
+ *   - **Label:** text a list item with a bold label, a few spaces after its colon
  */
 interface Props {
 	html: string;
@@ -42,12 +43,13 @@ const { html, class: className } = Astro.props;
 		margin-top: 0;
 	}
 
+	/* A soft white, a step under the leads' cream, so a bold phrase never outshines a section's first sentence */
 	.prose :global(strong) {
 		font-weight: 600;
-		color: var(--text);
+		color: #b3b9c4;
 	}
 
-	.prose :global(:is(p, ul) + :is(p, ul)) {
+	.prose :global(:is(p, ul, ol) + :is(p, ul, ol)) {
 		margin-top: 1em;
 	}
 
@@ -68,31 +70,56 @@ const { html, class: className } = Astro.props;
 		margin-left: 0.1em;
 	}
 
-	.prose :global(ul) {
+	.prose :global(:is(ul, ol)) {
 		display: grid;
-		gap: 0.55rem;
+		gap: 0.9rem;
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
 
+	/* Tighter leading than the paragraphs, so an item's wrapped lines hold together and the gap marks the next */
 	.prose :global(li) {
 		position: relative;
 		padding-left: 1.4rem;
+		line-height: 1.65;
 	}
 
 	/* A list item's bold label (listLabels in scripts/markdown.ts): a wider gap after its colon */
 	.prose :global(strong.term) {
-		margin-right: 0.4em;
+		margin-right: 0.5em;
 	}
 
-	.prose :global(li)::before {
+	/* The dash, level with the middle of the first line */
+	.prose :global(ul > li)::before {
 		content: "";
 		position: absolute;
 		left: 0;
-		top: 0.9em;
+		top: calc(0.825em - 1px);
 		width: 0.6rem;
 		height: 2px;
 		background: var(--muted);
+	}
+
+	/* Steps: a muted mono number in place of the dash */
+	.prose :global(ol) {
+		counter-reset: step;
+	}
+
+	.prose :global(ol > li) {
+		counter-increment: step;
+		padding-left: 2.4rem;
+	}
+
+	.prose :global(ol > li)::before {
+		content: counter(step, decimal-leading-zero);
+		position: absolute;
+		left: 0;
+		top: 0.28em;
+		font-family: "Red Hat Mono", monospace;
+		font-size: 0.8125rem;
+		font-weight: 300;
+		letter-spacing: 0.08em;
+		color: var(--muted);
 	}
 </style>
