@@ -6,6 +6,8 @@ import { FLIGHT, clamp, contrail, type Path } from "./flight-path";
 // Workers in some browsers have no requestAnimationFrame: a timer stands in
 const frame = (fn: (now: number) => void) =>
 	typeof requestAnimationFrame === "function" ? requestAnimationFrame(fn) : setTimeout(() => fn(performance.now()), 16);
+// The page draws the contrail itself unless this worker can keep to the screen's frames
+postMessage({ frames: typeof requestAnimationFrame === "function" });
 
 onmessage = ({ data }: MessageEvent<{ canvas: OffscreenCanvas; width: number; height: number; dpr: number; path: Path; reach: number; start: number }>) => {
 	const { canvas, width, height, dpr, path, reach, start } = data;

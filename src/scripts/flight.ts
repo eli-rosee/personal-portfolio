@@ -336,9 +336,12 @@ async function fly(button: HTMLElement) {
 	document.querySelectorAll<HTMLVideoElement>("[data-player] video").forEach((v) => v.pause());
 	const ready = prepare(url);
 	ready.catch(() => {}); // handled where it's awaited, after the countdown
-	// The contrail's worker (below) starts now, so it's ready at liftoff
+	// The contrail's worker (below) starts now, so it's ready at liftoff. It says whether it can draw in
+	// step with the screen's frames (Safari's workers can't: there it draws here, as the rocket does)
 	const offthread = "transferControlToOffscreen" in HTMLCanvasElement.prototype && typeof Worker === "function";
-	const worker = offthread ? new ContrailWorker() : undefined;
+	let worker = offthread ? new ContrailWorker() : undefined;
+	let framed = false;
+	if (worker) worker.onmessage = ({ data }) => (framed = !!data?.frames);
 
 	const row = button.closest<HTMLElement>(".row")!;
 	const rk = row.querySelector<SVGSVGElement>(".rk")!;
@@ -400,12 +403,19 @@ async function fly(button: HTMLElement) {
 	// A short orange contrail follows the engine (flight-path.ts), on a canvas over the window: drawn in a
 	// worker where the browser allows (OffscreenCanvas), so the page's thread doesn't repaint for it every
 	// frame (in Firefox that repaint, over the crossfading pages, dropped frames near the dock); otherwise here
+	// The canvas is exactly the window in CSS pixels (100vh on a phone is the height with the browser's bar
+	// hidden, which stretched the trail off the rocket)
 	const canvas = document.createElement("canvas");
 	canvas.className = "contrail";
+	Object.assign(canvas.style, { width: `${innerWidth}px`, height: `${innerHeight}px` });
 	document.body.append(canvas);
 	const size = { width: innerWidth * devicePixelRatio, height: innerHeight * devicePixelRatio, dpr: devicePixelRatio };
 	const reach = r0.height * 0.42;
 	let step: ((t: number) => void) | undefined;
+	if (worker && !framed) {
+		worker.terminate();
+		worker = undefined;
+	}
 	if (worker) {
 		const offscreen = canvas.transferControlToOffscreen();
 		worker.postMessage({ canvas: offscreen, ...size, path, reach, start: performance.timeOrigin + t0 }, [offscreen]);
