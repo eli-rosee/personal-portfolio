@@ -154,7 +154,11 @@ The approach I implemented was a particle filter.
 
 In Part A of this project, I developed an algorithm to localize the crew based on the gravity forces their ship was experiencing. Because a single gravity reading could match many different locations, a particle filter is uniquely equipped for this job, as it can **simultaneously track all possible locations of the ship**. If a Kalman filter were used, it would most likely converge on a single, incorrect guess.
 
+![](part_a_success_1.mp4 "Part A: localizing from gravity")
+
 In Part B, it was also a localization challenge, but we additionally had to calculate the bearing to our home planet (using atan2) and **send 10 successful transmissions to mission control**. This had the added challenge of localizing based on the percent illumination of each planet, as seen from the ship, forcing me to combine the error from each planet's observed illumination into a single weight for each particle.
+
+![](part_b_success_2.mp4 "Part B: localizing from planet illumination")
 
 ## The core algorithm
 
@@ -170,9 +174,11 @@ Every timestep, the following steps were taken:
 
 My initial variance values were wildly incorrect.
 
-For Part A, they were roughly **5 orders of magnitude too high** (10⁻⁸), and after I determined the variance value was the source of my error, I managed to decrease it to a workable value (10⁻¹³). For Part B, the readings switched to a standard percentage scale (0–100), which also caused issues until I corrected my variance to 10.
+For Part A, they were roughly **5 orders of magnitude too high** (10⁻⁸), and after I determined the variance value was the reason there was no convergence, I managed to decrease it to a workable value (10⁻¹³). For Part B, the readings switched to a standard percentage scale (0–100), which also caused issues until I corrected my variance to 10.
 
 I also exploited the CPU run time constraint. I frontloaded a lot of my calculation to the initial batch of particles, and reduced the count by 100 particles every timestep until I reached a group of 250 guesses. Doing this allowed me to pass the CPU constraint comfortably, while taking longer on earlier timesteps. The risk is that if the particle count is low before they're close to the ship, **the filter can sometimes fail**, and this did happen on a few of the test cases. In the real world, this frontloading shortcut would not work due to standardized time step lengths.
+
+![](failed_convergence.mp4 "A failed run")
 
 In the future, I would love to implement a way to **decrease the particle count based on the level of convergence** the filter has experienced, as opposed to a flat rate that can fail on certain test cases. This would allow for fewer initial particles as well, making the filter overall more efficient.
 

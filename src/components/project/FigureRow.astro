@@ -1,7 +1,7 @@
 ---
 /*
  * Figures in a project's write-up: one, or two or three side by side. Each takes one of two shapes from
- * its image: landscape (16:9) or portrait (3:4), filled (the edges cut if its shape is in between). Side by
+ * its image: landscape (16:9), portrait (3:4) or square (1:1), filled (the edges cut if its shape is in between). Side by
  * side they share one height. Each is a plain screen (the grade and glass only with {effects=true}) with its caption under it, and
  * opens in the theater (the zoom cursor says so).
  */
@@ -14,7 +14,7 @@ interface Props {
 }
 
 const { figures } = Astro.props;
-const ratio = { landscape: 16 / 9, portrait: 3 / 4 };
+const ratio = { landscape: 16 / 9, portrait: 3 / 4, square: 1 };
 const single = figures.length === 1;
 ---
 
@@ -52,10 +52,15 @@ const single = figures.length === 1;
 		margin: 0;
 	}
 
-	/* One portrait figure on its own stays narrow, so it doesn't run down the page */
+	/* One portrait or square figure on its own stays narrow, so it doesn't run down the page */
 	.single .figure.portrait {
 		flex: none;
 		width: min(100%, 22rem);
+	}
+
+	.single .figure.square {
+		flex: none;
+		width: min(100%, 28rem);
 	}
 
 	.open {
@@ -97,7 +102,7 @@ const single = figures.length === 1;
 		}
 
 		.figure,
-		.single .figure.portrait {
+		.single .figure:is(.portrait, .square) {
 			flex: none;
 			width: 100%;
 		}

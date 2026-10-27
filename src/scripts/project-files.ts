@@ -121,11 +121,13 @@ function videoSize(path: string): { width: number; height: number } | undefined 
 	return undefined;
 }
 
-// An image's or clip's shape for its frame: portrait when taller than wide, otherwise landscape (also when
-// the size isn't known, or the file is missing)
-export const shapeOf = (asset: Asset): "landscape" | "portrait" => {
+// An image's or clip's shape for its frame: square within 10% of it (a simulation's canvas), portrait when
+// taller than wide, otherwise landscape (also when the size isn't known, or the file is missing)
+export const shapeOf = (asset: Asset): "landscape" | "portrait" | "square" => {
 	const size = asset.kind === "image" ? asset.image : asset.kind === "gif" || asset.kind === "clip" ? asset : undefined;
-	return size?.width && size.height && size.height > size.width ? "portrait" : "landscape";
+	if (!size?.width || !size.height) return "landscape";
+	const ratio = size.width / size.height;
+	return ratio >= 0.9 && ratio <= 1.1 ? "square" : ratio < 1 ? "portrait" : "landscape";
 };
 
 /* ---------- The display screen ---------- */

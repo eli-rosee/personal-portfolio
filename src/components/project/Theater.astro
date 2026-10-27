@@ -4,7 +4,7 @@
  * data-theater="<id>" opens that item. One job per corner of the screen: where you are (top left), Close
  * (top right), title and caption (bottom left), a hint (bottom right). Under it a strip of every item,
  * held still and centered, in two groups: About (the write-up's figures) and Media (the cards).
- * Images take one of two screen shapes (landscape 16:9, portrait 3:4), tall clips 9:16 (phone video);
+ * Images take one of three screen shapes (landscape 16:9, portrait 3:4, square 1:1), tall clips 9:16 (phone video);
  * everything is shown whole. Arrow keys, the strip, or a swipe move between items; with a mouse, a click
  * zooms an image; a click pauses or resumes a clip; a video's player (Player.astro) is carried over
  * from its card, paused at the same moment, and back again (paused) on close. A deck shows its counter ‹ 03 / 15 › and PDF in the
@@ -190,7 +190,7 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 		padding-top: 3.5rem;
 	}
 
-	/* Two shapes: landscape 16:9, portrait 3:4, each as large as the window allows. The corners share
+	/* Three shapes: landscape 16:9, portrait 3:4, square 1:1, each as large as the window allows. The corners share
 	   the screen's edges. */
 	.col {
 		--ar: 16 / 9;
@@ -212,6 +212,11 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 	:global(.theater[data-shape="portrait"]) .col {
 		--ar: 3 / 4;
 		--w: min(90vw, calc((100cqh - var(--labels)) * 3 / 4));
+	}
+
+	:global(.theater[data-shape="square"]) .col {
+		--ar: 1;
+		--w: min(90vw, calc(100cqh - var(--labels)));
 	}
 
 	:global(.theater[data-shape="tall"]) .col {
@@ -629,6 +634,11 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 
 		:global(.theater[data-shape="portrait"]) .col {
 			--w: min(calc(100vw - 2rem), calc((100cqh - var(--labels)) * 3 / 4));
+			width: var(--w);
+		}
+
+		:global(.theater[data-shape="square"]) .col {
+			--w: min(calc(100vw - 2rem), calc(100cqh - var(--labels)));
 			width: var(--w);
 		}
 
