@@ -10,6 +10,8 @@
  * step tighter at a time (.fit-1 to .fit-3, styled by the row's component), and wrapping only when
  * even the tightest doesn't fit.
  *
+ * `signal` stops the refitting when the page is swapped out after a flight.
+ *
  * The box is marked .fitted once it has been fitted with the fonts loaded; until then the card keeps
  * its text hidden.
  *
@@ -19,7 +21,7 @@
 const MIN = 14; // px, the small text size
 const STEP = 0.5;
 
-export function fitText(root: ParentNode) {
+export function fitText(root: ParentNode, signal?: AbortSignal) {
 	root.querySelectorAll<HTMLElement>("[data-fit]").forEach((el) => {
 		const text = el.firstElementChild as HTMLElement | null;
 		if (!text) return;
@@ -69,7 +71,9 @@ export function fitText(root: ParentNode) {
 			el.style.lineHeight = `${lineHeight + (space - height()) / (lines - 1)}px`;
 		};
 		// The box's size comes from the card, not the text, so resizing the text doesn't refire this
-		new ResizeObserver(fit).observe(el);
+		const resized = new ResizeObserver(fit);
+		resized.observe(el);
+		signal?.addEventListener("abort", () => resized.disconnect());
 		document.fonts.ready.then(() => {
 			fit();
 			el.classList.add("fitted");
@@ -79,7 +83,7 @@ export function fitText(root: ParentNode) {
 
 const STEPS = ["fit-1", "fit-2", "fit-3"];
 
-export function fitRow(root: ParentNode) {
+export function fitRow(root: ParentNode, signal?: AbortSignal) {
 	root.querySelectorAll<HTMLElement>("[data-fit-row]").forEach((row) => {
 		// Measured by where the last item ends, not the row's scroll width (a hidden tooltip inside a
 		// button would count there)
@@ -95,7 +99,9 @@ export function fitRow(root: ParentNode) {
 			}
 			row.classList.remove("one-row");
 		};
-		new ResizeObserver(fit).observe(row.parentElement ?? row);
+		const resized = new ResizeObserver(fit);
+		resized.observe(row.parentElement ?? row);
+		signal?.addEventListener("abort", () => resized.disconnect());
 		document.fonts.ready.then(fit);
 	});
 }

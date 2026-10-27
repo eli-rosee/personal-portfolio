@@ -6,12 +6,12 @@
  * (the bar stays while paused); only one plays at a time; the line scrubs (drag it, and it holds still
  * until it's let go; or the arrow keys on it); the speaker mutes; the brackets go full screen (the
  * whole player, bar and all; Space plays or pauses there). Also gives each card its length ("[Sound on ·]
- * 1:23"). Runs again on the page swapped in after a flight.
+ * 1:23"). Runs again on the page swapped in after a flight; `signal` ends this page's document listeners.
  */
 const pad = (n: number) => String(n).padStart(2, "0");
 export const time = (s: number) => `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`;
 
-export function initPlayers(root: ParentNode = document) {
+export function initPlayers(root: ParentNode = document, signal?: AbortSignal) {
 	root.querySelectorAll<HTMLElement>("[data-player]").forEach((player) => {
 		const video = player.querySelector("video")!;
 		const track = player.querySelector<HTMLElement>("[data-track]")!;
@@ -113,13 +113,13 @@ export function initPlayers(root: ParentNode = document) {
 			full.setAttribute("aria-label", on ? "Exit full screen" : "Full screen");
 			// Space plays or pauses rather than pressing the button that had the focus
 			if (on) (document.activeElement as HTMLElement | null)?.blur();
-		});
+		}, { signal });
 		document.addEventListener("keydown", (e) => {
 			if (e.key !== " " || document.fullscreenElement !== player || (e.target as HTMLElement).closest?.("button")) return;
 			e.preventDefault();
 			e.stopPropagation();
 			toggle();
-		});
+		}, { signal });
 
 		// The bar: up while the mouse moves over the video (or a key is used in it), and away 2.5 s after
 		// that stops or the mouse leaves (taking the cursor with it, while it plays). Starting the video

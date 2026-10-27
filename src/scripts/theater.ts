@@ -2,11 +2,11 @@
  * The project page's theater (src/components/project/Theater.astro): opening an item, moving between
  * items (arrow keys, the strip, a swipe), stepping slides, zooming a still image with a mouse, and
  * carrying a video between its card and the theater. Runs again on the page swapped in after
- * a flight (`root` is the new <main>).
+ * a flight (`root` is the new <main>; `signal` ends this page's window listener when it's swapped out).
  */
 const pad = (n: number) => String(n).padStart(2, "0");
 
-export function initTheater(root: ParentNode = document) {
+export function initTheater(root: ParentNode = document, signal?: AbortSignal) {
 	const dialog = root.querySelector<HTMLDialogElement>("[data-theater-dialog]");
 	if (!dialog) return;
 	const panes = [...dialog.querySelectorAll<HTMLElement>("[data-pane]")];
@@ -48,7 +48,7 @@ export function initTheater(root: ParentNode = document) {
 		const needed = rows.reduce((sum, r) => sum + r.scrollWidth, 0) + gap * (rows.length - 1) + pad;
 		dialog.classList.toggle("stacked", rows.length > 1 && needed > innerWidth);
 	};
-	addEventListener("resize", fit);
+	addEventListener("resize", fit, { signal });
 
 	const show = (index: number, fromEnd = false) => {
 		current = (index + panes.length) % panes.length;

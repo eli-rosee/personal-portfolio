@@ -439,14 +439,17 @@ async function fly(button: HTMLElement) {
 	html.classList.remove("in-flight");
 }
 
-// Wires the launch buttons and the flight path in `root` (the page, or a swapped-in <main>)
-export function initFlight(root: ParentNode = document) {
+// Wires the launch buttons and the flight path in `root` (the page, or a swapped-in <main>); `signal`
+// stops its observers when that page is swapped out
+export function initFlight(root: ParentNode = document, signal?: AbortSignal) {
 	root.querySelectorAll<HTMLElement>("[data-launch]").forEach((button) => {
 		button.addEventListener("click", () => fly(button));
 		if (!button.classList.contains("phrase")) return;
 		const row = button.closest<HTMLElement>(".row")!;
 		const draw = () => drawPath(row, button);
-		new ResizeObserver(draw).observe(row);
+		const resized = new ResizeObserver(draw);
+		resized.observe(row);
+		signal?.addEventListener("abort", () => resized.disconnect());
 		document.fonts.ready.then(draw);
 		if (reduce) return; // the link just opens the page
 		const ahead = new IntersectionObserver(
@@ -458,6 +461,7 @@ export function initFlight(root: ParentNode = document) {
 			{ rootMargin: "800px" },
 		);
 		ahead.observe(row);
+		signal?.addEventListener("abort", () => ahead.disconnect());
 	});
 }
 

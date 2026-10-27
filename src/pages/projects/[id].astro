@@ -67,21 +67,33 @@ const panes: Pane[] = [
 
 	// Sizing (the hero's buttons and summary) and wiring (everything interactive). After a flight the next
 	// page is sized while it's still invisible ("project:prepare"), so it fades in at its final size, and
-	// wired once it has replaced this one ("project:swap").
-	const fit = (root: ParentNode) => {
-		fitRow(root);
-		fitText(root);
+	// wired once it has replaced this one ("project:swap"). Each page's listeners and observers live as
+	// long as the page: the swap ends the old one's, so a removed page can't linger in memory.
+	const fit = (root: ParentNode, signal: AbortSignal) => {
+		fitRow(root, signal);
+		fitText(root, signal);
 	};
-	const wire = (root: ParentNode) => {
-		initTheater(root);
-		initPlayers(root);
-		playClips(root);
-		initFlight(root);
+	const wire = (root: ParentNode, signal: AbortSignal) => {
+		initTheater(root, signal);
+		initPlayers(root, signal);
+		playClips(root, signal);
+		initFlight(root, signal);
 	};
-	fit(document);
-	wire(document);
-	document.addEventListener("project:prepare", (e) => fit((e as CustomEvent<HTMLElement>).detail));
-	document.addEventListener("project:swap", (e) => wire((e as CustomEvent<HTMLElement>).detail));
+	let page = new AbortController();
+	let next = new AbortController();
+	fit(document, page.signal);
+	wire(document, page.signal);
+	document.addEventListener("project:prepare", (e) => {
+		next.abort(); // a page prepared before, never shown
+		next = new AbortController();
+		fit((e as CustomEvent<HTMLElement>).detail, next.signal);
+	});
+	document.addEventListener("project:swap", (e) => {
+		page.abort();
+		page = next;
+		next = new AbortController();
+		wire((e as CustomEvent<HTMLElement>).detail, page.signal);
+	});
 </script>
 
 <style>
