@@ -9,6 +9,8 @@
  * reduced motion the link just opens the next page.
  */
 
+import { flicker } from "./flicker";
+
 const NS = "http://www.w3.org/2000/svg";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -25,21 +27,6 @@ const dbez = (a: number, b: number, c: number, d: number, t: number) => {
 	return 3 * u * u * (b - a) + 6 * u * t * (c - b) + 3 * t * t * (d - c);
 };
 const fx = (n: number) => n.toFixed(1);
-
-// The engine's flicker: a squash to 80% of the flame's length and back, in two steps each way, about the top
-// middle of the flame, around and around. `turn` is how far the drawing is turned. A Web Animation rather
-// than a CSS one: an infinite CSS animation keeps the page's thread busy servicing it every frame.
-const flicker = (el: Element, ms: number, turn = 0) => {
-	const squash = (y: number) => `rotate(${turn}deg) scaleY(${y}) rotate(${-turn}deg)`;
-	return el.animate(
-		[
-			{ transform: squash(1), easing: "steps(2)" },
-			{ transform: squash(0.8), offset: 0.5, easing: "steps(2)" },
-			{ transform: squash(1) },
-		],
-		{ duration: ms, iterations: Infinity },
-	);
-};
 
 const FLIGHT = 3400; // ms from liftoff to the dock
 const SCROLL_DELAY = 750; // ms after liftoff before the page starts to scroll
