@@ -94,6 +94,16 @@ const { statement, sections } = Astro.props;
 		color: #7c8494;
 	}
 
+	/* Figures get more room than paragraphs, a little more below for the caption's plate, so each
+	   reads as a break in the text */
+	.body > :global(.figures) {
+		margin-block: 1.75rem 2.25rem;
+	}
+
+	.body > :global(.figures:last-child) {
+		margin-bottom: 0;
+	}
+
 	/* The takeaway, and the detail close under it */
 	.body > :global(.project-prose:first-child > p:first-child) {
 		margin-bottom: 1.25rem;
