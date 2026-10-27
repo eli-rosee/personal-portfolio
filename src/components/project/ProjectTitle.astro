@@ -23,7 +23,9 @@ const phoneRule =
 
 <span class="project-title" data-title={id}>
 	<Image class="one" src={one} alt={title} height={one.height / 2} densities={[1, 2]} loading="eager" />
-	{two && <Image class="two" src={two} alt={title} height={two.height / 2} densities={[1, 2]} />}
+	{/* Its full width and shape given up front, so the page doesn't shift when it arrives (it shrinks with the
+	    card on narrow phones, keeping its shape) */}
+	{two && <Image class="two" src={two} alt={title} height={two.height / 2} densities={[1, 2]} style={`width: ${two.width / 2}px; aspect-ratio: ${two.width} / ${two.height}`} />}
 </span>
 {phoneRule && <style is:inline set:html={phoneRule} />}
 
