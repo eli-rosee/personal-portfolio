@@ -10,25 +10,15 @@
  */
 
 import { flicker } from "./flicker";
+import { FLIGHT, clamp, contrail, pose, type Path } from "./flight-path";
+import ContrailWorker from "./contrail-worker?worker";
 
 const NS = "http://www.w3.org/2000/svg";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const clamp = (t: number) => Math.min(1, Math.max(0, t));
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-// The climb off the pad: heavier and slower than easeInOut at the start, as the rocket fights gravity
-const climb = (t: number) => (t < 0.5 ? 2 ** 2.5 * t ** 3.5 : 1 - Math.pow(-2 * t + 2, 3.5) / 2);
-const bez = (a: number, b: number, c: number, d: number, t: number) => {
-	const u = 1 - t;
-	return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d;
-};
-const dbez = (a: number, b: number, c: number, d: number, t: number) => {
-	const u = 1 - t;
-	return 3 * u * u * (b - a) + 6 * u * t * (c - b) + 3 * t * t * (d - c);
-};
 const fx = (n: number) => n.toFixed(1);
 
-const FLIGHT = 3400; // ms from liftoff to the dock
 const SCROLL_DELAY = 750; // ms after liftoff before the page starts to scroll
 const BEAT = 1000; // ms per countdown beat: T-3, T-2, T-1 take a real 3 seconds
 
@@ -346,6 +336,9 @@ async function fly(button: HTMLElement) {
 	document.querySelectorAll<HTMLVideoElement>("[data-player] video").forEach((v) => v.pause());
 	const ready = prepare(url);
 	ready.catch(() => {}); // handled where it's awaited, after the countdown
+	// The contrail's worker (below) starts now, so it's ready at liftoff
+	const offthread = "transferControlToOffscreen" in HTMLCanvasElement.prototype && typeof Worker === "function";
+	const worker = offthread ? new ContrailWorker() : undefined;
 
 	const row = button.closest<HTMLElement>(".row")!;
 	const rk = row.querySelector<SVGSVGElement>(".rk")!;
@@ -385,31 +378,14 @@ async function fly(button: HTMLElement) {
 	// The logo's rocket leaves as this one takes off; it's back when the flight docks
 	navRocket.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 250, easing: "ease-in", fill: "forwards" });
 
-	const canvas = document.createElement("canvas");
-	canvas.className = "contrail";
-	document.body.append(canvas);
-	const ctx = canvas.getContext("2d")!;
-	canvas.width = innerWidth * devicePixelRatio;
-	canvas.height = innerHeight * devicePixelRatio;
-	ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-
 	// One curve from the pad to the logo: up, swinging left past the logo, then hooking up-right into its
 	// 45° pose.
 	const P0 = { x: r0.left + r0.width / 2, y: r0.top + r0.height / 2 };
 	const P3 = { x: target.x, y: target.y };
-	const P1 = { x: P0.x, y: P0.y - innerHeight * 0.5 };
 	const hook = Math.min(160, innerHeight * 0.2);
-	const P2 = { x: P3.x - hook, y: P3.y + hook };
-	const dock = target.scale;
-	const at = (t: number) => {
-		const s = climb(t);
-		const x = bez(P0.x, P1.x, P2.x, P3.x, s);
-		const y = bez(P0.y, P1.y, P2.y, P3.y, s);
-		const heading = (Math.atan2(dbez(P0.y, P1.y, P2.y, P3.y, s), dbez(P0.x, P1.x, P2.x, P3.x, s)) * 180) / Math.PI + 90;
-		// The rocket shrinks to the logo's size along the whole flight, in step with the distance covered
-		const scale = 1 + (dock - 1) * s;
-		return { x, y, heading, scale };
-	};
+	const path: Path = { P0, P1: { x: P0.x, y: P0.y - innerHeight * 0.5 }, P2: { x: P3.x - hook, y: P3.y + hook }, P3, dock: target.scale };
+	const dock = path.dock;
+	const at = (t: number) => pose(path, t);
 
 	// The flight as one compositor animation (the curve sampled into keyframes), so it stays smooth while
 	// the page underneath is busy; relative to the docked pose (the clone is already turned and logo-sized)
@@ -421,34 +397,35 @@ async function fly(button: HTMLElement) {
 	const flight = ship.animate(frames, { duration: FLIGHT, easing: "linear", fill: "forwards" });
 	const t0 = performance.now();
 
-	// The page glides to the top in the first half, after a moment's climb; a short orange contrail follows the engine
+	// A short orange contrail follows the engine (flight-path.ts), on a canvas over the window: drawn in a
+	// worker where the browser allows (OffscreenCanvas), so the page's thread doesn't repaint for it every
+	// frame (in Firefox that repaint, over the crossfading pages, dropped frames near the dock); otherwise here
+	const canvas = document.createElement("canvas");
+	canvas.className = "contrail";
+	document.body.append(canvas);
+	const size = { width: innerWidth * devicePixelRatio, height: innerHeight * devicePixelRatio, dpr: devicePixelRatio };
+	const reach = r0.height * 0.42;
+	let step: ((t: number) => void) | undefined;
+	if (worker) {
+		const offscreen = canvas.transferControlToOffscreen();
+		worker.postMessage({ canvas: offscreen, ...size, path, reach, start: performance.timeOrigin + t0 }, [offscreen]);
+	} else {
+		const ctx = canvas.getContext("2d")!;
+		canvas.width = size.width;
+		canvas.height = size.height;
+		ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
+		step = contrail(ctx, path, reach);
+	}
+
+	// The page glides to the top in the first half, after a moment's climb
 	const from = scrollY;
-	const trail: { x: number; y: number }[] = [];
-	let drawn: number[] | null = null; // the box last drawn in, the only part that needs clearing
 	const tick = (now: number) => {
 		const t = clamp((now - t0) / FLIGHT);
 		const g = clamp((t - SCROLL_DELAY / FLIGHT) / (0.5 - SCROLL_DELAY / FLIGHT));
 		if (g < 1) scrollTo({ top: from * (1 - easeInOut(g)), behavior: "instant" });
-		const p = at(t);
-		const rad = ((p.heading - 90) * Math.PI) / 180;
-		trail.push({ x: p.x - Math.cos(rad) * r0.height * 0.42 * p.scale, y: p.y - Math.sin(rad) * r0.height * 0.42 * p.scale });
-		if (trail.length > 11) trail.shift();
-		if (drawn) ctx.clearRect(drawn[0], drawn[1], drawn[2] - drawn[0], drawn[3] - drawn[1]);
-		const xs = trail.map((q) => q.x);
-		const ys = trail.map((q) => q.y);
-		drawn = [Math.min(...xs) - 3, Math.min(...ys) - 3, Math.max(...xs) + 3, Math.max(...ys) + 3]; // plus the line's width
-		const fade = 1 - clamp((t - 0.75) / 0.2);
-		for (let i = 1; i < trail.length; i++) {
-			const a = i / trail.length;
-			ctx.strokeStyle = `rgba(255, 168, 60, ${a * fade})`;
-			ctx.lineWidth = 2.8 * a;
-			ctx.lineCap = "round";
-			ctx.beginPath();
-			ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
-			ctx.lineTo(trail[i].x, trail[i].y);
-			ctx.stroke();
-		}
-		if (t < 1) requestAnimationFrame(tick);
+		step?.(t);
+		// With the contrail in its worker, the frames stop once the glide is done
+		if (t < 1 && (step || g < 1)) requestAnimationFrame(tick);
 	};
 	requestAnimationFrame(tick);
 
@@ -466,6 +443,7 @@ async function fly(button: HTMLElement) {
 	incoming.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 700, easing: "ease-out", fill: "forwards" });
 
 	await flight.finished;
+	worker?.terminate();
 	canvas.remove();
 	// At the dock the logo's own rocket takes the ship's place, in the same pose
 	navRocket.getAnimations().forEach((a) => a.cancel());
