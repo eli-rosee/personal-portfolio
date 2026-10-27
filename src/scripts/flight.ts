@@ -26,6 +26,21 @@ const dbez = (a: number, b: number, c: number, d: number, t: number) => {
 };
 const fx = (n: number) => n.toFixed(1);
 
+// The engine's flicker: a squash to 80% of the flame's length and back, in two steps each way, about the top
+// middle of the flame, around and around. `turn` is how far the drawing is turned. A Web Animation rather
+// than a CSS one: an infinite CSS animation keeps the page's thread busy servicing it every frame.
+const flicker = (el: Element, ms: number, turn = 0) => {
+	const squash = (y: number) => `rotate(${turn}deg) scaleY(${y}) rotate(${-turn}deg)`;
+	return el.animate(
+		[
+			{ transform: squash(1), easing: "steps(2)" },
+			{ transform: squash(0.8), offset: 0.5, easing: "steps(2)" },
+			{ transform: squash(1) },
+		],
+		{ duration: ms, iterations: Infinity },
+	);
+};
+
 const FLIGHT = 3400; // ms from liftoff to the dock
 const SCROLL_DELAY = 750; // ms after liftoff before the page starts to scroll
 const BEAT = 1000; // ms per countdown beat: T-3, T-2, T-1 take a real 3 seconds
@@ -273,12 +288,14 @@ function logoRocketPose(svg: SVGSVGElement, pageUnit: number) {
 	const r = svg.getBoundingClientRect();
 	const unit = r.height / h;
 	const [cx, cy] = turn([50, 62]);
+	const [fx, fy] = turn([50, 116]); // the top middle of the flame, where its flicker pivots
 	return {
 		x: r.left + (cx - x0) * unit,
 		y: r.top + (cy - y0) * unit,
 		scale: unit / pageUnit,
 		rect: r,
 		origin: [(cx - x0) * unit, (cy - y0) * unit],
+		flame: [(fx - x0) * unit, (fy - y0) * unit],
 	};
 }
 
@@ -286,7 +303,8 @@ function logoRocketPose(svg: SVGSVGElement, pageUnit: number) {
 // harder each beat; the fuel line drops away at T-2 and the service arms swing away at T-1, the status
 // light flashes each beat and turns green at "Liftoff", and the flight starts right then
 async function countdown(row: HTMLElement, rk: SVGSVGElement) {
-	const flame = rk.querySelector<SVGElement>(".flame")!;
+	const craft = row.querySelector<HTMLElement>(".craft")!; // the rocket and its flame
+	const flame = row.querySelector<SVGSVGElement>(".rk-flame")!;
 	const label = document.createElement("span");
 	label.className = "countdown";
 	const brackets = row.querySelector<SVGGraphicsElement>(".launch-arrow .brackets");
@@ -298,27 +316,22 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 		label.animate([{ opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1 }], { duration: 180, easing: "ease-out" });
 	};
 
-	Object.assign(flame.style, {
-		transformBox: "fill-box",
-		transformOrigin: "50% 0",
-		animation: "flame-flicker .1s steps(2) infinite",
-		transition: "opacity .5s ease-in-out",
-	});
-	const light = row.querySelector<SVGElement>(".light-sq");
+	flame.style.transition = "opacity .5s ease-in-out";
+	flicker(flame, 100);
+	const light = row.querySelector<SVGSVGElement>(".pad-light");
 	const k = rk.getBoundingClientRect().width / 25; // the shake grows with the rocket
 	const lifts = [0.2, 0.45, 0.7].map((l) => l * k); // it barely rises before liftoff
 	let shake: Animation | undefined;
 	for (const [i, beat] of ["3", "2", "1"].entries()) {
 		show(`T-${beat}`);
 		flame.style.opacity = String(0.35 + i * 0.3);
-		light?.animate([{ scale: 1.6 }, { scale: 1 }], { duration: 300, easing: "ease-out" });
+		light?.animate([{ transform: "scale(1.6)" }, { transform: "scale(1)" }], { duration: 300, easing: "ease-out" });
 		if (beat === "2") row.classList.add("fuel-off");
 		if (beat === "1") row.classList.add("arms-back");
 		const up = lifts[i];
-		// A shake through the beat, mostly sideways, growing a little with each beat. A transform, not
-		// `translate`: on an <svg> only a transform runs off the main thread. Each beat's shake replaces the
-		// last (stacked transform animations would all fall back to the main thread).
-		const beatShake = rk.animate(
+		// A shake through the beat, mostly sideways, growing a little with each beat. Each beat's shake
+		// replaces the last (stacked transform animations would all fall back to the main thread).
+		const beatShake = craft.animate(
 			Array.from({ length: 16 }, (_, j) => j)
 				.map((j) => ({ transform: `translate(${(j % 2 ? 1 : -1) * (0.35 + i * 0.13) * k}px, ${-up + (j % 3 === 0 ? 0.25 : -0.25) * k}px)` }))
 				.concat({ transform: `translate(0, ${-up}px)` }),
@@ -359,9 +372,16 @@ async function fly(button: HTMLElement) {
 	const navRocket = document.querySelector<SVGSVGElement>("[data-logo-rocket]")!;
 	const r0 = rk.getBoundingClientRect();
 	const target = logoRocketPose(navRocket, r0.width / 100);
-	const ship = navRocket.cloneNode(true) as SVGSVGElement;
-	ship.removeAttribute("data-logo-rocket");
-	ship.classList.add("ship");
+	// (as two layers, the hull and the flame, so the flame's flicker stays on the compositor)
+	const ship = document.createElement("div");
+	ship.className = "ship";
+	for (const part of ["hull", "flame"]) {
+		const layer = navRocket.cloneNode(true) as SVGSVGElement;
+		layer.removeAttribute("data-logo-rocket");
+		layer.querySelector(`.${part === "hull" ? "flame" : "hull"}`)!.remove();
+		if (part === "flame") layer.classList.add("ship-flame");
+		ship.append(layer);
+	}
 	const nr = target.rect;
 	Object.assign(ship.style, {
 		left: `${nr.left}px`,
@@ -370,9 +390,12 @@ async function fly(button: HTMLElement) {
 		height: `${nr.height}px`,
 		transformOrigin: `${target.origin[0]}px ${target.origin[1]}px`,
 	});
+	ship.style.setProperty("--fx", `${target.flame[0]}px`);
+	ship.style.setProperty("--fy", `${target.flame[1]}px`);
 	document.body.append(ship);
-	rk.style.visibility = "hidden";
-	rk.querySelector<SVGElement>(".flame")!.style.animation = "none"; // hidden, so its flicker can stop
+	flicker(ship.querySelector(".ship-flame")!, 120, 45); // the logo's drawing is turned 45°
+	row.querySelector<HTMLElement>(".craft")!.style.visibility = "hidden";
+	row.querySelector<SVGSVGElement>(".rk-flame")!.getAnimations().forEach((a) => a.cancel()); // hidden, so its flicker can stop
 	// The logo's rocket leaves as this one takes off; it's back when the flight docks
 	navRocket.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 250, easing: "ease-in", fill: "forwards" });
 
@@ -460,6 +483,7 @@ async function fly(button: HTMLElement) {
 	canvas.remove();
 	// At the dock the logo's own rocket takes the ship's place, in the same pose
 	navRocket.getAnimations().forEach((a) => a.cancel());
+	ship.getAnimations({ subtree: true }).forEach((a) => a.cancel()); // its endless flicker would keep it alive
 	ship.remove();
 
 	// Then, with nothing left moving, the new page takes the old one's place (the same spot, so nothing
