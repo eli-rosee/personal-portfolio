@@ -51,7 +51,7 @@ readouts:
   - label: When
     value: Sept 2026
 
-statement: One line, with *one phrase* in amber.
+statement: Our stranded crew has a broken engine and *400 days* to get back to Earth.
 
 # media (in order)
 #   type:
