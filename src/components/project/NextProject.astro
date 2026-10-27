@@ -30,10 +30,9 @@ const href = `/projects/${next.id}/`;
 		</div>
 		<button class="launch" type="button" data-launch={href} aria-label={`Launch to ${next.data.title}`}>
 			<span class="stand">
-				{/* The rocket and its flame each in their own SVG, so the countdown's flicker (like the shake of
-				    the two together) runs on the compositor */}
+				{/* The rocket; its flame is a layer of its own after the pad (below), so the flicker runs on the
+				    compositor and the flame burns in front of the deck */}
 				<span class="craft">
-					<svg class="rk-flame" viewBox="0 0 100 124" aria-hidden="true"><path class="flame" d={rocket.flame} /></svg>
 					<svg class="rk" viewBox="0 0 100 124" aria-hidden="true"><path class="hull" d={rocket.hull} /></svg>
 				</span>
 				{/* The launchpad, drawn around the rocket's feet (0, 0): a slab deck, a lattice tower on the right
@@ -63,6 +62,9 @@ const href = `/projects/${next.id}/`;
 				</span>
 				<span class="pad-layer" aria-hidden="true">
 					<svg class="part pad-light" viewBox="-42 -40 88 44"><rect class="light-sq" x="26" y="-31.5" width="3" height="3" /></svg>
+				</span>
+				<span class="burn" aria-hidden="true">
+					<svg class="rk-flame" viewBox="0 0 100 124"><path class="flame" d={rocket.flame} /></svg>
 				</span>
 			</span>
 		</button>
@@ -176,8 +178,15 @@ const href = `/projects/${next.id}/`;
 
 	/* The logo rocket at 1.6x (--s scales the rocket and pad together); its engine is dark until the countdown */
 	.craft {
-		position: relative;
 		display: block;
+	}
+
+	/* The flame's layer: over the rocket's box (it shakes with the rocket), in front of the pad */
+	.burn {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: calc(25px * var(--s));
 	}
 
 	.rk {
@@ -192,7 +201,7 @@ const href = `/projects/${next.id}/`;
 		transition: fill 0.15s;
 	}
 
-	/* Over the rocket's box; the flicker pivots on the top middle of the flame (50, 116 in the drawing) */
+	/* The flicker pivots on the top middle of the flame (50, 116 in the drawing) */
 	.rk-flame {
 		position: absolute;
 		top: 0;

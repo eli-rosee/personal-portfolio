@@ -303,7 +303,7 @@ function logoRocketPose(svg: SVGSVGElement, pageUnit: number) {
 // harder each beat; the fuel line drops away at T-2 and the service arms swing away at T-1, the status
 // light flashes each beat and turns green at "Liftoff", and the flight starts right then
 async function countdown(row: HTMLElement, rk: SVGSVGElement) {
-	const craft = row.querySelector<HTMLElement>(".craft")!; // the rocket and its flame
+	const craft = [...row.querySelectorAll<HTMLElement>(".craft, .burn")]; // the rocket, and its flame in front of the pad
 	const flame = row.querySelector<SVGSVGElement>(".rk-flame")!;
 	const label = document.createElement("span");
 	label.className = "countdown";
@@ -321,7 +321,7 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 	const light = row.querySelector<SVGSVGElement>(".pad-light");
 	const k = rk.getBoundingClientRect().width / 25; // the shake grows with the rocket
 	const lifts = [0.2, 0.45, 0.7].map((l) => l * k); // it barely rises before liftoff
-	let shake: Animation | undefined;
+	let shake: Animation[] = [];
 	for (const [i, beat] of ["3", "2", "1"].entries()) {
 		show(`T-${beat}`);
 		flame.style.opacity = String(0.35 + i * 0.3);
@@ -330,14 +330,13 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 		if (beat === "1") row.classList.add("arms-back");
 		const up = lifts[i];
 		// A shake through the beat, mostly sideways, growing a little with each beat. Each beat's shake
-		// replaces the last (stacked transform animations would all fall back to the main thread).
-		const beatShake = craft.animate(
-			Array.from({ length: 16 }, (_, j) => j)
-				.map((j) => ({ transform: `translate(${(j % 2 ? 1 : -1) * (0.35 + i * 0.13) * k}px, ${-up + (j % 3 === 0 ? 0.25 : -0.25) * k}px)` }))
-				.concat({ transform: `translate(0, ${-up}px)` }),
-			{ duration: BEAT, fill: "forwards" },
-		);
-		shake?.cancel();
+		// replaces the last (stacked transform animations would all fall back to the main thread). The rocket
+		// and its flame start together, so they shake as one.
+		const frames = Array.from({ length: 16 }, (_, j) => j)
+			.map((j) => ({ transform: `translate(${(j % 2 ? 1 : -1) * (0.35 + i * 0.13) * k}px, ${-up + (j % 3 === 0 ? 0.25 : -0.25) * k}px)` }))
+			.concat({ transform: `translate(0, ${-up}px)` });
+		const beatShake = craft.map((el) => el.animate(frames, { duration: BEAT, fill: "forwards" }));
+		shake.forEach((a) => a.cancel());
 		shake = beatShake;
 		await wait(BEAT);
 	}
@@ -394,7 +393,7 @@ async function fly(button: HTMLElement) {
 	ship.style.setProperty("--fy", `${target.flame[1]}px`);
 	document.body.append(ship);
 	flicker(ship.querySelector(".ship-flame")!, 120, 45); // the logo's drawing is turned 45°
-	row.querySelector<HTMLElement>(".craft")!.style.visibility = "hidden";
+	row.querySelectorAll<HTMLElement>(".craft, .burn").forEach((el) => (el.style.visibility = "hidden"));
 	row.querySelector<SVGSVGElement>(".rk-flame")!.getAnimations().forEach((a) => a.cancel()); // hidden, so its flicker can stop
 	// The logo's rocket leaves as this one takes off; it's back when the flight docks
 	navRocket.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 250, easing: "ease-in", fill: "forwards" });
