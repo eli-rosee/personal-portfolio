@@ -65,6 +65,7 @@ const { statement, sections } = Astro.props;
 		--takeaway-leading: 1.6;
 		display: grid;
 		grid-template-columns: 13rem minmax(0, 1fr);
+		counter-reset: figure; /* the figures' numbers (FigureRow) */
 		column-gap: 3rem;
 		row-gap: 5rem;
 	}
