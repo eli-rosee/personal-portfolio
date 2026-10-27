@@ -4,6 +4,8 @@
  * carrying a video between its card and the theater. Runs again on the page swapped in after
  * a flight (`root` is the new <main>; `signal` ends this page's window listener when it's swapped out).
  */
+import { attach } from "./clips";
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export function initTheater(root: ParentNode = document, signal?: AbortSignal) {
@@ -82,7 +84,10 @@ export function initTheater(root: ParentNode = document, signal?: AbortSignal) {
 		// Everything in the item loads now (a deck's slides too), so nothing shows up blank
 		pane.querySelectorAll<HTMLImageElement>("img[loading=lazy]").forEach((img) => (img.loading = "eager"));
 		pane.classList.remove("is-paused");
-		pane.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => v.play().catch(() => {}));
+		pane.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => {
+			attach(v);
+			v.play().catch(() => {});
+		});
 		// A video's player comes over from its card at the same moment, paused (▶ Play or a click starts it)
 		const player = playerOf(pane);
 		if (player) {

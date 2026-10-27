@@ -2,7 +2,8 @@
 /*
  * One of a project's files on a screen, filling it: an image (optimized), a GIF, a silent looping clip,
  * or, in a draft, a "no signal" gap naming the file that's still missing.
- * Clips play only while on screen (src/scripts/clips.ts) and hold still with reduced motion.
+ * A clip's file is attached only as it comes near the screen, showing its poster (its first frame) until
+ * then; it plays only while on screen and holds still with reduced motion (src/scripts/clips.ts).
  */
 import { Image } from "astro:assets";
 import type { Asset } from "../../scripts/project-files";
@@ -25,7 +26,21 @@ const style = `object-fit: ${fit}; object-position: ${position}; scale: ${zoom};
 {asset.kind === "gif" && <img class="visual" src={asset.src} alt={alt} loading={eager ? "eager" : "lazy"} decoding="async" style={style} />}
 {
 	asset.kind === "clip" && (
-		<video class="visual" data-clip src={asset.src} muted loop playsinline preload="metadata" aria-label={alt || undefined} style={style} />
+		<video
+			class="visual"
+			data-clip
+			data-src={asset.src}
+			poster={asset.poster?.src}
+			width={asset.width}
+			height={asset.height}
+			muted
+			loop
+			playsinline
+			disablepictureinpicture
+			preload="none"
+			aria-label={alt || undefined}
+			style={style}
+		/>
 	)
 }
 {
