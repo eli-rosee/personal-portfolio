@@ -147,9 +147,9 @@ order
 
 While traveling through the solar system, the engine in a spacecraft sputters out.
 
-Luckily, a asteroid field approaches, and you realize that you can use my spaccraft to hop (scotch) from asteroid to asteroid in order to get back to Earth.
+Luckily, an asteroid field approaches, and you realize that you can use my spacecraft to hop (scotch) from asteroid to asteroid in order to get back to Earth.
 
-Now asteroid hopping is a tricky operation. Missing a jump will send you flying out into deep space, and our rocket has as limited jump window. Attempting to jump outside of this will result in becoming a castaway forever.
+Now asteroid hopping is a tricky operation. Missing a jump will send you flying out into deep space, and our rocket has a limited jump window. Attempting to jump outside of this will result in becoming a castaway forever.
 
 And to top it all off, we only have 400 days (timesteps) of supplies on board (with heavy rationing).
 
