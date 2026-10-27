@@ -130,7 +130,16 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 									return (
 										<button type="button" class="thumb" data-go={p.id} aria-label={p.title}>
 											<Screen plain class="thumb-screen">
-												{t && t.kind === "clip" ? <video src={t.src} muted preload="metadata" /> : t && <Visual asset={t} width={240} />}
+												{/* A clip's thumbnail is its poster (its first frame); without one, the clip itself */}
+												{t && t.kind === "clip" ? (
+													t.poster ? (
+														<Visual asset={{ kind: "image", image: t.poster }} width={240} />
+													) : (
+														<video src={t.src} muted preload="metadata" />
+													)
+												) : (
+													t && <Visual asset={t} width={240} />
+												)}
 											</Screen>
 											<span class="badge label">{typeOf(p)}</span>
 										</button>

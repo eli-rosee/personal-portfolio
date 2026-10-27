@@ -31,12 +31,13 @@ const urls = import.meta.glob<string>("/src/content/projects/*/**/*.{gif,mp4,web
 	import: "default",
 });
 
-// What a file field turns into: an image (optimized by Astro), a GIF or video clip (served as is), any
-// other file by URL, or a gap where a draft's file is still missing
+// What a file field turns into: an image (optimized by Astro), a GIF or video clip (served as is; a clip
+// with its first frame as a poster when `npm run media` has made one), any other file by URL, or a gap
+// where a draft's file is still missing
 export type Asset =
 	| { kind: "image"; image: ImageMetadata }
 	| { kind: "gif"; src: string; width: number; height: number }
-	| { kind: "clip"; src: string; width?: number; height?: number }
+	| { kind: "clip"; src: string; width?: number; height?: number; poster?: ImageMetadata }
 	| { kind: "file"; src: string }
 	| { kind: "missing"; path: string };
 
@@ -74,7 +75,8 @@ function find(project: Project, path: string, where: string, as: "visual" | "ima
 		const head = readFileSync(`.${key}`);
 		return { kind: "gif", src: url!, width: head.readUInt16LE(6), height: head.readUInt16LE(8) };
 	}
-	return { kind: "clip", src: url!, ...videoSize(`.${key}`) };
+	const poster = images[key.replace(/\.\w+$/, ".poster.webp")]?.default;
+	return { kind: "clip", src: url!, ...videoSize(`.${key}`), poster };
 }
 
 /*
