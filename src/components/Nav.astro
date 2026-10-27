@@ -367,12 +367,13 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 		animation: none;
 	}
 
-	nav.scripted .sky .invader .legs-b,
-	nav.scripted .run[data-pose="b"] .legs-a {
+	/* Pose a until the script says b (the pose rules match the same chain, plus the pose, so they win) */
+	nav.scripted .sky .run .invader .legs-b,
+	nav.scripted .sky .run[data-pose="b"] .invader .legs-a {
 		opacity: 0;
 	}
 
-	nav.scripted .run[data-pose="b"] .legs-b {
+	nav.scripted .sky .run[data-pose="b"] .invader .legs-b {
 		opacity: 1;
 	}
 
