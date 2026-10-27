@@ -9,7 +9,7 @@ title: "Satellite Particle Filter"
 number: 1
 status: in-orbit
 summary: A particle filter that finds a lost satellite within 0.01 AU from noisy gravity and light readings.
-stack: [Python, Particle Filters, Bayesian Estimation, Monte Carlo]
+stack: [Python, Particle Filter, State Estimation, Monte Carlo Sampling]
 
 # display (delete for no signal)
 #   fit:
@@ -186,4 +186,4 @@ In the future, I would love to implement a way to **decrease the particle count 
 
 My filter scored 18 out of 20 on the autograder.
 
-**8 of 10 in Part A, and 10/10 in Part B**. Passing required 7 of 10 in each part. Because the filter is random by design, these numbers can vary from run to run.
+**8/10 in Part A, and 10/10 in Part B**. A 100% required 7 of 10 in each part. Because the filter is random by design, these numbers can vary from run to run.
