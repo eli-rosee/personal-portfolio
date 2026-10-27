@@ -75,6 +75,28 @@ const { clip } = Astro.props;
 	const chip = card?.querySelector<HTMLButtonElement>("[data-play]");
 	const chipLabel = chip?.querySelector<HTMLElement>("[data-play-label]");
 
+	// The static's shimmer, as a Web Animation of the same offsets (an endless CSS animation keeps the
+	// page's thread busy every frame); it rests while the card is off screen, and stays still with
+	// reduced motion. Without JavaScript the CSS version plays.
+	const noise = card?.querySelector(".static");
+	const shimmer =
+		noise && !matchMedia("(prefers-reduced-motion: reduce)").matches
+			? noise.animate(
+					[
+						{ translate: "0 0" },
+						{ offset: 0.25, translate: "-37px 23px" },
+						{ offset: 0.5, translate: "51px -44px" },
+						{ offset: 0.75, translate: "-18px 61px" },
+						{ offset: 1, translate: "0 0" },
+					].map((f) => ({ easing: "steps(1)", ...f })),
+					{ duration: 500, iterations: Infinity, pseudoElement: "::before" },
+				)
+			: undefined;
+	if (shimmer) {
+		card!.classList.add("scripted");
+		shimmer.pause(); // until the card is on screen
+	}
+
 	/*
 	 * Player. The clip waits on its poster with a "Play feed" chip. A click anywhere on the card
 	 * (not the SENT tab, which sits outside it) starts it looping silently; another click pauses it
@@ -123,6 +145,8 @@ const { clip } = Astro.props;
 		new IntersectionObserver(
 			([entry]) => {
 				card.classList.toggle("off-screen", !entry.isIntersecting); // the static rests too
+				if (entry.isIntersecting) shimmer?.play();
+				else shimmer?.pause();
 				if (entry.isIntersecting) {
 					if (video.preload === "none") video.preload = "auto"; // a head start on the first click
 					if (wanted && video.paused) video.play().catch(() => {});
@@ -324,6 +348,11 @@ const { clip } = Astro.props;
 
 	:global(.clip-card.off-screen) .static::before {
 		animation-play-state: paused;
+	}
+
+	/* With JavaScript the shimmer is played by the card's script */
+	:global(.clip-card.scripted) .static::before {
+		animation: none;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
