@@ -31,8 +31,8 @@ stack: [Python, Kalman Filter, State Estimation, Gaussian Filtering]
 #     false
 #   zoom: 1 and up
 
-display:
-  image: display.png
+# display:
+#   image: display.png
 
 # code (one or neither)
 #   repo: <url> (default)
