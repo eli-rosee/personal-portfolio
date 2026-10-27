@@ -1,6 +1,6 @@
 /*
  * The starfield's sky (src/components/Starfield.astro): faint stars drifting slowly to the left, drawn
- * 30 times a second. Runs in a worker on an OffscreenCanvas where the browser has one, so the page's
+ * 15 times a second. Runs in a worker on an OffscreenCanvas where the browser has one, so the page's
  * own thread never draws it; otherwise on the page itself. The page says when the canvas resizes and
  * when the drift should run (not while scrolling, during a flight, in a hidden tab or with reduced
  * motion).
@@ -11,7 +11,7 @@ type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 const DENSITY = 1 / 5000; // stars per square CSS pixel
 const MIN_STARS = 150; // small screens would otherwise get only ~70
 const MAX_SPEED = 4; // px per second for the nearest (largest) stars
-const FRAME_MS = 1000 / 30; // the drift is so slow that 30 fps looks the same as 60
+const FRAME_MS = 1000 / 15; // the drift is so slow (a quarter pixel a redraw at most) that 15 fps looks the same as 60
 
 // Workers in some browsers have no requestAnimationFrame: a timer stands in
 const frame = (fn: (now: number) => void): number =>
