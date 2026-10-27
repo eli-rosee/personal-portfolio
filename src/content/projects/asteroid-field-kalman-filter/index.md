@@ -159,11 +159,11 @@ At every timestep, we're given a noisy (x, y) measurement of every asteroid in t
 
 In Part A, our goal was predicting where each asteroid would be one timestep in the future. While it wasn't perfect, my tracking was precise enough given enough time to converge on each asteroid.
 
-![](part_a_success.mp4 "Part A: tracking every asteroid")
+<!--![](part_a_success.mp4 "Part A: tracking every asteroid")-->
 
 In Part B, those predictions were used to **decide which asteroid (if any) to jump to** at each timestep in order to reach home, which is the upper boundary of the window.
 
-![](part_b_success.mp4 "Part B: hopping home")
+<!--![](part_b_success.mp4 "Part B: hopping home")-->
 
 ## The math
 
@@ -206,7 +206,7 @@ Every time the ship got close to home, it would keep jumping between asteroids t
 
 Some runs also failed simply from **running out of supplies before reaching home**. In this run, the algorithm got unlucky with its field of asteroids. They were pretty sparse, and a lot of the ones that fell into the ship's jump window had downward momentum. Despite this, the ship was still making progress, and it most likely would have made it home given a bit more supplies.
 
-![](failed_too_slow.mp4 "A failed run: out of supplies")
+<!--![](failed_too_slow.mp4 "A failed run: out of supplies")-->
 
 ## Results
 
