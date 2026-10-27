@@ -4,8 +4,11 @@
  * stands alone for a beat, then the rocket comes back down and brakes to a landing.
  * With reduced motion the engine just flickers in place.
  *
- * The rocket moves by inline transforms on each animation frame; nothing here touches layout.
+ * The whole flight is worked out ahead, in idle time (again at the click only if the room for it has
+ * changed), and handed to the browser as animations of transform and opacity, so it runs on the
+ * compositor: nothing runs on the page's thread while the rocket flies, and nothing here touches layout.
  */
+import { flicker } from "./flicker";
 
 const MAX_HEIGHT = 245; // px of climb when there's room for it
 const HEADING_CLEARANCE = 26; // px: the rocket's last trace fades out level with the heading's top
@@ -27,6 +30,11 @@ const REDUCED_MOTION_MS = 900;
 const JOLT = 0.61;
 const JOLT_MS = 65;
 const JOLT_FADE = 400;
+// Keyframe spacing: every quarter jolt while the rocket shakes (landing on each jolt's turn, so the shake
+// is exact), every jolt's length on the smooth climb and descent
+const SHAKE_MS = JOLT_MS / 4;
+const SMOOTH_MS = JOLT_MS;
+const whenIdle = (fn: () => void) => ("requestIdleCallback" in window ? requestIdleCallback(fn, { timeout: 3000 }) : setTimeout(fn, 500));
 
 // Pitch in degrees from vertical at progress p: a gravity turn, gradual the whole way up
 const pitch = (p: number) => 45 * p ** 1.5;
@@ -70,7 +78,8 @@ const along = (p: number): [number, number] => {
 };
 
 /**
- * Wires `button` to launch the rocket in `landing` (which holds an svg.rocket with a .flame).
+ * Wires `button` to launch the rocket in `landing` (which holds an svg.rocket, and its flame's layer,
+ * .rocket-flame, over the same box).
  * The climb is scaled to the sky between the landing and `ceiling`, so the rocket is gone by the
  * time it reaches it, and it never crosses any of the `texts` that sit above its flight path.
  */
@@ -80,9 +89,10 @@ export function initLaunch(
 	ceiling: HTMLElement | null,
 	texts: Element[] = [],
 ) {
-	const ship = landing.querySelector<SVGElement>(".rocket");
-	const flame = ship?.querySelector<SVGElement>(".flame");
-	if (!ship || !flame) return;
+	const ship = landing.querySelector<SVGSVGElement>(".rocket");
+	const engine = landing.querySelector<HTMLElement>(".rocket-flame"); // flies with the rocket
+	const flame = engine?.querySelector<SVGSVGElement>("svg"); // glows and flickers inside it
+	if (!ship || !engine || !flame) return;
 
 	let flying = false;
 	let height = MAX_HEIGHT;
@@ -153,30 +163,58 @@ export function initLaunch(
 			const k = (ms / JOLT_MS) % 2; // a triangle wave, one jolt each way
 			x += JOLT * jolt * (k < 1 ? 2 * k - 1 : 3 - 2 * k);
 		}
-		ship.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
-		ship.style.opacity = String(opacity);
-		flame.style.opacity = String(burn);
+		return { transform: `translate(${x}px, ${y}px) rotate(${angle}deg)`, opacity, burn };
 	};
+
+	// Sample times over `ms`: every SHAKE_MS up to `shaking`, every SMOOTH_MS after, plus each `edge` (where
+	// the flight changes phase) and a hair before it, so a jump there (the rocket back at the pad, unseen,
+	// for the descent) stays a jump
+	const times = (ms: number, shaking = ms, edges: number[] = []) => {
+		const at = [...edges.flatMap((e) => [e - 0.01, e]), ms];
+		for (let t = 0; t < ms; t += t < shaking ? SHAKE_MS : SMOOTH_MS) at.push(t);
+		return [...new Set(at)].filter((t) => t >= 0 && t <= ms).sort((a, b) => a - b);
+	};
+
+	// The flight's keyframes for the room measured last: the rocket's (and its flame layer's) path and
+	// fades, and the engine's burn
+	let plan: { height: number; flight: Keyframe[]; burn: Keyframe[] } | undefined;
+	const build = () => {
+		const edges = [IGNITE, IGNITE + climbMs, IGNITE + climbMs + PAUSE, totalMs - SETTLE];
+		const poses = times(totalMs, IGNITE + JOLT_FADE, edges).map((ms) => ({ offset: ms / totalMs, ...pose(ms) }));
+		plan = {
+			height,
+			flight: poses.map(({ offset, transform, opacity }) => ({ offset, transform, opacity })),
+			burn: poses.map(({ offset, burn }) => ({ offset, opacity: burn })),
+		};
+	};
+	// Worked out once the page has settled, so the click has nothing to compute
+	document.fonts.ready.then(() =>
+		whenIdle(() => {
+			measure();
+			build();
+		}),
+	);
 
 	const fly = () => {
 		flying = true;
 		landing.classList.add("flying");
 		const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-		const duration = still ? REDUCED_MOTION_MS : totalMs;
-		const start = performance.now();
-		const tick = (now: number) => {
-			const ms = now - start;
-			if (still) flame.style.opacity = String(0.5 + 0.5 * Math.sin(ms / 40));
-			else pose(Math.min(ms, totalMs));
-			if (ms < duration) {
-				requestAnimationFrame(tick);
-				return;
-			}
-			ship.style.transform = ship.style.opacity = flame.style.opacity = "";
+		const flickering = flicker(flame, 120);
+		let moves: Animation[];
+		if (still) {
+			const at = times(REDUCED_MOTION_MS);
+			moves = [flame.animate(at.map((ms) => ({ offset: ms / REDUCED_MOTION_MS, opacity: 0.5 + 0.5 * Math.sin(ms / 40) })), REDUCED_MOTION_MS)];
+		} else {
+			if (plan?.height !== height) build(); // the room changed since (measured at the click)
+			const { flight, burn } = plan!;
+			// The rocket and its flame's layer start together, so they fly as one
+			moves = [ship.animate(flight, totalMs), engine.animate(flight, totalMs), flame.animate(burn, totalMs)];
+		}
+		Promise.all(moves.map((a) => a.finished)).then(() => {
+			[...moves, flickering].forEach((a) => a.cancel());
 			landing.classList.remove("flying");
 			flying = false;
-		};
-		requestAnimationFrame(tick);
+		});
 	};
 
 	button.addEventListener("click", () => {

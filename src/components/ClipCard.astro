@@ -35,12 +35,13 @@ const { clip } = Astro.props;
 	style="--tab-w: 8.5rem; --tab-h: 1.6rem; --slant: 0.6rem; --cut: 10px; --status-inset: 0.55rem; --screen-cut: 2rem; --bezel-pad: 0.625rem; --screen-tint: rgb(40 70 130 / 0.14); --grade: saturate(0.882353) contrast(0.917431) brightness(0.888889) contrast(1.1); --grade-lit: none"
 >
 	{/* The logo's rocket (geometry from scripts/render-art.py), standing on its fins beside a green
-	    flag: the summit, like SENT. The flame burns only in flight. */}
+	    flag: the summit, like SENT. The flame burns only in flight: a layer of its own over the rocket's
+	    box, flying with it, so its glow and flicker run on the compositor like the flight. */}
 	<div slot="on-top" class="landing" aria-hidden="true">
 		<svg class="rocket" viewBox="0 0 100 124">
-			<path class="flame" d={rocket.flame} />
 			<path class="hull" fill-rule="evenodd" d={rocket.hull} />
 		</svg>
+		<span class="rocket-flame"><svg viewBox="0 0 100 124"><path class="flame" d={rocket.flame} /></svg></span>
 		<svg class="flag" viewBox="0 0 34 60">
 			<line x1="4" y1="60" x2="4" y2="3" />
 			<path d="M5 5 C 12 2, 18 9, 30 5 L 30 21 C 18 25, 12 18, 5 21 Z" />
@@ -243,21 +244,25 @@ const { clip } = Astro.props;
 		fill: #fff;
 	}
 
-	/* The engine (the logo's amber flame): off at rest, lit and flickering while the rocket flies */
-	.rocket .flame {
+	/* The engine (the logo's amber flame): off at rest, lit and flickering while the rocket flies
+	   (launch.ts). Its layer covers the rocket's box and turns about the same point, over the ground
+	   shadow like the flying rocket. The flicker pivots on the top middle of the flame (50, 116 in the
+	   drawing). */
+	.rocket-flame {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		width: 25px;
+		transform-origin: 50% 60%;
+	}
+
+	.rocket-flame svg {
+		display: block;
+		width: 100%;
+		overflow: visible;
 		fill: var(--accent);
 		opacity: 0;
-		transform-origin: 50px 116px;
-	}
-
-	.flying .rocket .flame {
-		animation: flame-flicker 0.12s steps(2) infinite;
-	}
-
-	@keyframes flame-flicker {
-		50% {
-			transform: scaleY(0.8);
-		}
+		transform-origin: 50% calc(116 / 124 * 100%);
 	}
 
 	.flag {
