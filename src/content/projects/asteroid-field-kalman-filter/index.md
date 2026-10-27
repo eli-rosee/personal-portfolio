@@ -5,11 +5,11 @@
 #     in-orbit
 #     decommissioned
 
-title: "asteroid-field-kalman-filter"
+title: "Asteroid Kalman Filter"
 number: 2
-status: liftoff
-summary: One or two sentences.
-stack: [Python, C++]
+status: in-orbit
+summary: A spaceship stranded in an asteroid field needs to localize all asteroids in order to find its way home.
+stack: [Python, Kalman Filter, State Estimation, Gaussian Filtering]
 
 # display (delete for no signal)
 #   fit:
@@ -49,7 +49,7 @@ readouts:
   - label: Team
     value: Solo
   - label: When
-    value: Jan 2026
+    value: Sept 2026
 
 statement: One line, with *one phrase* in amber.
 
@@ -143,6 +143,33 @@ order
   What I'd change · Future work
 -->
 
-## My role
+## The Problem
 
-What I owned, in a sentence or two.
+While traveling through the solar system, the engine in a spacecraft sputters out.
+
+Luckily, a asteroid field approaches, and you realize that you can use my spaccraft to hop (scotch) from asteroid to asteroid in order to get back to Earth.
+
+Now asteroid hopping is a tricky operation. Missing a jump will send you flying out into deep space, and our rocket has as limited jump window. Attempting to jump outside of this will result in becoming a castaway forever.
+
+And to top it all off, we only have 400 days (timesteps) of supplies on board (with heavy rationing).
+
+## Approach
+
+For this problem, we are provided with the asteroids' position (x, y) at every timestep.
+
+These asteroids all have unknown velocities and accelerations associated with them. Using a Kalman Filter for each asteroid, we are able to predict what the most likely velocity and acceleration is for each individual asteroid, and update our belief based on both prediction and measurement.
+
+For Part B, we have to take these measurements,
+
+## The core algorithm
+
+
+## Where I went wrong
+
+Biggest bug was hopping around near the border of the Earth.
+
+## Results
+
+My filter scored 30 out of 32 on the autograder.
+
+**15/15 in Part A, and 15/17 in Part B**. A 100% required 15/15 in Part A, and 15/17 in Part B, which I hit on the nose. These results can differ depending on the specific test suite used.
