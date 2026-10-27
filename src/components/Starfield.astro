@@ -3,8 +3,8 @@
 // Decorative only: without JavaScript or canvas support the sky is just empty.
 // With reduced motion the stars are drawn once and never move.
 // Kept cheap for phones: it's drawn in a worker where the browser allows (OffscreenCanvas), so the
-// page's own thread is free for scrolling and animations; it pauses while the page scrolls and in a
-// hidden tab, redraws 30 times a second, and renders at no more than 2x pixel density.
+// page's own thread is free for scrolling and animations; it pauses while the page scrolls, during a
+// project page's rocket flight (html.in-flight) and in a hidden tab, redraws 30 times a second, and renders at no more than 2x pixel density.
 ---
 
 <canvas class="starfield" aria-hidden="true"></canvas>
@@ -40,7 +40,12 @@
 		let scrolling = false;
 		let scrollTimer = 0;
 		// It drifts unless something says not to
-		const update = () => stars.run(!reducedMotion.matches && !scrolling && !document.hidden);
+		const html = document.documentElement;
+		let running: boolean | undefined;
+		const update = () => {
+			const on = !reducedMotion.matches && !scrolling && !document.hidden && !html.classList.contains("in-flight");
+			if (on !== running) stars.run((running = on));
+		};
 
 		// Nothing redraws behind the page while it's scrolling
 		const onScroll = () => {
@@ -58,6 +63,7 @@
 		new ResizeObserver(() => stars.size(canvas.clientWidth, canvas.clientHeight, Math.min(window.devicePixelRatio || 1, 2))).observe(canvas);
 		reducedMotion.addEventListener("change", update);
 		document.addEventListener("visibilitychange", update);
+		new MutationObserver(update).observe(html, { attributeFilter: ["class"] });
 		addEventListener("scroll", onScroll, { passive: true });
 		update();
 	}
