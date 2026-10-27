@@ -92,10 +92,10 @@ statement: One line, with *one phrase* in amber.
 #       false (default)
 #       true
 
-media:
-  - type: video
-    file: demo.mp4
-    title: Demo
+# media:
+#   - type: video
+#     file: demo.mp4
+#     title: Demo
 
 # draft
 #   delete to publish
