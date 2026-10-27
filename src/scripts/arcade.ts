@@ -264,13 +264,13 @@ export function initArcade(header: HTMLElement) {
 	const finish = () => {
 		phase = "idle";
 		button.classList.remove("playing");
-		const back = (event: AnimationEvent) => {
-			if (event.target !== run || phase !== "idle") return;
+		const back = () => {
+			if (phase !== "idle") return;
 			sky.classList.remove("off");
 			planet.classList.remove("calm");
-			run.removeEventListener("animationiteration", back);
+			run.removeEventListener("pass", back);
 		};
-		run.addEventListener("animationiteration", back);
+		run.addEventListener("pass", back);
 	};
 
 	const start = () => {

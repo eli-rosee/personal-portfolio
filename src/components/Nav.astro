@@ -103,22 +103,9 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 
 <script>
 	import { initArcade } from "../scripts/arcade";
+	import { initSkirmish } from "../scripts/skirmish";
 
-	// The first pass is always the classic crab (set in the markup), so it's recognizable. After that,
-	// a different kind on each pass, never the same one twice in a row. It switches between passes,
-	// while the invader is invisible.
-	const run = document.querySelector<HTMLElement>("[data-run]");
-	if (run) {
-		const aliens = ["squid", "crab", "octopus"];
-		const pick = (last?: string) => {
-			const options = aliens.filter((kind) => kind !== last);
-			return options[Math.floor(Math.random() * options.length)];
-		};
-		run.addEventListener("animationiteration", (event) => {
-			if (event.target === run) run.dataset.kind = pick(run.dataset.kind);
-		});
-	}
-
+	initSkirmish(document.querySelector("header nav")!);
 	initArcade(document.querySelector("header")!);
 
 	// On the home page the logo glides back to the top instead of reloading the page
@@ -370,6 +357,23 @@ const box = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs)
 		50% {
 			opacity: 0;
 		}
+	}
+
+	/* With JavaScript, scripts/skirmish.ts plays these same keyframes one pass at a time, on the compositor,
+	   and swaps the legs by a timer while the invader is on screen; the CSS version stands down */
+	nav.scripted .sky > *,
+	nav.scripted .planet .lit,
+	nav.scripted .sky .invader :is(.legs-a, .legs-b) {
+		animation: none;
+	}
+
+	nav.scripted .sky .invader .legs-b,
+	nav.scripted .run[data-pose="b"] .legs-a {
+		opacity: 0;
+	}
+
+	nav.scripted .run[data-pose="b"] .legs-b {
+		opacity: 1;
 	}
 
 	.planet-btn {
