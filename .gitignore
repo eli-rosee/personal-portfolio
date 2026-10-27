@@ -35,9 +35,3 @@ public/files/
 
 # written by the server (scripts/rebuild.sh); the local copy is a fake for development
 public/assets/status.json
-
-# project videos stay out of the repo: they live in each project's assets/ folder locally and are
-# copied to the server by hand (see PLAN.md)
-src/content/projects/*/assets/**/*.mp4
-src/content/projects/*/assets/**/*.webm
-src/content/projects/*/assets/**/*.mov
