@@ -180,8 +180,6 @@ function drawPath(row: HTMLElement, phrase: HTMLElement) {
 	svg.classList.add("drawn");
 }
 
-// The next page, made ready before it's shown: its <main> parsed, any styles it needs added, laid out
-// out of sight over the current one, and its images decoded, so the crossfade itself is only opacity
 // The next page's HTML, fetched and parsed ahead (the parse is the slowest part, and on a phone it froze
 // the countdown): as the end of the page comes into view, in idle time
 const parsed = new Map<string, Promise<Document>>();
@@ -198,11 +196,19 @@ const load = (url: string) => {
 };
 const whenIdle = (fn: () => void) => ("requestIdleCallback" in window ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 200));
 
-async function prepare(url: string) {
+// The next page, made ready before it's shown: its <main> with any styles it needs, laid out out of sight
+// over this one, sized, and its first screen's images decoded, so the crossfade itself is only opacity.
+// Laying a whole page out is the slow part (a long task on a phone), so it's staged ahead, in idle time
+// once the HTML is in: hidden, inert, and clipped to no height so it adds no room to scroll into.
+type Staged = { incoming: HTMLElement; title: string };
+const staged = new Map<string, Promise<Staged>>();
+const place = (incoming: HTMLElement, old: HTMLElement) => {
+	const r = old.getBoundingClientRect();
+	Object.assign(incoming.style, { top: `${r.top + scrollY}px`, left: `${r.left}px`, width: `${r.width}px` });
+};
+
+async function build(url: string): Promise<Staged> {
 	const doc = await load(url);
-	// After the countdown's first frame: T-3 is up and the shake (on the compositor) carries on through
-	// the work below, instead of everything waiting for it
-	await new Promise((r) => requestAnimationFrame(() => setTimeout(r)));
 	const have = new Set([...document.querySelectorAll("style[data-vite-dev-id]")].map((s) => s.getAttribute("data-vite-dev-id")));
 	doc.querySelectorAll("style[data-vite-dev-id]").forEach((s) => {
 		if (!have.has(s.getAttribute("data-vite-dev-id"))) document.head.append(s.cloneNode(true));
@@ -213,18 +219,18 @@ async function prepare(url: string) {
 	});
 	const old = document.querySelector("main")!;
 	const incoming = document.importNode(doc.querySelector("main")!, true);
-	const r = old.getBoundingClientRect();
 	Object.assign(incoming.style, {
 		position: "absolute",
-		top: `${r.top + scrollY}px`,
-		left: `${r.left}px`,
-		width: `${r.width}px`,
 		margin: "0",
+		height: "0",
+		overflow: "clip",
+		visibility: "hidden",
 		opacity: "0",
 		pointerEvents: "none",
-		willChange: "opacity",
 		zIndex: "1",
 	});
+	incoming.inert = true;
+	place(incoming, old);
 	old.after(incoming);
 	// Only what's on its first screen is seen during the crossfade; the rest loads as it normally would
 	const fold = incoming.getBoundingClientRect().top + innerHeight;
@@ -233,8 +239,30 @@ async function prepare(url: string) {
 	// Sized now (its summary and buttons fit to the card), so it fades in as it will stay
 	document.dispatchEvent(new CustomEvent("project:prepare", { detail: incoming }));
 	await Promise.all(seen.map((i) => i.decode().catch(() => {})));
+	return { incoming, title: doc.title };
+}
+
+const stage = (url: string) => {
+	let next = staged.get(url);
+	if (!next) {
+		next = build(url);
+		next.catch(() => staged.delete(url)); // tried again at the click
+		staged.set(url, next);
+	}
+	return next;
+};
+
+// At the click: the staged page (or, if it isn't staged yet, the same work now, after the countdown's
+// first frame so T-3 is up and the shake carries on through it), shown under the current one at opacity 0
+async function prepare(url: string) {
+	if (!staged.has(url)) await new Promise((r) => requestAnimationFrame(() => setTimeout(r)));
+	const { incoming, title } = await stage(url);
+	staged.delete(url); // used up: a flight from the page it becomes stages its own
+	const old = document.querySelector("main")!;
+	place(incoming, old); // the window may have changed since
+	Object.assign(incoming.style, { height: "", overflow: "", visibility: "", willChange: "opacity" });
 	await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); // the sizing's first pass
-	return { old, incoming, title: doc.title };
+	return { old, incoming, title };
 }
 
 // Where the logo's rocket is, and how big: the same drawing in an SVG whose viewBox is the turned
@@ -426,21 +454,27 @@ async function fly(button: HTMLElement) {
 	}
 	const { old, incoming, title } = next;
 	old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 550, easing: "ease-in", fill: "forwards" });
-	await incoming.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 700, easing: "ease-out", fill: "forwards" }).finished;
-	old.remove();
-	incoming.getAnimations().forEach((a) => a.cancel());
-	incoming.removeAttribute("style");
-	document.title = title;
-	history.pushState(null, "", url);
-	shownPath = location.pathname;
-	document.dispatchEvent(new CustomEvent("project:swap", { detail: incoming }));
+	incoming.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 700, easing: "ease-out", fill: "forwards" });
 
 	await flight.finished;
 	canvas.remove();
 	// At the dock the logo's own rocket takes the ship's place, in the same pose
 	navRocket.getAnimations().forEach((a) => a.cancel());
 	ship.remove();
+
+	// Then, with nothing left moving, the new page takes the old one's place (the same spot, so nothing
+	// shifts; a whole page's layout is a long task on a phone, kept out of the flight), and its scripts
+	// are wired up when the browser is next idle
+	await new Promise((r) => setTimeout(r));
+	old.remove();
+	incoming.getAnimations().forEach((a) => a.cancel());
+	incoming.removeAttribute("style");
+	incoming.inert = false;
+	document.title = title;
+	history.pushState(null, "", url);
+	shownPath = location.pathname;
 	html.classList.remove("in-flight");
+	whenIdle(() => document.dispatchEvent(new CustomEvent("project:swap", { detail: incoming })));
 }
 
 // Wires the launch buttons and the flight path in `root` (the page, or a swapped-in <main>); `signal`
@@ -460,7 +494,8 @@ export function initFlight(root: ParentNode = document, signal?: AbortSignal) {
 			([entry]) => {
 				if (!entry.isIntersecting) return;
 				ahead.disconnect();
-				whenIdle(() => load(button.dataset.launch!).catch(() => {}));
+				const url = button.dataset.launch!;
+				whenIdle(() => load(url).then(() => whenIdle(() => !signal?.aborted && stage(url).catch(() => {})), () => {}));
 			},
 			{ rootMargin: "800px" },
 		);
