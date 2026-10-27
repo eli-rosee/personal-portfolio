@@ -279,6 +279,7 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 	const light = row.querySelector<SVGElement>(".light-sq");
 	const k = rk.getBoundingClientRect().width / 25; // the shake grows with the rocket
 	const lifts = [0.2, 0.45, 0.7].map((l) => l * k); // it barely rises before liftoff
+	let shake: Animation | undefined;
 	for (const [i, beat] of ["3", "2", "1"].entries()) {
 		show(`T-${beat}`);
 		flame.style.opacity = String(0.35 + i * 0.3);
@@ -287,13 +288,16 @@ async function countdown(row: HTMLElement, rk: SVGSVGElement) {
 		if (beat === "1") row.classList.add("arms-back");
 		const up = lifts[i];
 		// A shake through the beat, mostly sideways, growing a little with each beat. A transform, not
-		// `translate`: on an <svg> only a transform runs off the main thread
-		rk.animate(
+		// `translate`: on an <svg> only a transform runs off the main thread. Each beat's shake replaces the
+		// last (stacked transform animations would all fall back to the main thread).
+		const beatShake = rk.animate(
 			Array.from({ length: 16 }, (_, j) => j)
 				.map((j) => ({ transform: `translate(${(j % 2 ? 1 : -1) * (0.35 + i * 0.13) * k}px, ${-up + (j % 3 === 0 ? 0.25 : -0.25) * k}px)` }))
 				.concat({ transform: `translate(0, ${-up}px)` }),
 			{ duration: BEAT, fill: "forwards" },
 		);
+		shake?.cancel();
+		shake = beatShake;
 		await wait(BEAT);
 	}
 	show("Liftoff");
