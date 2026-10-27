@@ -120,15 +120,21 @@ export function initArcade(header: HTMLElement) {
 		tip = null;
 	};
 
-	// Words across the bar, between the logo and the planet
+	// Words across the bar, between the logo and the planet. Only the words fade: their box, the bar's own
+	// color, stays solid (a fading box of the same color showed its edges in Chrome)
 	const banner = (text: string, tone: "text" | "accent", ms: number) => {
 		const { mid, y } = lane();
 		const el = document.createElement("span");
 		el.className = `banner ${tone}`;
-		el.textContent = text;
-		el.style.translate = `${mid}px ${y}px`;
+		const words = document.createElement("span");
+		words.textContent = text;
+		el.append(words);
 		fx.append(el);
-		el.animate([{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 1, offset: 0.9 }, { opacity: 0 }], { duration: ms }).onfinish = () => el.remove();
+		// Centered there, its edges on whole device pixels (a box straddling pixels showed a faint rim)
+		const snap = (v: number) => Math.round(v * devicePixelRatio) / devicePixelRatio;
+		el.style.transform = "none";
+		el.style.translate = `${snap(mid - el.offsetWidth / 2)}px ${snap(y - el.offsetHeight / 2)}px`;
+		words.animate([{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 1, offset: 0.9 }, { opacity: 0 }], { duration: ms }).onfinish = () => el.remove();
 	};
 
 	const fire = () => {
