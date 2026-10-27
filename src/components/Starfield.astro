@@ -1,118 +1,65 @@
 ---
-// Faint stars fixed behind the whole page, drifting slowly to the left.
+// Faint stars fixed behind the whole page, drifting slowly to the left (src/scripts/sky.ts).
 // Decorative only: without JavaScript or canvas support the sky is just empty.
 // With reduced motion the stars are drawn once and never move.
-// Kept cheap for phones, where repainting a full-screen canvas behind the page made scrolling
-// stutter: it pauses while the page scrolls, redraws 30 times a second (and only asks the browser
-// for those frames, so it isn't woken 60 times a second), and renders at no more than 2x pixel
-// density (the stars are smaller than a pixel, so more buys nothing).
+// Kept cheap for phones: it's drawn in a worker where the browser allows (OffscreenCanvas), so the
+// page's own thread is free for scrolling and animations; it pauses while the page scrolls and in a
+// hidden tab, redraws 30 times a second, and renders at no more than 2x pixel density.
 ---
 
 <canvas class="starfield" aria-hidden="true"></canvas>
 
 <script>
+	import { sky, type Sky } from "../scripts/sky";
+	import SkyWorker from "../scripts/sky-worker?worker";
+
 	const canvas = document.querySelector<HTMLCanvasElement>(".starfield");
-	const ctx = canvas?.getContext("2d");
-
-	type Star = { x: number; y: number; r: number; alpha: number; speed: number };
-
-	const DENSITY = 1 / 5000; // stars per square CSS pixel
-	const MIN_STARS = 150; // small screens would otherwise get only ~70
-	const MAX_SPEED = 4; // px per second for the nearest (largest) stars
-	const FRAME_MS = 1000 / 30; // the drift is so slow that 30 fps looks the same as 60
 	const SCROLL_REST_MS = 200; // resume this long after the last scroll event
 
-	if (!canvas || !ctx) {
+	// The sky, in a worker (it gets the canvas) or on the page (it gets the canvas's context)
+	const open = (canvas: HTMLCanvasElement): Sky | undefined => {
+		const color = getComputedStyle(canvas).getPropertyValue("--text");
+		if ("transferControlToOffscreen" in canvas && typeof Worker === "function") {
+			const offscreen = canvas.transferControlToOffscreen();
+			const worker = new SkyWorker();
+			worker.postMessage({ canvas: offscreen, color }, [offscreen]);
+			return {
+				size: (w, h, dpr) => worker.postMessage({ size: [w, h, dpr] }),
+				run: (on) => worker.postMessage({ run: on }),
+			};
+		}
+		const ctx = canvas.getContext("2d");
+		return ctx ? sky(ctx, color) : undefined;
+	};
+
+	const stars = canvas && open(canvas);
+	if (!canvas || !stars) {
 		canvas?.remove();
 	} else {
 		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-		const starColor = getComputedStyle(canvas).getPropertyValue("--text");
-		let stars: Star[] = [];
-		let width = 0;
-		let height = 0;
-		let frame = 0;
-		let wake = 0;
-		let last = 0;
+		let scrolling = false;
 		let scrollTimer = 0;
-
-		// Bigger stars are brighter and drift faster, a cheap parallax effect
-		const makeStar = (x: number): Star => {
-			const depth = Math.random() ** 2; // most stars are small and far away
-			return {
-				x,
-				y: Math.random() * height,
-				r: 0.3 + depth * 0.9,
-				alpha: 0.2 + depth * 0.5,
-				speed: MAX_SPEED * (0.15 + depth * 0.85),
-			};
-		};
-
-		const resize = () => {
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			width = canvas.clientWidth;
-			height = canvas.clientHeight;
-			if (width === canvas.width / dpr && height === canvas.height / dpr) return;
-			canvas.width = Math.round(width * dpr);
-			canvas.height = Math.round(height * dpr);
-			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-			const count = Math.max(MIN_STARS, Math.round(width * height * DENSITY));
-			stars = Array.from({ length: count }, () => makeStar(Math.random() * width));
-			draw();
-		};
-
-		const draw = () => {
-			ctx.clearRect(0, 0, width, height);
-			ctx.fillStyle = starColor;
-			for (const star of stars) {
-				ctx.globalAlpha = star.alpha;
-				ctx.beginPath();
-				ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
-				ctx.fill();
-			}
-		};
-
-		// The next frame is asked for just before it's due (the browser's frame after the timer)
-		const next = () => {
-			wake = window.setTimeout(() => (frame = requestAnimationFrame(tick)), FRAME_MS - 4);
-		};
-
-		const stop = () => {
-			clearTimeout(wake);
-			cancelAnimationFrame(frame);
-		};
-
-		const tick = (now: number) => {
-			const dt = Math.min((now - last) / 1000, 0.1); // cap the jump after a long pause
-			last = now;
-			for (const star of stars) {
-				star.x -= star.speed * dt;
-				// A star leaving on the left is replaced by a new one on the right
-				if (star.x < -star.r) Object.assign(star, makeStar(width + star.r));
-			}
-			draw();
-			next();
-		};
-
-		const start = () => {
-			stop();
-			if (!reducedMotion.matches) {
-				last = performance.now();
-				next();
-			}
-		};
+		// It drifts unless something says not to
+		const update = () => stars.run(!reducedMotion.matches && !scrolling && !document.hidden);
 
 		// Nothing redraws behind the page while it's scrolling
 		const onScroll = () => {
-			stop();
+			if (!scrolling) {
+				scrolling = true;
+				update();
+			}
 			clearTimeout(scrollTimer);
-			scrollTimer = window.setTimeout(start, SCROLL_REST_MS);
+			scrollTimer = window.setTimeout(() => {
+				scrolling = false;
+				update();
+			}, SCROLL_REST_MS);
 		};
 
-		new ResizeObserver(resize).observe(canvas);
-		reducedMotion.addEventListener("change", start);
+		new ResizeObserver(() => stars.size(canvas.clientWidth, canvas.clientHeight, Math.min(window.devicePixelRatio || 1, 2))).observe(canvas);
+		reducedMotion.addEventListener("change", update);
+		document.addEventListener("visibilitychange", update);
 		addEventListener("scroll", onScroll, { passive: true });
-		start(); // the browser pauses the animation in background tabs
+		update();
 	}
 </script>
 
