@@ -100,7 +100,7 @@ media:
 # draft
 #   delete to publish
 
-draft: true
+draft: false
 ---
 
 <!--
