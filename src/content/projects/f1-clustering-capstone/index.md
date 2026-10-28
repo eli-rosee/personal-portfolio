@@ -95,30 +95,26 @@ media:
     href: https://f1.elirose.dev
     live: true
     title: Live site
-  # Needs teammates' OK (and GM's) before going public
   # - type: video
   #   file: demo.mp4
   #   title: Demo
-  # - type: image
-  #   file: Project_Poster.jpg
-  #   fit: whole
-  #   title: Poster
-  # - type: link
-  #   href: https://youtu.be/OCAGYdfFWjQ
-  #   label: YouTube
-  #   title: Final presentation
   - type: slides
     folder: slides/
     pdf: Final_Slides.pdf
     title: Final slides
+  - type: image
+    file: Project_Poster.jpg
+    crop: top
+    zoom: 1.0
+    title: Poster
+  - type: link
+    href: https://youtu.be/OCAGYdfFWjQ
+    label: YouTube
+    title: Final presentation
   - type: link
     file: Final_Report.pdf
     label: PDF
     title: Final report
-  - type: link
-    file: Project_Poster.jpg
-    label: Image
-    title: Poster
 
 # draft
 #   delete to publish
