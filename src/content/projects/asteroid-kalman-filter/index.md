@@ -8,7 +8,7 @@
 title: "Asteroid Kalman Filter"
 number: 2
 status: in-orbit
-summary: A spaceship stranded in an asteroid field needs to localize all asteroids in order to find its way home.
+summary: A Kalman filter for every asteroid, predicting where each one moves next so a stranded ship can hop-scotch home.
 stack: [Python, Kalman Filter, State Estimation, Gaussian Filtering]
 
 # display (delete for no signal)
@@ -132,41 +132,43 @@ statement: Our stranded crew has a broken engine and *400 days* to get back to E
 
 ## The problem
 
-While traveling through the solar system, the engine in our spacecraft sputters out.
+While traveling through the solar system, the engine in our ship sputters out.
 
-Luckily, an asteroid field is approaching, and we realize the spacecraft can hop (scotch) from asteroid to asteroid to get back to Earth. Asteroid hopping is a tricky operation, though. Missing a jump will send us flying out into deep space, and the rocket has a limited jump window. **Attempting a jump outside of it means becoming a castaway forever.**
+Luckily, an asteroid field is approaching, and we realize the ship can hop-scotch from asteroid to asteroid to get back to Earth, at the top edge of the field. Asteroid hopping is a tricky operation, though. The ship can only jump so far, and **a jump out of range sends us flying into deep space, castaways forever.** Even a good jump isn't safe. If the asteroid we land on drifts out of the field, we suffer the same fate.
 
-To top it all off, we only have **400 days (timesteps) of supplies**.
+To top it all off, we only have **400 days of supplies**.
 
 ## Approach
 
-The approach I implemented was a Kalman filter, one for every asteroid.
+I gave every asteroid its own Kalman filter.
 
 At every timestep, we're given a noisy (x, y) measurement of every asteroid in the field. Each asteroid also has an unknown velocity and acceleration that the measurements never tell us directly. A Kalman filter is uniquely equipped for this job, as it can **estimate those hidden values from position alone**, while deciding how much to trust its own prediction versus each new noisy measurement.
 
-In Part A, our goal was predicting where each asteroid would be one timestep in the future. While it wasn't perfect, my tracking was precise enough given enough time to converge on each asteroid.
+A particle filter could do this too, but it would be overkill. There's only ever **one likely position to track**, as we are provided the measurements (however nosiy) at every timestep. A Kalman filter follows it with a single estimate and its uncertainty, where a particle filter would need thousands of particles to do the same.
+
+In Part A, our goal was predicting where each asteroid would be one timestep in the future. Each filter needs a few timesteps to converge, then its predictions stay roughly within the match range.
 
 ![](part_a_success.mp4 "Part A: tracking every asteroid")
 
-In Part B, those predictions were used to **decide which asteroid (if any) to jump to** at each timestep in order to reach home, which is the upper boundary of the window.
+In Part B, those predictions were used to **decide which asteroid (if any) to jump to** at each timestep in order to reach Earth at the top of the field.
 
 ![](part_b_success.mp4 "Part B: hopping home")
 
 ## The math
 
-The Kalman Filter's magic can be broken down into just a few simple Linear Algebra equations.
+The whole filter comes down to a few lines of linear algebra.
 
-Each asteroid's state is its position, velocity, and acceleration in both axes:
+Each asteroid's state is its position, velocity, and acceleration in each axis:
 
 ```math
-x = [x, y, v_x, v_y, a_x, a_y]ᵀ
+x = [x, v_x, a_x, y, v_y, a_y]ᵀ
 ```
 
 Movement follows constant-acceleration kinematics (**x + vΔt + ½aΔt²**), which gets packed into a state transition matrix **F**. Since we only ever measure position, the measurement matrix **H** just pulls x and y out of the state.
 
 ```math
 Predict:  x = F x
-          P = F P Fᵀ + Q
+          P = F P Fᵀ
 
 Update:   y = z − H x
           S = H P Hᵀ + R
@@ -175,25 +177,22 @@ Update:   y = z − H x
           P = (I − K H) P
 ```
 
-**P** is our uncertainty, **Q** is the process noise, and **R** is the measurement noise. The Kalman gain **K** is how weighting gets decided. When we're uncertain in our state estimate, it values the measurement higher, and when we're confident, it values the prediction.
+**P** is our uncertainty, starting with a variance of 0.5 on every value. There's no process noise term (**Q**). **R** is the measurement noise, which has unknown values. After tuning, I landed on a standard deviation of 0.035 in x and 0.055 in y. The Kalman gain **K** is how weighting gets decided. When we're uncertain in our state estimate, it values the measurement higher, and when we're confident, it values the prediction.
 
 ## The core algorithm
 
-Before the first timestep, every asteroid is initialized with its own Kalman filter.
+Each asteroid's filter is set up once, then every timestep runs the same steps:
 
-This was set to the (x, y) of its first measurement with velocity and acceleration at 0. The filter converges closer to the actual values after several timesteps.
-
-Every timestep, the following steps were taken:
-
-1. **Update:** Each asteroid's measurement is used to update its filter's belief. Because the measurement is noisy, we can't fully trust it, but we can't fully trust our prediction either. That's where Kalman Gain is used.
+0. **Initialize:** Each new asteroid gets its own filter, set to its first (x, y) measurement with velocity and acceleration at 0. The filter converges on the real values over the next several timesteps.
+1. **Update:** Each asteroid's measurement is used to update its filter's belief. Because the measurement is noisy, we can't fully trust it, but we can't fully trust our prediction either. That's where the Kalman gain is used.
 2. **Predict:** Each asteroid is predicted exactly one timestep into the future.
-3. **Jump (Part B only):** The ship chooses the asteroid predicted to be closest to the top-middle point 5 timesteps from now, as long as it's within a certain level of padding from the boundaries.
+3. **Jump (Part B only):** Of the asteroids in jump range, the ship chooses the one predicted to be closest to the top-middle point 5 timesteps from now. The algorithm skips any too close to the field's edges to prevent the asteroid we're riding from carrying us out of bounds.
 
 ## Where I went wrong
 
-My biggest bug was **hopping around just short of the finish line**.
+My biggest bug was hopping around just short of the finish line.
 
-Every time the ship got close to home, it would keep jumping between asteroids that were closer to the top-middle point in 5 timesteps, but it would never actually want to cross the finish line. To fix this, I used a **moving finish line**. Once the ship got close enough, the goal target was then set past the boundary, so crossing it became the best option.
+Every time the ship got close to home, it would keep jumping between asteroids that were closer to the top-middle point in 5 timesteps, but it would never actually want to cross the finish line. To fix this, I used a **moving finish line**. Once the ship got close enough, the target moved past the boundary, so crossing it became the best option.
 
 Some runs also failed simply from **running out of supplies before reaching home**. In this run, the algorithm got unlucky with its field of asteroids. They were pretty sparse, and a lot of the ones that fell into the ship's jump window had downward momentum. Despite this, the ship was still making progress, and it most likely would have made it home given a bit more supplies.
 
@@ -201,6 +200,6 @@ Some runs also failed simply from **running out of supplies before reaching home
 
 ## Results
 
-My filter scored 30 out of 32 on the autograder.
+My filters scored 30 out of 32, full marks.
 
-**15/15 in Part A, and 15/17 in Part B**. A 100% required 15/15 in Part A and 15/17 in Part B, which I hit on the nose. These results can differ depending on the specific test suite used.
+**15/15 in Part A, and 15/17 in Part B.** A 100% required 15/15 in Part A and 15/17 in Part B, which I hit on the nose. These results can differ depending on the specific test suite used.
