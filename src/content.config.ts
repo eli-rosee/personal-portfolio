@@ -110,7 +110,7 @@ const projects = defineCollection({
 						// a folder of slide images, in file-name order, and the deck as a PDF to download
 						z.object({ type: z.literal("slides"), folder: file, pdf: file.optional(), effects, ...card }),
 						// a web page (href) or a file (a PDF report): a bar under the cards that opens a new tab;
-						// live: the project running somewhere, first, with a green Live light and its own button
+						// live: the project running somewhere, shown only as the hero's Live site button
 						z.object({
 							type: z.literal("link"),
 							href: z.url().optional(),

@@ -233,7 +233,7 @@ export type MediaItem = {
 	| { type: "clip"; asset: Asset; shape: "landscape" | "portrait"; effects: boolean }
 	| { type: "video"; asset: Asset; poster?: Asset; sound: boolean; effects: boolean }
 	| { type: "slides"; slides: Asset[]; pdf?: Asset; effects: boolean }
-	| { type: "link"; href?: string; live: boolean; address?: string }
+	| { type: "link"; href?: string; live: boolean }
 );
 
 export function media(project: Project): MediaItem[] {
@@ -293,11 +293,9 @@ export function media(project: Project): MediaItem[] {
 				return {
 					...base,
 					type: "link",
-					tab: m.label ?? (m.live ? "Live" : m.file ? m.file.split(".").pop()!.toUpperCase() : "Link"),
+					tab: m.label ?? (m.file ? m.file.split(".").pop()!.toUpperCase() : "Link"),
 					href: m.href ?? (file?.kind === "file" ? file.src : undefined),
 					live: m.live,
-					// A live site's address, beside its title: lander.example.dev/sim
-					address: m.live && m.href ? m.href.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "") : undefined,
 				};
 			}
 		}

@@ -4,8 +4,7 @@
  * or clip card with `shape: portrait` is one column wide and two rows tall, packed in beside others). The
  * screens show the media as it is unless `effects: true` (the grade and glass). A video plays on its card (its bar's bracket icon
  * opens the theater); images, clips and slides open in the theater. Links are bars under the cards, all one
- * height, each opening a new tab (a report, a paper); a live site comes first, the same but for a green
- * Live light in its tag and its address beside the title (it's also a button in the hero).
+ * height, each opening a new tab (a report, a paper). A live site is left out: it's a button in the hero.
  */
 import ConsoleCard from "../ConsoleCard.astro";
 import SectionHeading from "../SectionHeading.astro";
@@ -20,12 +19,12 @@ interface Props {
 
 const { items } = Astro.props;
 const cards = items.flatMap((it) => (it.type === "link" ? [] : [it]));
-const rows = items.flatMap((it) => (it.type === "link" ? [it] : [])).sort((a, b) => Number(b.live) - Number(a.live));
+const rows = items.flatMap((it) => (it.type === "link" && !it.live ? [it] : []));
 const slideCount = (n: number) => String(n).padStart(2, "0");
 ---
 
 {
-	items.length > 0 && (
+	(cards.length > 0 || rows.length > 0) && (
 		<section class="media" aria-labelledby="media-heading">
 			<SectionHeading id="media-heading" text="Media" />
 			{cards.length > 0 && (
@@ -69,15 +68,9 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 				<ul class="rows">
 					{rows.map((it) => (
 						<li>
-							<a href={it.href} target="_blank" rel="noopener" class:list={{ missing: !it.href, live: it.live }}>
-								<span class="tag label">
-									{it.live && <span class="light" aria-hidden="true" />}
-									{it.tab}
-								</span>
-								<span class="name">
-									{it.title}
-									{it.address && <span class="address">{it.address}</span>}
-								</span>
+							<a href={it.href} target="_blank" rel="noopener" class:list={{ missing: !it.href }}>
+								<span class="tag label">{it.tab}</span>
+								<span class="name">{it.title}</span>
 								<span class="go label">
 									{it.href ? (
 										<>
@@ -200,25 +193,6 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 		border: 1px solid var(--border);
 	}
 
-	/* A live site: the same bar, with a green light in its tag (the status color, kept for "live") */
-	.live .tag {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		border-color: color-mix(in srgb, var(--status) 45%, transparent);
-		color: var(--status);
-	}
-
-	/* Hidden on phones, where the bar is too narrow for it */
-	.address {
-		margin-left: 1.25rem;
-		color: var(--muted);
-		font-family: var(--font-body);
-		font-size: 0.8125rem;
-		letter-spacing: 0;
-		text-transform: none;
-	}
-
 	.name {
 		font-family: var(--font-label);
 		font-size: var(--text-sm);
@@ -235,10 +209,6 @@ const slideCount = (n: number) => String(n).padStart(2, "0");
 		.rows a {
 			gap: 1rem;
 			padding-inline: 1rem;
-		}
-
-		.address {
-			display: none;
 		}
 
 

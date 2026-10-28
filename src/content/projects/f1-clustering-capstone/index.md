@@ -8,7 +8,7 @@
 title: "F1 Clustering Capstone"
 number: 1
 status: in-orbit
-summary: A dashboard that clusters Formula 1 telemetry into driving styles.
+summary: A 1st-place capstone for GM Motorsports that clusters Formula 1 telemetry into driving styles.
 stack: [Python, Clustering, K-means, Data Processing]
 
 # display (delete for no signal)
@@ -31,8 +31,8 @@ stack: [Python, Clustering, K-means, Data Processing]
 #     false
 #   zoom: 1 and up
 
-# display:
-#   image: display.png
+display:
+  image: project_image.png
 
 # code (one or neither)
 #   repo: <url> (default)
@@ -103,18 +103,22 @@ media:
   #   file: Project_Poster.jpg
   #   fit: whole
   #   title: Poster
-  # - type: slides
-  #   folder: slides/
-  #   pdf: Final_Slides.pdf
-  #   title: Final slides
   # - type: link
   #   href: https://youtu.be/OCAGYdfFWjQ
   #   label: YouTube
   #   title: Final presentation
-  # - type: link
-  #   file: Final_Report.pdf
-  #   label: PDF
-  #   title: Final report
+  - type: slides
+    folder: slides/
+    pdf: Final_Slides.pdf
+    title: Final slides
+  - type: link
+    file: Final_Report.pdf
+    label: PDF
+    title: Final report
+  - type: link
+    file: Project_Poster.jpg
+    label: Image
+    title: Poster
 
 # draft
 #   delete to publish
