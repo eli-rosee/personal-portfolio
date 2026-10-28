@@ -44,8 +44,8 @@ repo: https://github.com/eli-rosee/asteroid-field-kalman-filter
 #   note
 
 readouts:
-  - label: My role
-    value: Role
+  - label: OMSCS Course Project
+    value: 'Robotics: AI Techniques'
   - label: Team
     value: Solo
   - label: When
@@ -117,6 +117,9 @@ write-up (files go in assets/)
   ![alt](file "caption") on its own line
     2–3 in a row sit side by side
     {effects=true} right after it adds the image effects
+  ```math … ``` = equations, one a line
+    Label:  x = F x    (note)
+    v_x  F^T  S^{-1}
 
 writing
   4–5 sections, 80–200 words each, 400–750 in all
@@ -171,18 +174,22 @@ The Kalman Filter's magic can be broken down into just a few simple Linear Algeb
 
 Each asteroid's state is its position, velocity, and acceleration in both axes:
 
-    x = [x, y, vx, vy, ax, ay]ᵀ
+```math
+x = [x, y, v_x, v_y, a_x, a_y]ᵀ
+```
 
-Movement follows constant-acceleration kinematics (x + vΔt + ½aΔt²), which gets packed into a state transition matrix **F**. Since we only ever measure position, the measurement matrix **H** just pulls x and y out of the state.
+Movement follows constant-acceleration kinematics (**x + vΔt + ½aΔt²**), which gets packed into a state transition matrix **F**. Since we only ever measure position, the measurement matrix **H** just pulls x and y out of the state.
 
-    Predict:  x = F x
-              P = F P Fᵀ + Q
+```math
+Predict:  x = F x
+          P = F P Fᵀ + Q
 
-    Update:   y = z − H x          (how far off the prediction was)
-              S = H P Hᵀ + R
-              K = P Hᵀ S⁻¹         (Kalman gain)
-              x = x + K y
-              P = (I − K H) P
+Update:   y = z − H x
+          S = H P Hᵀ + R
+          K = P Hᵀ S⁻¹
+          x = x + K y
+          P = (I − K H) P
+```
 
 **P** is our uncertainty, **Q** is the process noise, and **R** is the measurement noise. The Kalman gain **K** is how weighting gets decided. When we're uncertain in our state estimate, it values the measurement higher, and when we're confident, it values the prediction.
 

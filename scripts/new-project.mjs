@@ -150,6 +150,9 @@ write-up (files go in assets/)
   ![alt](file "caption") on its own line
     2–3 in a row sit side by side
     {effects=true} right after it adds the image effects
+  \`\`\`math … \`\`\` = equations, one a line
+    Label:  x = F x    (note)
+    v_x  F^T  S^{-1}
 
 writing
   4–5 sections, 80–200 words each, 400–750 in all
