@@ -6,7 +6,7 @@
 #     decommissioned
 
 title: "Asteroid Kalman Filter"
-number: 2
+number: 3
 status: in-orbit
 summary: A Kalman filter for every asteroid, predicting where each one moves next so a stranded ship can hop-scotch home.
 stack: [Python, Kalman Filter, State Estimation, Gaussian Filtering]

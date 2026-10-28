@@ -6,7 +6,7 @@
 #     decommissioned
 
 title: "Satellite Particle Filter"
-number: 1
+number: 2
 status: in-orbit
 summary: A particle filter that finds a lost satellite within 0.01 AU from noisy gravity and light readings.
 stack: [Python, Particle Filter, State Estimation, Monte Carlo Sampling]
