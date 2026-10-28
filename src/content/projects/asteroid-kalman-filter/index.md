@@ -51,8 +51,6 @@ readouts:
   - label: When
     value: Sept 2026
 
-statement: Our stranded crew has a broken engine and *400 days* to get back to Earth.
-
 # media (in order)
 #   type:
 #     video
@@ -101,50 +99,36 @@ media:
 #   delete to publish
 
 draft: false
+
+# write-up (files go in assets/)
+#   ## Heading
+#   **bold**
+#   [text](url "tooltip")
+#   - list
+#   1. steps in order (numbered 01, 02, …)
+#   - **Label:** text (the gap after the colon is set by the site)
+#   blank line = new paragraph; extra blank lines or spaces add nothing
+#   &ensp; or &emsp; = a one-off wider space
+#   line\ (line break)
+#   ![alt](file "caption") on its own line
+#     2–3 in a row sit side by side
+#     {effects=true} right after it adds the image effects
+#   ```math … ``` = equations, one a line
+#     Label:  x = F x    (note)
+#     v_x  F^T  S^{-1}
+
+# order
+#   Background (opt)
+#   The problem · The prompt
+#   Approach · What we built
+#   The core algorithm (opt)
+#   My role (team projects)
+#   Where I went wrong
+#   Results
+#   Awards (opt)
+
+statement: Our stranded crew has a broken engine and *400 days* to get back to Earth.
 ---
-
-<!--
-write-up (files go in assets/)
-  ## Heading
-  **bold**
-  [text](url "tooltip")
-  - list
-  1. steps in order (numbered 01, 02, …)
-  - **Label:** text (the gap after the colon is set by the site)
-  blank line = new paragraph; extra blank lines or spaces add nothing
-  &ensp; or &emsp; = a one-off wider space
-  line\ (line break)
-  ![alt](file "caption") on its own line
-    2–3 in a row sit side by side
-    {effects=true} right after it adds the image effects
-  ```math … ``` = equations, one a line
-    Label:  x = F x    (note)
-    v_x  F^T  S^{-1}
-
-writing
-  4–5 sections, 80–200 words each, 400–750 in all
-  depth over breadth: the first lines carry the skim, the paragraphs carry the detail
-  first paragraph = the takeaway: one sentence
-  one idea per paragraph, 2–4 sentences
-  "I" for what you did, "we" only for the team
-  numbers over adjectives: a count, a time, a size or a score beats "fast" or "robust"
-  name what got worse, not only what got better
-  a figure wherever words would take a paragraph
-
-order
-  My role · Context · Background (opt)
-  The problem
-  Goals (opt)
-  Constraints (opt)
-  Approach · How it works
-  Alternatives considered (opt)
-  The hard part · What went wrong · A bug worth mentioning
-  What went well (opt)
-  Where I got lucky (opt)
-  Trade-offs (opt)
-  Results · Outcome · Final result
-  What I'd change · Future work
--->
 
 ## The problem
 

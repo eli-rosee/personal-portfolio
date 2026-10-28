@@ -107,6 +107,11 @@ const { html, class: className } = Astro.props;
 		counter-reset: step;
 	}
 
+	/* A list written from 0. starts at 00 */
+	.prose :global(ol[start="0"]) {
+		counter-reset: step -1;
+	}
+
 	.prose :global(ol > li) {
 		counter-increment: step;
 		padding-left: 2.4rem;
