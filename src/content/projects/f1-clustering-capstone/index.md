@@ -8,7 +8,7 @@
 title: "F1 Clustering Capstone"
 number: 1
 status: in-orbit
-summary: A 1st-place capstone for GM Motorsports that clusters Formula 1 telemetry into driving styles.
+summary: An award winning capstone project for GM Motorsports that clusters Formula 1 telemetry into driving styles.
 stack: [Python, Clustering, K-means, Data Processing]
 
 # display (delete for no signal)
