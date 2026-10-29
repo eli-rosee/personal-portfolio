@@ -9,8 +9,8 @@
  * grade exactly: rest ∘ lit⁻¹ = saturate(0.75/0.85) contrast(1/1.09) brightness(0.8/0.9)
  * contrast(1.1). The grades are linear, so this inverts cleanly and still fades on hover.
  *
- * Clicking the card plays or pauses the clip. The About statement's amber phrase launches the
- * rocket (src/scripts/launch.ts). Content comes from src/content/clip.md.
+ * Clicking the card plays or pauses the clip; clicking the rocket launches it
+ * (src/scripts/launch.ts). Content comes from src/content/clip.md.
  */
 import type { CollectionEntry } from "astro:content";
 import ConsoleCard from "./ConsoleCard.astro";
@@ -166,13 +166,12 @@ const { clip } = Astro.props;
 		video.addEventListener("seeked", track);
 	}
 
-	const launchButton = document.querySelector<HTMLElement>("[data-launch]");
+	// A click on the rocket launches it: a small extra, so it stays out of the tab order
 	const landing = card?.querySelector<HTMLElement>(".landing");
-	if (launchButton && landing) {
+	const ship = landing?.querySelector(".rocket");
+	if (landing && ship) {
 		const statement = document.querySelector("#about .statement");
-		initLaunch(launchButton, landing, document.querySelector("#about-heading"), statement ? [statement] : []);
-		// The rocket itself launches too (the phrase stays the keyboard and screen-reader way in)
-		landing.querySelector(".rocket")?.addEventListener("click", () => launchButton.click());
+		initLaunch(ship, landing, document.querySelector("#about-heading"), statement ? [statement] : []);
 	}
 </script>
 

@@ -1,7 +1,7 @@
 ---
 # The statement that opens the About section, in its own row above the text and the clip card.
 # Wrap a phrase in *asterisks* to set it in amber.
-statement: "I build software that senses *the physical world*."
+statement: "I'm a software engineer focused on *perception and machine learning*."
 ---
 
 ### Where I started

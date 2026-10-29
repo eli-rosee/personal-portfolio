@@ -4,7 +4,7 @@
  * with the climbing clip card beside them (below them on phones).
  *
  * Markdown conventions in about.md:
- *   statement: "... *phrase* ..."   the phrase is amber and launches the rocket on the clip card
+ *   statement: "... *phrase* ..."   the phrase is amber
  *   ### Prompt                      a label over each paragraph (the project pages' heading)
  *   first sentence                  each paragraph's lead, in the statement's Space Mono (scripts/markdown.ts)
  *   **key phrase**                  set in the text color, above the muted body
@@ -20,15 +20,8 @@ import { leadSentences, linkTooltips, listLabels, statementHtml } from "../scrip
 // The clip is optional; the section works without it
 const clip = (await getEntry("clip", "clip"))?.data;
 
-// The phrase is the launch button; punctuation right after it stays on its line, next to the bracket
 const statement: string | undefined = frontmatter.statement;
-const launchHtml = statement
-	? statementHtml(
-			statement,
-			(text) =>
-				`<button type="button" class="launch" data-launch><em>${text}</em><span class="tooltip label" aria-hidden="true">Launch the Rocket</span></button>`,
-		)
-	: undefined;
+const statementLine = statement ? statementHtml(statement) : undefined;
 
 const proseHtml = listLabels(leadSentences(linkTooltips(await compiledContent())));
 ---
@@ -36,24 +29,11 @@ const proseHtml = listLabels(leadSentences(linkTooltips(await compiledContent())
 <section id="about" class="section" aria-labelledby="about-heading">
 	<SectionHeading id="about-heading" text="About" />
 	<div class:list={["layout", { "has-clip": clip }]}>
-		{launchHtml && <p class="statement" set:html={launchHtml} />}
+		{statementLine && <p class="statement" set:html={statementLine} />}
 		<Prose class="about-prose" html={proseHtml} />
 		{clip && <ClipCard clip={clip} />}
-		{/* The dashed flight path from the launch phrase to the rocket, drawn by the script below */}
-		{launchHtml && clip && <svg class="launch-arrow" aria-hidden="true"></svg>}
 	</div>
 </section>
-
-<script>
-	import { initLaunchArrow } from "../scripts/launch-arrow";
-
-	const svg = document.querySelector<SVGSVGElement>("#about .launch-arrow");
-	const layout = svg?.parentElement;
-	const phrase = document.querySelector<HTMLElement>("#about [data-launch]");
-	const rocket = document.querySelector<SVGElement>("#about-clip .rocket");
-	const statement = document.querySelector("#about .statement");
-	if (svg && layout && phrase && rocket && statement) initLaunchArrow(svg, layout, phrase, rocket, statement);
-</script>
 
 <style>
 	/* One rhythm: 3.5rem after the statement and between parts, 0.75rem from a prompt to its paragraph */
@@ -63,56 +43,8 @@ const proseHtml = listLabels(leadSentences(linkTooltips(await compiledContent())
 		row-gap: var(--space-6);
 	}
 
-	/* The flight path to the rocket: muted dashes, a pad ring, target brackets on the rocket. Out of
-	   the grid's flow, over the layout. Hidden while the rocket flies, and until it's measured. */
-	.launch-arrow {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		overflow: visible;
-		pointer-events: none;
-		z-index: 1;
-		fill: none;
-		stroke-width: 1.25;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		opacity: 0;
-		transition: opacity 0.4s;
-	}
-
-	.launch-arrow.drawn {
-		opacity: 1;
-	}
-
-	.layout:has(:global(.landing.flying)) .launch-arrow {
-		opacity: 0;
-	}
-
-	.launch-arrow :global(.path) {
-		stroke: var(--muted);
-		stroke-opacity: 0.8;
-		stroke-dasharray: 5 5;
-	}
-
-	.launch-arrow :global(.pad) {
-		stroke: var(--muted);
-	}
-
-	.launch-arrow :global(.brackets) {
-		stroke: var(--text);
-		stroke-opacity: 0.7;
-		stroke-linecap: square;
-	}
-
-	.launch-arrow :global(.chevron) {
-		stroke: var(--text);
-		stroke-opacity: 0.85;
-		stroke-width: 1.5;
-	}
-
 	.statement {
-		max-width: 30rem; /* room for the brackets, so the statement stays on two lines */
+		max-width: 30rem; /* so the statement stays on two lines */
 		margin-bottom: calc(3.5rem - var(--space-6)); /* 3.5rem to the text, counting the row gap */
 		font-family: var(--font-label);
 		font-size: 1.35rem;
@@ -145,40 +77,8 @@ const proseHtml = listLabels(leadSentences(linkTooltips(await compiledContent())
 		color: inherit;
 	}
 
-	/* The launch phrase and the links: amber, framed in amber console brackets instead of an
-	   underline, with a tooltip underneath */
-	.statement :global(.launch) {
-		all: unset;
-		position: relative;
-		cursor: pointer;
-	}
-
-	.statement :global(.launch:focus-visible) {
-		outline: 2px solid var(--accent); /* `all: unset` drops the global focus ring */
-		outline-offset: 3px;
-	}
-
-	.statement :global(.nowrap) {
-		white-space: nowrap;
-	}
-
-	.statement :global(.launch)::before {
-		content: "[";
-		margin-right: 0.1em;
-	}
-
-	.statement :global(.launch)::after {
-		content: "]";
-		margin-left: 0.1em;
-	}
-
-	.statement :global(.launch)::before,
-	.statement :global(.launch)::after {
-		color: var(--accent);
-	}
-
-	/* Phones: the clip card comes right after the statement, so the rocket stands just under the
-	   phrase that launches it, with clear sky between them to fly in; the text follows */
+	/* Phones: the clip card comes right after the statement, with clear sky above the rocket for
+	   its flight; the text follows */
 	@media (max-width: 47.99rem) {
 		.has-clip .statement {
 			margin-bottom: 7rem; /* plus the row gap: 10rem above the card */

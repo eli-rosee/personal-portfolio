@@ -78,13 +78,13 @@ const along = (p: number): [number, number] => {
 };
 
 /**
- * Wires `button` to launch the rocket in `landing` (which holds an svg.rocket, and its flame's layer,
+ * Wires a click on `trigger` to launch the rocket in `landing` (which holds an svg.rocket, and its flame's layer,
  * .rocket-flame, over the same box).
  * The climb is scaled to the sky between the landing and `ceiling`, so the rocket is gone by the
  * time it reaches it, and it never crosses any of the `texts` that sit above its flight path.
  */
 export function initLaunch(
-	button: HTMLElement,
+	trigger: Element,
 	landing: HTMLElement,
 	ceiling: HTMLElement | null,
 	texts: Element[] = [],
@@ -217,7 +217,7 @@ export function initLaunch(
 		});
 	};
 
-	button.addEventListener("click", () => {
+	trigger.addEventListener("click", () => {
 		if (flying) return;
 		// If the rocket or the sky it climbs into is out of view, scroll first and fly once settled
 		const navBottom = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
