@@ -136,6 +136,7 @@ draft: false
 #   ![alt](file "caption") on its own line
 #     2–3 in a row sit side by side
 #     {effects=true} right after it adds the image effects
+#     {values=N} right after a clip adds a progress bar and a count of N values
 #   ```math … ``` = equations, one a line
 #     Label:  x = F x    (note)
 #     v_x  F^T  S^{-1}
@@ -155,47 +156,63 @@ statement: Is there a *best way* to drive a Formula 1 car?
 
 ## At a glance
 
-A year-long capstone for GM Motorsports that took first place twice.
+A year-long capstone for GM Motorsports where we set out to define "driving styles" amongst F1 drivers.
 
-- **Awards:** 1st place for the CSCE Undergraduate Enrichment Fund, 1st place at the College of Engineering Expo, and an invitation to present at the CSCE Alumni Conference.
-- **My part:** I owned ingestion, the database and preprocessing, and made 78 of the team's 167 commits.
-- **Scale:** 26,692 laps and over 18 million telemetry samples from all 24 races of 2025.
+- **Awards:** 1st place for the CSCE Undergraduate Enrichment Fund, 1st place at the College of Engineering Expo (CSCE), and an invitation to present at the CSCE Alumni Conference.
+- **My part:** I built the scraper, the database and the preprocessing pipeline, and made 78 of the team's 167 commits.
+- **Scale:** 26,692 laps and over 18 million telemetry samples from all 24 races of the 2025 F1 season.
 - **Speed:** a database redesign cut a driver's query from two minutes to 15–20 seconds.
 - **Live:** [f1.elirose.dev](https://f1.elirose.dev "The live dashboard")
+
+## Background
+
+This project lasted my entire senior year.
+
+Capstone at the University of Arkansas is two semesters. In the fall, each team is matched with an industry sponsor and designs a solution to the sponsor's problem. In the spring, we built it. My team of six was sponsored by **GM Motorsports**, whose data science team mentored us throughout the project's duration.
 
 ## The prompt
 
 Formula 1 teams measure everything about the car, but the driver is still hard to quantify.
 
-Lap time is the number that everyone looks at, but it's shaped by everything around the driver. The car, the tires, the track, and other things outside of the driver's control can influence a driver's performance. GM Motorsports wanted to see past it, with a tool that clusters drivers by driving style **independent of lap time**.
+Lap time is the number everyone looks at, but it's shaped by everything around the driver just as much as the driver themselves. GM Motorsports asked us to build a tool that digs into what defines a driver, and to do so independent of lap time. That meant stripping away the noise from the car, the tires and the track until all that was left were the driver's own inputs.
 
-Capstone at the University of Arkansas is two semesters. In the fall, each team is matched with an industry sponsor and designs a solution to the sponsor's problem. In the spring, we build it. My team of six was sponsored by **GM Motorsports**, whose data science team mentored us throughout the project's duration.
+In the end, our ultimate goal was to define "driving styles" amongst the field of F1 drivers.
 
 ## My role
 
-I owned the data, from the first download to the laps the clustering ran on.
+I built the data handling side of the project.
 
-I made **78 of the team's 167 commits**, more than anyone else on a team of six, and most of them went into ingestion, the database and preprocessing. The clustering was shared work that I joined near the end, and a teammate built the dashboard.
+I made **78 of the team's 167 commits**. Most of them went into ingestion, the database, and preprocessing. The clustering was shared work that I joined near the end, and a teammate built the dashboard.
 
-## Getting the data
+## Jan 15 · Scraper
 
-The first problem was getting a full season of telemetry onto one machine.
+The project began, and I started work on the scraper.
 
-Tracing Insights publishes each driver's race telemetry as one JSON file per lap on GitHub, with no bulk download, so every lap has to be requested by name. I started the scraper in mid-January. It uses FastF1 to pull the season's schedule and the number of laps each driver completed, builds the address of every lap from those, and saves each file under its race and driver. For 2025 that came to **26,692 laps** across 24 races, each one its own request.
+Tracing Insights publishes each driver's race telemetry as one JSON file per lap in a public GitHub repository, with no API or bulk download, so the scraper fetches every lap straight from a race's GitHub repository with a plain HTTP request. Each lap is nested by race, driver, and lap number, so the scraper uses FastF1 to pull the season's schedule and the number of laps each driver completed. It then builds the GitHub URL to request download individual driver's telemetry from a single lap of a single race. For 2025, there were **26,692 laps** across 24 races, each one its own request.
 
-By 3 a.m. on February 17 the whole season was on disk, and my [commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/8e7a600 "See the commit") that night said all that was left was the transfer into the database, to run overnight. That evening the disk filled up halfway through the load, and the [next commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/d574779 "See the commit") reads "storage full. need to redo transfer." That set the pattern for the next few days. It took **nearly five overnight runs** before every lap made it in correctly, and many hours of rewriting the scraper and the loader in between.
+![](lap-data.mp4 "One lap. One driver. One race."){values=10914}
+
+## Feb 17 · Overnight
+
+The whole season was on disk by 3 a.m., and loading it into the database took nearly five overnight runs.
+
+My [commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/8e7a600 "See the commit") that night said all that was left was the transfer, to run overnight. That evening the disk filled up halfway through the load, and the [next commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/d574779 "See the commit") reads "storage full. need to redo transfer." Many hours of rewriting the scraper and the loader went in before every lap made it in correctly.
 
 The loader that finally worked trusts nothing. It checks each value against the schema before inserting it, so a gear outside 0–8 or a throttle reading outside 0–100 becomes a null instead of a failed insert. Every sample goes into the race's telemetry table with a metadata row tying it to its driver and lap, and the run ends by counting both tables and stopping if the numbers disagree.
 
-## Making it fast
+## Mar 10 · Redesign
 
-With the data finally in, the next problem was that it was too slow to use.
+I rebuilt the database because pulling a single race took over ten minutes.
 
-The first design kept the whole season, over **18 million** samples, in two tables, and pulling a single race took over ten minutes. Every clustering experiment re-read the data, so that cost was paid again and again. In March I [redesigned the database](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/5017cc7 "See the commit") around a pair of tables per race, about 750,000 rows each, and two days later [added B-tree indexes](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/d86b2cd "See the commit") on driver and lap. A driver's query dropped from about **two minutes to 15–20 seconds**.
+The first design kept the whole season, over **18 million** samples, in two tables, and every clustering experiment re-read the data. The [new design](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/5017cc7 "See the commit") gives each race its own pair of tables, about 750,000 rows each.
 
-I also put every read behind one small query class, so nobody on the team wrote their own SQL again, and a metadata cache built once from FastF1 that stores each race's tables and every driver's lap count. After that, loading a race was one line of code.
+## Mar 12 · Indexes
 
-## Making laps comparable
+Two days later, B-tree indexes cut a driver's query from about **two minutes to 15–20 seconds**.
+
+The [commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/d86b2cd "See the commit") that added them also put every read behind one small query class, so nobody on the team wrote their own SQL again, alongside a metadata cache built once from FastF1. After that, loading a race was one line of code.
+
+## Mar 16 · RaceData
 
 Fast data still isn't comparable data.
 
@@ -207,13 +224,17 @@ Each lap becomes a single point to cluster, so two laps have to line up sample f
 4. **Drop outlier laps.** The first lap is always dropped, and so is any lap whose average speed falls more than 1.5 × IQR below the driver's norm, which catches safety cars, pit stops and incidents. Unlike a fixed speed cutoff, this works on any track without tuning.
 5. **Reduce with PCA.** PCA compresses the eight metrics at each point to the few combinations that carry 95% of the variation, which takes a lap from 4,000 values to about 2,500.
 
-Most of these steps started out simpler and got rebuilt when a race broke them. The per-driver scaling [came in mid-March](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/1f73aec "See the commit"), and the outlier filter was rewritten in April so it [could finally run on every race](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/9cba86c "See the commit") instead of only the race it was tested on.
+Most of these steps started out simpler and got rebuilt when a race broke them, starting with the per-driver scaling, which [landed that day](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/1f73aec "See the commit").
+
+## Apr 3 · Every race
+
+The outlier filter was [rewritten](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/9cba86c "See the commit") so it could run on every race, not only the one it was tested on.
 
 Nothing gets dropped silently. Every lap the pipeline throws out is logged with its reason, and those counts ship with the results. Across the season, 2,200 of the 26,692 laps were dropped, 1,460 as speed outliers, 458 as first laps and 282 for gaps in the data, and the dashboard shows each race's breakdown.
 
-## Clustering
+## Apr 9 · First results
 
-On April 9 the pipeline produced its [first clustering results](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/dd5d075 "See the commit"), three months after the first line of the scraper.
+Three months after the first line of the scraper, the pipeline produced its [first clustering results](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/dd5d075 "See the commit").
 
 K-means sorts each race's laps into five clusters, so a driver's style is the share of their laps in each one, a distribution rather than a single label. We tried hierarchical clustering, Gaussian mixtures and DBSCAN first, and K-means held up best across a full season of tracks. One lesson stuck with me. Adding PCA lowered our silhouette score, yet it was the first time drivers' distributions actually differed from each other, so from then on we judged every run by its distributions as well as its scores.
 
@@ -223,11 +244,9 @@ We left the clusters **unlabeled**. A cluster's meaning shifts from track to tra
 
 The finished system is a pipeline from raw telemetry to an interactive dashboard, in three layers.
 
-1. **Ingestion and storage:** the scraper and loader bring every lap of the 2025 season from Tracing Insights into PostgreSQL, 48 tables in all, one pair per race.
-2. **Preprocessing and clustering:** RaceData aligns, normalizes, cleans and reduces each race's laps, and K-means sorts them into five clusters per race.
-3. **Dashboard:** a static single-page site built with Chart.js and Leaflet. Pick a track and any drivers, and each driver gets a breakdown of their laps across the five clusters and a radar chart of the same mix, beside a chart of what each cluster means and a count of the laps that were dropped and why.
+![](architecture.png "From raw telemetry to the dashboard")
 
-Clustering runs offline, so the site only serves precomputed JSON files, one set per race, with no database or API behind it.
+Clustering runs offline, so the site only serves precomputed JSON files, one set per race, with no database or API behind it. During the capstone it ran on an Amazon EC2 instance, and it now runs on my own server alongside this site. Pick a track and any drivers on the dashboard, and each driver gets a breakdown of their laps across the five clusters and a radar chart of the same mix, beside a chart of what each cluster means and a count of the laps that were dropped and why.
 
 ## Where I went wrong
 
