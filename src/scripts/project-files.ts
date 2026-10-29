@@ -9,7 +9,7 @@
  *                              .mp4 / .webm clips (silent loops). Two or three such lines together (no
  *                              blank line between) sit side by side at one height. Options in braces
  *                              after it: {effects=true} adds the screen's grade and glass, and on a clip
- *                              {values=N} adds a progress bar and a count of N values scrolling past
+ *                              {values=N} adds a count of N values scrolling past and a progress bar
  *                              (src/scripts/clip-hud.ts); both together as {effects=true values=N}.
  *   <!-- notes -->             left out of the page
  *
@@ -277,11 +277,12 @@ export function media(project: Project): MediaItem[] {
 					effects: m.effects,
 				};
 			case "slides": {
+				// Each slide is an image, or a GIF or clip for one that moves; a clip's poster isn't a slide of its own
 				const folder = keyOf(slug, m.folder).replace(/\/$/, "") + "/";
-				const slides: Asset[] = Object.keys(images)
-					.filter((k) => k.startsWith(folder) && !k.slice(folder.length).includes("/"))
+				const slides: Asset[] = [...Object.keys(images), ...Object.keys(urls).filter((k) => !k.endsWith(".pdf"))]
+					.filter((k) => k.startsWith(folder) && !k.slice(folder.length).includes("/") && !k.endsWith(".poster.webp"))
 					.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-					.map((k) => ({ kind: "image", image: images[k].default }));
+					.map((k) => find(project, k.slice(`${ROOT}/${slug}/assets/`.length), where, "visual"));
 				if (!slides.length) {
 					if (!project.data.draft) throw new Error(`Project "${slug}": no slide images in ${m.folder} (${where}).`);
 					slides.push({ kind: "missing", path: `${clean(m.folder).replace(/\/$/, "")}/slide-01.png` });

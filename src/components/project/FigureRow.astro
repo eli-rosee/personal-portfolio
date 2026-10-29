@@ -4,8 +4,8 @@
  * its image: landscape (16:9), portrait (3:4) or square (1:1), filled (the edges cut if its shape is in between). Side by
  * side they share one height. Each is a plain screen (the grade and glass only with {effects=true}) with its caption on a plate
  * under it, joined to the screen by a leader line and numbered (Fig 01, counted in ProjectAbout), and opens in the theater (the
- * zoom cursor says so). A clip with {values=N} gets a progress bar along its bottom and a count of its N
- * values climbing as it plays (src/scripts/clip-hud.ts).
+ * zoom cursor says so). A clip with {values=N} gets a count of its N values climbing as it plays, and a
+ * progress bar along its bottom (src/scripts/clip-hud.ts).
  */
 import Screen from "../Screen.astro";
 import Visual from "./Visual.astro";
@@ -95,8 +95,8 @@ const single = figures.length === 1;
 		aspect-ratio: var(--ar);
 	}
 
-	/* A clip's progress: the values passed in a chip at the top right, an amber bar along the bottom. Over
-	   the footage, so they keep a dark backing whatever the clip shows. */
+	/* A {values=N} clip's progress: the values passed in a chip at the top right, an amber bar along the
+	   bottom. Over the footage, so they keep a dark backing whatever the clip shows. */
 	.clip-hud {
 		--chip: rgb(11 14 20 / 0.82);
 		position: absolute;
@@ -126,13 +126,14 @@ const single = figures.length === 1;
 			font-size: 0.58rem;
 		}
 
+		.bar {
+			height: 4px;
+		}
+
 		.count {
 			right: 0.45rem;
 		}
 
-		.bar {
-			height: 4px;
-		}
 	}
 
 	.count .dim {

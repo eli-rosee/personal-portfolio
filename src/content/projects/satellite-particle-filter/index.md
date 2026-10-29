@@ -73,6 +73,7 @@ readouts:
 #         portrait
 #       fit, crop, zoom: as in display
 #     slides
+#       npm run slides <slug> deck.pptx makes the folder and the PDF
 #       pdf
 #     link
 #       live:
@@ -113,7 +114,7 @@ draft: false
 #   ![alt](file "caption") on its own line
 #     2–3 in a row sit side by side
 #     {effects=true} right after it adds the image effects
-#     {values=N} right after a clip adds a progress bar and a count of N values
+#     {values=N} right after a clip adds a count of N values and a progress bar
 
 # order
 #   Background (opt)
