@@ -4,7 +4,7 @@
  *   ### Prompt        a label over a paragraph
  *   **key phrase**    in a soft white, above the muted body and under the leads
  *   [text](url)       amber console brackets instead of an underline (a title becomes a tooltip)
- *   - item            a list, each line led by the cards' short muted dash
+ *   - item            a list, each line led by a small muted square
  *   1. step           a list in order, each line led by a muted mono step number (01, 02, …)
  *   - **Label:** text a list item with a bold label, a few spaces after its colon
  *   ```math          equations, one a line, beside a 1px rule (mathBlock in src/scripts/markdown.ts)
@@ -91,18 +91,18 @@ const { html, class: className } = Astro.props;
 		margin-right: 0.5em;
 	}
 
-	/* The dash, level with the middle of the first line */
+	/* A small square, level with the middle of the first line */
 	.prose :global(ul > li)::before {
 		content: "";
 		position: absolute;
 		left: 0;
-		top: calc(0.825em - 1px);
-		width: 0.6rem;
-		height: 2px;
+		top: calc(0.825em - 2.5px);
+		width: 5px;
+		height: 5px;
 		background: var(--muted);
 	}
 
-	/* Steps: a muted mono number in place of the dash */
+	/* Steps: a muted mono number in place of the square */
 	.prose :global(ol) {
 		counter-reset: step;
 	}
