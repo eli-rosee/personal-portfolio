@@ -14,6 +14,7 @@ npm run preview  # serve the production build
 npm run check    # type-check the code (the dev server and build skip types)
 npm run art      # re-render the brand art (needs the licensed font, not in the repo)
 npm run media    # posters (first frames) for the projects' clips (needs ffmpeg)
+npm run slides <slug> deck.pptx   # a project's slide images and PDF from its deck (needs PowerPoint, ffmpeg)
 ```
 
 ## Where things are
@@ -39,6 +40,7 @@ public/files/             files copied to the server by hand, not in the repo: r
 scripts/new-project.mjs   `npm run new-project "Title"`: a new project folder from the template
 scripts/render-art.py     `npm run art`: the display-font images (wordmark, headings, titles, icons)
 scripts/media.mjs         `npm run media`: a poster beside each project clip (its first frame)
+scripts/slides.mjs        `npm run slides`: a deck's slides (moving ones as clips) and its PDF
 scripts/rebuild.sh        server: writes status.json at boot, then rebuilds the site
 ```
 
@@ -46,4 +48,4 @@ scripts/rebuild.sh        server: writes status.json at boot, then rebuilds the 
 
 **About text:** conventions for the statement, prompts and links are at the top of `src/components/About.astro`.
 
-**Adding a project:** run `npm run new-project "Title"`. It makes `src/content/projects/<slug>/index.md`, with every field written out and explained, and an `assets/` folder for the project's images, clips, slides and PDFs (paths in the file are relative to it). The project starts as a draft: it shows under `npm run dev` at `/projects/<slug>/`, with any missing file marked on the page, and stays off the built site until `draft: true` is deleted. Once published, a missing file stops the build and names it. Videos are committed with the rest of the folder, so compress them first (a short loop should be well under 1 MB), then run `npm run media` and commit the `.poster.webp` it makes beside each clip: the page shows it while the clip loads, and the theater uses it as the thumbnail. Run `npm run art` after renaming a project, to redraw its title.
+**Adding a project:** run `npm run new-project "Title"`. It makes `src/content/projects/<slug>/index.md`, with every field written out and explained, and an `assets/` folder for the project's images, clips, slides and PDFs (paths in the file are relative to it). The project starts as a draft: it shows under `npm run dev` at `/projects/<slug>/`, with any missing file marked on the page, and stays off the built site until `draft: true` is deleted. Once published, a missing file stops the build and names it. Videos are committed with the rest of the folder, so compress them first (a short loop should be well under 1 MB), then run `npm run media` and commit the `.poster.webp` it makes beside each clip: the page shows it while the clip loads, and the theater uses it as the thumbnail. For a slide deck, put the `.pptx` in `assets/` and run `npm run slides <slug> deck.pptx`: it exports every slide through PowerPoint into `assets/slides/` and the deck's PDF beside it (run it from WSL on the Windows machine with Office; it works on a copy, so the deck can stay open). A slide with a GIF or video on it becomes a clip that plays in the viewer, unless it would be over 12 MB. Run `npm run art` after renaming a project, to redraw its title.

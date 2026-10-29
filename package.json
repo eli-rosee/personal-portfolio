@@ -14,7 +14,8 @@
     "art": "python3 scripts/render-art.py",
     "new-project": "node scripts/new-project.mjs",
     "check": "astro check",
-    "media": "node scripts/media.mjs"
+    "media": "node scripts/media.mjs",
+    "slides": "node scripts/slides.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.2",
