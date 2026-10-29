@@ -7,8 +7,10 @@
  *   text, **bold**, links      the section's text (src/components/Prose.astro)
  *   ![alt](file "Caption")     on a line of its own: a framed figure under the text. Images, GIFs and
  *                              .mp4 / .webm clips (silent loops). Two or three such lines together (no
- *                              blank line between) sit side by side at one height. {effects=true} after
- *                              it adds the screen's grade and glass.
+ *                              blank line between) sit side by side at one height. Options in braces
+ *                              after it: {effects=true} adds the screen's grade and glass, and on a clip
+ *                              {values=N} adds a progress bar and a count of N values scrolling past
+ *                              (src/scripts/clip-hud.ts); both together as {effects=true values=N}.
  *   <!-- notes -->             left out of the page
  *
  * Every file lives in the project's assets/ folder, named by its path there ("plot.png", "slides/"). In a draft a missing file becomes a labeled gap on the
@@ -149,6 +151,7 @@ export interface Figure {
 	caption?: string;
 	asset: Asset;
 	effects: boolean;
+	values?: number; // a clip's count of values, shown climbing with its progress
 }
 export type Block = { kind: "text"; html: string } | { kind: "figures"; figures: Figure[] };
 export interface Section {
@@ -156,7 +159,9 @@ export interface Section {
 	blocks: Block[];
 }
 
-const FIGURE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+"([^"]*)")?\s*\)(\{effects=true\})?$/;
+const FIGURE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+"([^"]*)")?\s*\)(?:\{([^}]*)\})?$/;
+// A figure's options, "effects=true values=10914" -> { effects: "true", values: "10914" }
+const options = (text = "") => Object.fromEntries(text.trim().split(/\s+/).filter(Boolean).map((o) => o.split("=")));
 let markdown: Awaited<ReturnType<typeof createSatteriMarkdownProcessor>> | undefined;
 const render = async (text: string) => {
 	markdown ??= await createSatteriMarkdownProcessor();
@@ -198,13 +203,17 @@ export async function writeUp(project: Project): Promise<Section[]> {
 					throw new Error(`Project "${slug}": at most three figures side by side (found ${figures.length}).`);
 				blocks.push({
 					kind: "figures",
-					figures: figures.map((m) => ({
-						id: `fig-${++figureCount}`,
-						alt: m![1] || m![3] || "", // without its own alt text, a figure is described by its caption
-						caption: m![3],
-						asset: find(project, m![2], "in the write-up", "visual"),
-						effects: Boolean(m![4]),
-					})),
+					figures: figures.map((m) => {
+						const o = options(m![4]);
+						return {
+							id: `fig-${++figureCount}`,
+							alt: m![1] || m![3] || "", // without its own alt text, a figure is described by its caption
+							caption: m![3],
+							asset: find(project, m![2], "in the write-up", "visual"),
+							effects: o.effects === "true",
+							values: o.values ? Number(o.values) : undefined,
+						};
+					}),
 				});
 			} else if (lines.some((l) => /!\[[^\]]*\]\(/.test(l))) {
 				throw new Error(

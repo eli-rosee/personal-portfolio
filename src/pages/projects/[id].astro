@@ -62,6 +62,7 @@ const panes: Pane[] = [
 	import { initTheater } from "../../scripts/theater";
 	import { initPlayers } from "../../scripts/player";
 	import { playClips } from "../../scripts/clips";
+	import { initClipHuds } from "../../scripts/clip-hud";
 	import { initFlight } from "../../scripts/flight";
 	import { fitRow, fitText } from "../../scripts/fit-text";
 	import { fitReadoutInset } from "../../scripts/readout-inset";
@@ -79,6 +80,7 @@ const panes: Pane[] = [
 		initTheater(root, signal);
 		initPlayers(root, signal);
 		playClips(root, signal);
+		initClipHuds(root, signal);
 		initFlight(root, signal);
 	};
 	let page = new AbortController();

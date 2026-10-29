@@ -146,6 +146,7 @@ draft: true
 #   ![alt](file "caption") on its own line
 #     2–3 in a row sit side by side
 #     {effects=true} right after it adds the image effects
+#     {values=N} right after a clip adds a progress bar and a count of N values
 #   \`\`\`math … \`\`\` = equations, one a line
 #     Label:  x = F x    (note)
 #     v_x  F^T  S^{-1}

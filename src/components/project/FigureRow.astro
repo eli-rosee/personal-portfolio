@@ -4,7 +4,8 @@
  * its image: landscape (16:9), portrait (3:4) or square (1:1), filled (the edges cut if its shape is in between). Side by
  * side they share one height. Each is a plain screen (the grade and glass only with {effects=true}) with its caption on a plate
  * under it, joined to the screen by a leader line and numbered (Fig 01, counted in ProjectAbout), and opens in the theater (the
- * zoom cursor says so).
+ * zoom cursor says so). A clip with {values=N} gets a progress bar along its bottom and a count of its N
+ * values climbing as it plays (src/scripts/clip-hud.ts).
  */
 import Screen from "../Screen.astro";
 import Visual from "./Visual.astro";
@@ -29,6 +30,14 @@ const single = figures.length === 1;
 						<Screen plain={!f.effects} class="figure-screen">
 							<div class="frame">
 								<Visual asset={f.asset} alt={f.alt} width={single ? 900 : 600} />
+								{f.values && f.asset.kind === "clip" && (
+									<div class="clip-hud" data-values={f.values} aria-hidden="true">
+										<span class="label chip count">
+											<span class="dim">Values</span> <span class="n">0</span> <span class="dim">/ {f.values.toLocaleString("en-US")}</span>
+										</span>
+										<span class="bar"><span class="fill" /></span>
+									</div>
+								)}
 							</div>
 						</Screen>
 					</button>
@@ -84,6 +93,70 @@ const single = figures.length === 1;
 	.frame {
 		position: relative;
 		aspect-ratio: var(--ar);
+	}
+
+	/* A clip's progress: the values passed in a chip at the top right, an amber bar along the bottom. Over
+	   the footage, so they keep a dark backing whatever the clip shows. */
+	.clip-hud {
+		--chip: rgb(11 14 20 / 0.82);
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.chip {
+		position: absolute;
+		top: 0.75rem;
+		padding: 0.35rem 0.6rem;
+		background: var(--chip);
+		border: 1px solid var(--frame-line-lit);
+		color: var(--text);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.count {
+		right: 0.75rem;
+	}
+
+	/* Phones: a smaller chip, so it covers less of a small screen */
+	@media (max-width: 35.99rem) {
+		.chip {
+			top: 0.45rem;
+			padding: 0.25rem 0.45rem;
+			font-size: 0.58rem;
+		}
+
+		.count {
+			right: 0.45rem;
+		}
+
+		.bar {
+			height: 4px;
+		}
+	}
+
+	.count .dim {
+		color: var(--muted);
+	}
+
+	.count .n {
+		color: var(--accent);
+	}
+
+	.bar {
+		position: absolute;
+		inset: auto 0 0;
+		height: 6px;
+		background: rgb(11 14 20 / 0.85);
+	}
+
+	/* Scaled rather than resized, so it moves on the compositor */
+	.fill {
+		display: block;
+		height: 100%;
+		background: var(--accent);
+		transform-origin: left;
+		scale: var(--progress, 0) 1;
 	}
 
 	/* The caption's plate, with a leader line dropping into it from the screen. Too long for one line, the
