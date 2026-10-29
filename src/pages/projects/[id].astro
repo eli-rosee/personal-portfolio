@@ -64,14 +64,16 @@ const panes: Pane[] = [
 	import { playClips } from "../../scripts/clips";
 	import { initFlight } from "../../scripts/flight";
 	import { fitRow, fitText } from "../../scripts/fit-text";
+	import { fitReadoutInset } from "../../scripts/readout-inset";
 
-	// Sizing (the hero's buttons and summary) and wiring (everything interactive). After a flight the next
+	// Sizing (the hero's buttons and summary, the readouts' inset) and wiring (everything interactive). After a flight the next
 	// page is sized while it's still invisible ("project:prepare"), so it fades in at its final size, and
 	// wired once it has replaced this one ("project:swap"). Each page's listeners and observers live as
 	// long as the page: the swap ends the old one's, so a removed page can't linger in memory.
 	const fit = (root: ParentNode, signal: AbortSignal) => {
 		fitRow(root, signal);
 		fitText(root, signal);
+		fitReadoutInset(root, signal);
 	};
 	const wire = (root: ParentNode, signal: AbortSignal) => {
 		initTheater(root, signal);
