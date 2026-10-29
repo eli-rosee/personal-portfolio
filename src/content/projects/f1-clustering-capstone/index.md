@@ -74,6 +74,7 @@ readouts:
 #         portrait
 #       fit, crop, zoom: as in display
 #     slides
+#       npm run slides <slug> deck.pptx makes the folder and the PDF
 #       folder
 #       pdf
 #     link
@@ -97,12 +98,13 @@ media:
     href: https://f1.elirose.dev
     live: true
     title: Live site
-  # - type: video
-  #   file: demo.mp4
-  #   title: Demo
+  - type: video
+    file: demo.mp4
+    title: Live demo
+    wide: true
   - type: slides
     folder: slides/
-    pdf: Final_Slides.pdf
+    pdf: Final_Presentation.pdf
     title: Final slides
   - type: image
     file: Project_Poster.jpg
@@ -136,7 +138,7 @@ draft: false
 #   ![alt](file "caption") on its own line
 #     2–3 in a row sit side by side
 #     {effects=true} right after it adds the image effects
-#     {values=N} right after a clip adds a progress bar and a count of N values
+#     {values=N} right after a clip adds a count of N values and a progress bar
 #   ```math … ``` = equations, one a line
 #     Label:  x = F x    (note)
 #     v_x  F^T  S^{-1}
@@ -161,7 +163,6 @@ A year-long capstone for GM Motorsports where we set out to define "driving styl
 - **Awards:** 1st place for the CSCE Undergraduate Enrichment Fund, 1st place at the College of Engineering Expo (CSCE), and an invitation to present at the CSCE Alumni Conference.
 - **My part:** I built the scraper, the database and the preprocessing pipeline, and made 78 of the team's 167 commits.
 - **Scale:** 26,692 laps and over 18 million telemetry samples from all 24 races of the 2025 F1 season.
-- **Speed:** a database redesign cut a driver's query from two minutes to 15–20 seconds.
 - **Live:** [f1.elirose.dev](https://f1.elirose.dev "The live dashboard")
 
 ## Background
@@ -194,23 +195,25 @@ Tracing Insights publishes each driver's race telemetry as one JSON file per lap
 
 ## Feb 17 · Overnight
 
-The whole season was on disk by 3 a.m., and loading it into the database took nearly five overnight runs.
+With the whole season on disk, the hard part became getting it into the database, and this took five overnight runs.
 
-My [commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/8e7a600 "See the commit") that night said all that was left was the transfer, to run overnight. That evening the disk filled up halfway through the load, and the [next commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/d574779 "See the commit") reads "storage full. need to redo transfer." Many hours of rewriting the scraper and the loader went in before every lap made it in correctly.
-
-The loader that finally worked trusts nothing. It checks each value against the schema before inserting it, so a gear outside 0–8 or a throttle reading outside 0–100 becomes a null instead of a failed insert. Every sample goes into the race's telemetry table with a metadata row tying it to its driver and lap, and the run ends by counting both tables and stopping if the numbers disagree.
+The scraper finished on the night of February 16, and my [commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/8e7a600 "See the commit") that night said all that was left was the overnight transfer into the database. Runs failed on null values, mismatched columns, a [full disk](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/d574779 "See the commit") and half-finished loads, and each failure meant starting over the next night. The loader that finally worked validates every value before inserting it and checks its row counts when it's done.
 
 ## Mar 10 · Redesign
 
-I rebuilt the database because pulling a single race took over ten minutes.
+I rebuilt the database because pulling a single race took over 30 seconds.
 
 The first design kept the whole season, over **18 million** samples, in two tables, and every clustering experiment re-read the data. The [new design](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/5017cc7 "See the commit") gives each race its own pair of tables, about 750,000 rows each.
 
+![](db_telemetry_schema.png "One race's telemetry table")
+
 ## Mar 12 · Indexes
 
-Two days later, B-tree indexes cut a driver's query from about **two minutes to 15–20 seconds**.
+Two days later, B-tree indexes cut a driver's query from **over 10 minutes to 15–20 seconds**.
 
 The [commit](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/d86b2cd "See the commit") that added them also put every read behind one small query class, so nobody on the team wrote their own SQL again, alongside a metadata cache built once from FastF1. After that, loading a race was one line of code.
+
+![](db_meta_schema.png "The metadata table and its driver and lap index")
 
 ## Mar 16 · RaceData
 
@@ -237,6 +240,9 @@ Nothing gets dropped silently. Every lap the pipeline throws out is logged with 
 Three months after the first line of the scraper, the pipeline produced its [first clustering results](https://github.com/eli-rosee/f1-style-analysis-capstone-project/commit/dd5d075 "See the commit").
 
 K-means sorts each race's laps into five clusters, so a driver's style is the share of their laps in each one, a distribution rather than a single label. We tried hierarchical clustering, Gaussian mixtures and DBSCAN first, and K-means held up best across a full season of tracks. One lesson stuck with me. Adding PCA lowered our silhouette score, yet it was the first time drivers' distributions actually differed from each other, so from then on we judged every run by its distributions as well as its scores.
+
+![](without_pca.png "Without PCA")
+![](with_pca.png "With PCA")
 
 We left the clusters **unlabeled**. A cluster's meaning shifts from track to track, and calling one "aggressive" would be our opinion, not the data's.
 
