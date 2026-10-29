@@ -6,7 +6,7 @@ statement: "I'm a software engineer focused on *perception and machine learning*
 
 ### Where I started
 
-I started in real-world data. For my senior capstone, I built a large-scale data ingestion and analysis pipeline for Formula 1 telemetry in collaboration with a **General Motorsports** data science team.
+I started in real-world data. For my [senior capstone](/projects/f1-clustering-capstone/ "See the project"), I built a large-scale data ingestion and analysis pipeline for Formula 1 telemetry in collaboration with a **General Motorsports** data science team.
 
 ### What I'm doing now
 
