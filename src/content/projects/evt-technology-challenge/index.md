@@ -99,7 +99,7 @@ media:
 # draft
 #   delete to publish
 
-draft: true
+draft: false
 
 # write-up (files go in assets/)
 #   ## Heading
