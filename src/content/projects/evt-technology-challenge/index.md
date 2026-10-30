@@ -136,7 +136,7 @@ statement: I had *12 days* to build a secure server that starts with one command
 
 The prompt was to create a web server that hosts a page over a secure port, and can deploy in a single command.
 
-EVT (Enterprise Vision Technologies) creates and sells IT infrastructure for enterprises, and this challenge was a microcosm of their world. Beyond a secure port and a single command, the only rule was that I had to write a README explaining how to run it my design decisions behind it.
+EVT (Enterprise Vision Technologies) creates and sells IT infrastructure for enterprises, and this challenge was a microcosm of their world. Beyond a secure port and a single command, the only rule was that I had to write a README explaining how to run it and the design decisions behind it.
 
 Everything else was up to me. The prompt (linked below) listed over a dozen tools, from Vagrant to Kubernetes to Ansible, and backend tooling was fairly new to me.
 
@@ -150,7 +150,7 @@ Nginx is the lightest, fastest choice for serving a static page, and its configu
 
 With Docker handling every dependency, what was left to automate fit in **four Bash scripts**. The one to set up and deploy the server was required, but the other three I made to stand out. One to test the server, one for nginx logs, and one to shut the server down.
 
-Initially, I wanted to register for a real certificate from the CA, however, this proved too complicated. To do this, you need a registered domain, and it would have slowed down every run, and fully broken the one-command tenant. **A self-signed certificate for localhost** worked well for this project, and made much more sense given the scope.
+Initially, I wanted to register for a real certificate from the CA; however, this proved too complicated. To do this, you need a registered domain, and it would have slowed down every run, and fully broken the one-command tenet. **A self-signed certificate for localhost** worked well for this project, and made much more sense given the scope.
 
 The prompt only asked for a secure port, but I also added a **redirect from HTTP to HTTPS** in the nginx config file. That way, all insecure connections would simply be transformed into a secure connection.
 
