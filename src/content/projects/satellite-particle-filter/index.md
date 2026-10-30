@@ -9,7 +9,7 @@ title: "Satellite Particle Filter"
 number: 2
 status: in-orbit
 summary: A particle filter that finds a lost satellite within 0.01 AU from noisy gravity and light readings.
-stack: [Python, Particle Filter, State Estimation, Monte Carlo Sampling]
+stack: [Python, Particle Filter, Localization]
 
 # display (delete for no signal)
 #   fit:

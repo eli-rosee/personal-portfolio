@@ -9,7 +9,7 @@ title: "Asteroid Kalman Filter"
 number: 3
 status: in-orbit
 summary: A Kalman filter for every asteroid, predicting where each one moves next so a stranded ship can hop-scotch home.
-stack: [Python, Kalman Filter, State Estimation, Gaussian Filtering]
+stack: [Python, Kalman Filter, State Estimation]
 
 # display (delete for no signal)
 #   fit:
@@ -38,7 +38,7 @@ display:
 #   repo: <url> (default)
 #   private: <tooltip>
 
-repo: https://github.com/eli-rosee/asteroid-field-kalman-filter
+private: Private per course policy
 
 # readouts (up to 4)
 #   note
