@@ -136,25 +136,23 @@ statement: I had *12 days* to build a secure server that starts with one command
 
 The prompt was to create a web server that hosts a page over a secure port, and can deploy in a single command.
 
-EVT (Enterprise Vision Technologies) sells and supports IT infrastructure for enterprises, and this challenge was a microcosm of their world.
+EVT (Enterprise Vision Technologies) creates and sells IT infrastructure for enterprises, and this challenge was a microcosm of their world. Beyond a secure port and a single command, the only rule was that I had to write a README explaining how to run it my design decisions behind it.
 
-The page had to be served from the machine itself, on **a secure port** (self-signed was OK), and **a single command or script** had to start and build everything. The README had to explain how to run it, and why each piece was chosen over its alternatives.
-
-Everything else was up to me. The prompt listed over a dozen tools to pick from, from Vagrant to Kubernetes to Ansible, and I was fairly unfamiliar with the world of backend tooling.
+Everything else was up to me. The prompt (linked below) listed over a dozen tools, from Vagrant to Kubernetes to Ansible, and backend tooling was fairly new to me.
 
 ## Approach
 
 After hours of research, I settled on Nginx inside a Docker container, started by Bash scripts.
 
-With Docker, **the only thing you need installed is Docker**. A virtual machine would have been much heavier to set up and run, and containers are the more common way to host a server today. Kubernetes runs whole fleets of containers, which was overkill for a single server.
+With Docker, **the only thing you need installed is Docker**. A virtual machine would have been much heavier to set up and run, and containers are the much more common way to host a server. Kubernetes is needed when running multiple containers, which was overkill for a single server.
 
 Nginx is the lightest, fastest choice for serving a static page, and its configuration is far simpler than Apache's. I first got HTTPS working with Nginx installed straight on my machine, then moved it into **the official nginx image** from Docker Hub, which comes with Nginx ready to run.
 
-With Docker handling every dependency, what was left to automate fit in **four Bash scripts**. The one to set up was required, but the other three I made to stand out: one to test, one for logs, and one to shut the server down.
+With Docker handling every dependency, what was left to automate fit in **four Bash scripts**. The one to set up and deploy the server was required, but the other three I made to stand out. One to test the server, one for nginx logs, and one to shut the server down.
 
-Initially, I wanted to register for a real certificate from the CA, but it needs a registered domain, it would have slowed down every run, and it breaks the one-command rule. **A self-signed certificate for localhost** worked well for this project, and was much less complex.
+Initially, I wanted to register for a real certificate from the CA, however, this proved too complicated. To do this, you need a registered domain, and it would have slowed down every run, and fully broken the one-command tenant. **A self-signed certificate for localhost** worked well for this project, and made much more sense given the scope.
 
-The prompt only asked for a secure port, but I also added a **redirect from HTTP to HTTPS** in the nginx config file. That way, all insecure connections would simply be upgraded to a secure connection.
+The prompt only asked for a secure port, but I also added a **redirect from HTTP to HTTPS** in the nginx config file. That way, all insecure connections would simply be transformed into a secure connection.
 
 ```nginx file=configs/nginx.conf lines=35-55
 # HTTP server block - configured to redirect all traffic to HTTPS
@@ -234,4 +232,4 @@ Two things I'd change if I could go back:
 
 It came down to me and one other candidate, and they got the offer.
 
-However, I am still really glad I got to undertake this project. In under two weeks, I went from new to these tools to **a one-command secure server**, with a reason for every choice. Even today, I use the tools I learned in that interview to serve this site and my [capstone project](https://f1.elirose.dev "The live dashboard") from a mini PC at home.
+However, I am still really glad I got to undertake this project. In under two weeks, I went from brand new to these tools to **a one-command secure server**, with a reason for every choice. Even today, I use the tools I learned in that interview to serve this site and my [capstone project](https://f1.elirose.dev "The live dashboard") from a mini PC at home.
