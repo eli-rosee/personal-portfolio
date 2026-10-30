@@ -11,6 +11,9 @@
  *                              after it: {effects=true} adds the screen's grade and glass, and on a clip
  *                              {values=N} adds a count of N values scrolling past and a progress bar
  *                              (src/scripts/clip-hud.ts); both together as {effects=true values=N}.
+ *   ```python file=x.py lines=3-9   code on a console panel: its file (or language) in a title bar, with a
+ *                              GitHub link to those lines when the project has a repo. title="…" names
+ *                              a block without a file (a tree), and link=repo points it at the repo.
  *   <!-- notes -->             left out of the page
  *
  * Every file lives in the project's assets/ folder, named by its path there ("plot.png", "slides/"). In a draft a missing file becomes a labeled gap on the
@@ -163,13 +166,40 @@ const FIGURE = /^!\[([^\]]*)\]\(\s*(\S+?)(?:\s+"([^"]*)")?\s*\)(?:\{([^}]*)\})?$
 // A figure's options, "effects=true values=10914" -> { effects: "true", values: "10914" }
 const options = (text = "") => Object.fromEntries(text.trim().split(/\s+/).filter(Boolean).map((o) => o.split("=")));
 let markdown: Awaited<ReturnType<typeof createSatteriMarkdownProcessor>> | undefined;
-const render = async (text: string) => {
+
+// The options after a code fence's language, `file=data/x.py lines=151-162 title="backend"`
+const fenceOptions = (text: string) =>
+	Object.fromEntries([...text.matchAll(/(\w+)=(?:"([^"]*)"|(\S+))/g)].map(([, k, quoted, bare]) => [k, quoted ?? bare]));
+const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+const ARROW = '<svg width="0.75em" height="0.75em" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" aria-hidden="true"><path d="M3 9 9 3M4 3h5v5"></path></svg>';
+
+// `repo` is the project's repository: a code block naming a file links to it there, at its lines
+const render = async (text: string, repo?: string) => {
 	markdown ??= await createSatteriMarkdownProcessor();
-	// Each ```math block is set aside as a one-word paragraph, then swapped for its HTML (mathBlock)
+	// Each ```math block is set aside as a one-word paragraph, then swapped for its HTML (mathBlock).
+	// Code blocks are set aside the same way and come back on a console panel: a title bar with the
+	// language (or a title) and the file, and a GitHub link when the block names one.
 	const maths: string[] = [];
-	const marked = text.replace(/^```math\n([\s\S]*?)\n```$/gm, (_, source: string) => `MATHBLOCK${maths.push(mathBlock(source)) - 1}`);
+	const codes: string[] = [];
+	let marked = text.replace(/^```math\n([\s\S]*?)\n```$/gm, (_, source: string) => `MATHBLOCK${maths.push(mathBlock(source)) - 1}`);
+	const fences: { lang: string; opts: Record<string, string>; source: string }[] = [];
+	marked = marked.replace(/^```(\w*)([^\n]*)\n([\s\S]*?)\n```$/gm, (_, lang: string, rest: string, source: string) => {
+		fences.push({ lang, opts: fenceOptions(rest), source });
+		return `CODEBLOCK${fences.length - 1}`;
+	});
+	for (const { lang, opts, source } of fences) {
+		const pre = (await markdown.render("```" + lang + "\n" + source + "\n```")).code;
+		// Its title: the file it's from, or its language
+		const title = opts.title ?? opts.file?.split("/").pop() ?? lang;
+		const lines = opts.lines?.match(/^(\d+)-(\d+)$/);
+		const href = repo && (opts.file ? `${repo}/blob/HEAD/${opts.file}${lines ? `#L${lines[1]}-L${lines[2]}` : ""}` : opts.link === "repo" ? repo : undefined);
+		const link = href ? `<a class="code-link" href="${escape(href)}" target="_blank" rel="noopener">GitHub ${ARROW}</a>` : "";
+		codes.push(`<div class="code-panel"><div class="code-bar label"><span>${escape(title)}</span>${link}</div>${pre}</div>`);
+	}
 	const html = listLabels(linkTooltips((await markdown.render(marked)).code));
-	return html.replace(/<p>MATHBLOCK(\d+)<\/p>/g, (_, i) => maths[Number(i)]);
+	return html
+		.replace(/<p>MATHBLOCK(\d+)<\/p>/g, (_, i) => maths[Number(i)])
+		.replace(/<p>CODEBLOCK(\d+)<\/p>/g, (_, i) => codes[Number(i)]);
 };
 
 export async function writeUp(project: Project): Promise<Section[]> {
@@ -190,7 +220,7 @@ export async function writeUp(project: Project): Promise<Section[]> {
 		const blocks: Block[] = [];
 		let text: string[] = [];
 		const flushText = async () => {
-			if (text.length) blocks.push({ kind: "text", html: await render(text.join("\n\n")) });
+			if (text.length) blocks.push({ kind: "text", html: await render(text.join("\n\n"), project.data.repo?.replace(/\/$/, "")) });
 			text = [];
 		};
 		for (const chunk of part.lines.join("\n").split(/\n\s*\n/)) {

@@ -8,6 +8,7 @@
  *   1. step           a list in order, each line led by a muted mono step number (01, 02, …)
  *   - **Label:** text a list item with a bold label, a few spaces after its colon
  *   ```math          equations, one a line, beside a 1px rule (mathBlock in src/scripts/markdown.ts)
+ *   ```python …      code or a file tree on a console panel (built in src/scripts/project-files.ts)
  */
 interface Props {
 	html: string;
@@ -127,6 +128,56 @@ const { html, class: className } = Astro.props;
 		font-weight: 300;
 		letter-spacing: 0.08em;
 		color: var(--muted);
+	}
+
+	/* Code and file trees: a console panel, its title bar naming the language and file (with a GitHub
+	   link when the project has a repo), the code in one quiet color without the highlighter's box. A long
+	   line scrolls inside the panel. */
+	.prose :global(.code-panel) {
+		margin-block: 1.75rem;
+		background: var(--surface);
+		border: var(--border-width) solid var(--frame-line);
+	}
+
+	.prose :global(.code-bar) {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.5rem 0.9rem;
+		border-bottom: var(--border-width) solid var(--frame-line);
+		color: var(--muted);
+	}
+
+	.prose :global(a.code-link) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		white-space: nowrap;
+	}
+
+	/* A plain link, not a bracketed one */
+	.prose :global(a.code-link)::before,
+	.prose :global(a.code-link)::after {
+		content: none;
+	}
+
+	.prose :global(.code-panel pre) {
+		margin: 0;
+		padding: 0.9rem 1rem;
+		overflow-x: auto;
+		background: none !important;
+		font-family: var(--font-body);
+		font-size: 0.8125rem;
+		line-height: 1.75;
+		color: #b3b9c4 !important;
+	}
+
+	.prose :global(.code-panel pre span) {
+		color: inherit !important;
+	}
+
+	.prose :global(.code-panel pre code) {
+		font-family: inherit;
 	}
 
 	/* Equations: Plex Mono beside a 1px rule, like a quoted aside; a group's label (Predict:) in its own

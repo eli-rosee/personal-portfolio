@@ -83,14 +83,18 @@ const { statement, sections } = Astro.props;
 		color: var(--text);
 	}
 
+	/* min-width 0 all the way down, so a long line of code scrolls inside its block instead of
+	   widening the column */
 	.body {
 		grid-column: 2;
 		display: grid;
 		gap: 1.25rem;
+		min-width: 0;
 		max-width: 44rem;
 	}
 
 	.body > :global(.project-prose) {
+		min-width: 0;
 		color: #7c8494;
 	}
 
