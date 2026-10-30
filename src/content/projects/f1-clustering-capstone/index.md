@@ -8,7 +8,7 @@
 title: "F1 Clustering Capstone"
 number: 1
 status: in-orbit
-summary: A tool built for GM Motorsports that sorts 18 million samples of Formula 1 telemetry into driving styles.
+summary: A tool built for General Motors that sorts 18 million samples of Formula 1 telemetry into driving styles.
 stack: [Python, PostgreSQL, pandas, scikit-learn]
 
 # display (delete for no signal)
@@ -156,7 +156,7 @@ statement: Is there a *best way* to drive a Formula 1 car?
 
 ## At a glance
 
-A year-long capstone for GM Motorsports where we set out to define "driving styles" amongst F1 drivers.
+A year-long capstone for GM where we set out to define "driving styles" amongst F1 drivers.
 
 - **Awards:** 1st place for the CSCE Undergraduate Enrichment Fund, 1st place at the College of Engineering Expo (CSCE), and an invitation to present at the CSCE Alumni Conference.
 - **My part:** I built the scraper, the database and the preprocessing pipeline, and made 78 of the team's 167 commits.
@@ -167,9 +167,9 @@ A year-long capstone for GM Motorsports where we set out to define "driving styl
 
 Formula 1 teams measure everything about the car, but the driver is still hard to quantify.
 
-Lap time is the metric everyone looks at, but it's shaped by everything around the driver just as much as the driver themselves. GM Motorsports asked us to build a tool that digs into what defines a driver, and to do so **independent of lap time**. That meant stripping away the noise from the car, the tires and the track until all that was left were the driver's own inputs.
+Lap time is the metric everyone looks at, but it's shaped by everything around the driver just as much as the driver themselves. GM asked us to build a tool that digs into what defines a driver, and to do so **independent of lap time**. That meant stripping away the noise from the car, the tires and the track until all that was left were the driver's own inputs.
 
-Capstone at the University of Arkansas is two semesters. In the fall, we were matched with an industry sponsor and designed a solution to the sponsor's given problem statement. In the spring, we built it. My team of six was sponsored by **GM Motorsports**, whose data science team mentored us throughout the project's duration.
+Capstone at the University of Arkansas is two semesters. In the fall, we were matched with an industry sponsor and designed a solution to the sponsor's given problem statement. In the spring, we built it. My team of six was sponsored by **General Motors**, whose data science team mentored us throughout the project's duration.
 
 ## My role
 
