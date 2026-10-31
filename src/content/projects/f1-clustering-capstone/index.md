@@ -167,7 +167,7 @@ A year-long capstone for GM where we set out to define "driving styles" amongst 
 
 Formula 1 teams measure everything about the car, but the driver is still hard to quantify.
 
-Lap time is the metric everyone looks at, but it's shaped by everything around the driver just as much as the driver themselves. GM asked us to build a tool that digs into what defines a driver, and to do so **independent of lap time**. That meant stripping away the noise from the car, the tires and the track until all that was left were the driver's own inputs.
+Lap time is the metric everyone looks at, but it's shaped by everything around the driver just as much as the driver themselves. GM asked us to build a tool that digs into what defines a driver, and to do so **independent of lap time**. It was an interesting challenge, and one that had previously been relatively unexplored in F1 data analytics.
 
 Capstone at the University of Arkansas is two semesters. In the fall, we were matched with an industry sponsor and designed a solution to the sponsor's given problem statement. In the spring, we built it. My team of six was sponsored by **General Motors**, whose data science team mentored us throughout the project's duration.
 
