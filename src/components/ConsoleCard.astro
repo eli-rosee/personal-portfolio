@@ -17,6 +17,7 @@
  * Wrappers supply the screen contents and any behavior. Sizes are CSS variables on .panel
  * that a wrapper can override through `style`. Adding .is-active to .panel holds the hover look.
  */
+import { textHtml } from "../scripts/markdown";
 import ExternalIcon from "./ExternalIcon.astro";
 import Screen from "./Screen.astro";
 
@@ -126,7 +127,7 @@ const tipText =
 				}
 			</Heading>
 			<div class="body">
-				{summary && <p class="summary" data-fit={side ? "" : undefined}><span>{summary}</span></p>}
+				{summary && <p class="summary" data-fit={side ? "" : undefined}><span set:html={textHtml(summary)} /></p>}
 				<slot name="actions" />
 			</div>
 		</div>

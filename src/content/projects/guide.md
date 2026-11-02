@@ -76,6 +76,10 @@ Everything after the second `---`.
 - `![alt](file "caption")` on its own line is a figure; two or three in a row sit side by side
   - `{effects=true}` right after it adds the screen effects
   - `{values=N}` right after a clip adds a count of N values and a progress bar
-- Equations in a ` ```math ` block, one a line: `Label:  x = F x    (note)`, with `v_x`, `F^T`, `S^{-1}`
+- Equations in a ` ```math ` block, one a line: `Label:  x = F x    (note)`
+- Exponents, subscripts and fractions: `n^2`, `10^-8`, `n_2`, `v_x`, `{1/2}`
+  - Braces for anything longer: `x^{n+1}`, `S_{xy}`, `{n+1/2}`
+  - In backticks they stay as typed, and `file_name`, `x_1.py` and `15/17` are left alone
+  - They work in the write-up, equations, summary, statement, achievement and captions. In a field, quote a line that starts with `{`
 
 **Suggested sections, in order** (pick what fits): Background · The problem / The prompt · Approach / What we built · The core algorithm · My role (team projects) · Where I went wrong · Results · Awards

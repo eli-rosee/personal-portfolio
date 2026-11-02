@@ -105,6 +105,22 @@ img {
 	height: auto;
 }
 
+/* Small, and without pushing their line away from its neighbours */
+sub,
+sup {
+	font-size: 0.7em;
+	line-height: 0;
+}
+
+/* A typed fraction, {1/2}: the slash tucked between its numbers */
+.frac {
+	white-space: nowrap;
+}
+
+.frac sub {
+	vertical-align: baseline;
+}
+
 a {
 	color: var(--accent);
 	text-decoration: none;

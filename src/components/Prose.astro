@@ -233,11 +233,6 @@ const { html, class: className } = Astro.props;
 		grid-column: 2;
 	}
 
-	.prose :global(.math :is(sub, sup)) {
-		font-size: 0.7em;
-		line-height: 0;
-	}
-
 	/* Phones: notes drop under their equation */
 	@media (max-width: 47.99rem) {
 		.prose :global(.math) {

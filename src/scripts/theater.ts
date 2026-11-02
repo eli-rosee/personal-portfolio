@@ -66,8 +66,8 @@ export function initTheater(root: ParentNode = document, signal?: AbortSignal) {
 		const group = panes.filter((p) => p.dataset.group === pane.dataset.group);
 		field("group").textContent = pane.dataset.group ?? "";
 		field("count").textContent = `${pad(group.indexOf(pane) + 1)} / ${pad(group.length)}`;
-		field("title").textContent = pane.dataset.title ?? "";
-		field("caption").textContent = pane.dataset.caption ?? "";
+		field("title").innerHTML = pane.dataset.title ?? ""; // escaped when built (textHtml)
+		field("caption").innerHTML = pane.dataset.caption ?? "";
 		field("hint").textContent = pane.dataset.hint ?? "";
 		// A deck shows its counter and PDF in the hint's corner
 		dialog.classList.toggle("on-slides", !!pane.querySelector(".slide"));

@@ -23,19 +23,43 @@ export const leadSentences = (html: string) =>
 		return lead ? `<p><span class="lead">${lead}</span>${inner.slice(lead.length)}</p>` : paragraph;
 	});
 
+// Typed exponents, subscripts and fractions, in escaped text: n^2, 10^-8, x^{n+1}, n_2, v_x, S_{xy}, {1/2}. An
+// unbraced subscript is one letter or a number and must end its word, so file_name, a_b_c and x_1.py stay as
+// typed. A fraction needs its braces, so a score like 15/17 stays as typed.
+const scripts = (text: string) =>
+	text
+		.replace(
+			/(?<=(?<![\p{L}\p{N}_./])[\p{L}\p{N}]+|[)\]])_(?:\{([^{}]*)\}|(\d+|\p{L})(?![\p{L}\p{N}_@/]|\.[\p{L}\p{N}]))/gu,
+			(_, long, one) => `<sub>${long ?? one}</sub>`,
+		)
+		.replace(
+			/(?<=[\p{L}\p{N})\]]|<\/sub>)\^(?:\{([^{}]*)\}|([-−+]?[\p{L}\p{N}]+))/gu,
+			(_, long, one) => `<sup>${(long ?? one).replace(/-/g, "−")}</sup>`,
+		)
+		.replace(/\{([^{}/]+)\/([^{}/]+)\}/g, '<span class="frac"><sup>$1</sup>/<sub>$2</sub></span>');
+
+// The same in rendered Markdown: only in its text, never in tags or `code`
+export const typedScripts = (html: string) =>
+	html.replace(/<(pre|code)\b[\s\S]*?<\/\1>|<[^>]+>|[^<]+/g, (part) => (part[0] === "<" ? part : scripts(part)));
+
 // A statement line with its *phrase* in amber. `phrase` wraps it (the home page makes it the launch
 // button); punctuation right after the phrase stays on its line, next to it.
 export const statementHtml = (statement: string, phrase = (text: string) => `<em>${text}</em>`) =>
-	escapeHtml(statement).replace(/\*([^*]+)\*([.,!?;:]?)/g, (_, text, punct) => `<span class="nowrap">${phrase(text)}${punct}</span>`);
+	scripts(escapeHtml(statement)).replace(/\*([^*]+)\*([.,!?;:]?)/g, (_, text, punct) => `<span class="nowrap">${phrase(text)}${punct}</span>`);
+
+// A plain line of text with its exponents, subscripts and fractions set
+export const textHtml = (text: string) => scripts(escapeHtml(text));
+
+// The same line where only plain text can go (alt text, link previews): as typed, without the braces
+export const plainText = (text: string) =>
+	text
+		.replace(/\^\{([^{}]*)\}/g, "^($1)")
+		.replace(/_\{([^{}]*)\}/g, "_$1")
+		.replace(/\{([^{}/]+\/[^{}/]+)\}/g, "$1");
 
 // A ```math block: one equation a line. "Label:" at a line's start goes in a label column, a "(note)"
-// after two spaces at its end is dimmed, v_x and S_{xy} are subscripts, F^T and S^{-1} superscripts,
+// after two spaces at its end is dimmed, exponents and subscripts are typed as anywhere else (scripts),
 // and a blank line is a gap between groups.
-const mathText = (text: string) =>
-	escapeHtml(text)
-		.replace(/\^\{([^}]*)\}|\^(\S)/g, (_, long, one) => `<sup>${(long ?? one).replace(/-/g, "−")}</sup>`)
-		.replace(/_\{([^}]*)\}|_(\w)/g, (_, long, one) => `<sub>${long ?? one}</sub>`);
-
 export const mathBlock = (source: string) => {
 	const rows = source.split("\n").map((line) => {
 		if (!line.trim()) return undefined;
@@ -48,7 +72,7 @@ export const mathBlock = (source: string) => {
 		.map((r, i) => {
 			if (!r) return rows[i - 1] ? '<span class="math-gap"></span>' : "";
 			const label = labels ? `<span class="math-label">${r.label ? escapeHtml(r.label) : ""}</span>` : "";
-			return `${label}<span class="math-eq">${mathText(r.eq)}</span>${r.note ? `<span class="math-note">${escapeHtml(r.note)}</span>` : ""}`;
+			return `${label}<span class="math-eq">${scripts(escapeHtml(r.eq))}</span>${r.note ? `<span class="math-note">${escapeHtml(r.note)}</span>` : ""}`;
 		})
 		.join("");
 	return `<div class="${labels ? "math" : "math math-bare"}">${html}</div>`;
