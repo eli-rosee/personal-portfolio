@@ -46,14 +46,50 @@ scripts/rebuild.sh        server: writes status.json at boot, then rebuilds the 
 
 ## Editing content
 
-**About text:** conventions for the statement, prompts and links are at the top of `src/components/About.astro`.
+### About text
 
-**Adding a project:** every field, its options and the write-up's syntax are in [`src/content/projects/guide.md`](src/content/projects/guide.md); the project files themselves carry no comments.
+Conventions for the statement, prompts and links are at the top of `src/components/About.astro`.
 
-1. Run `npm run new-project "Title"`. It makes `src/content/projects/<slug>/` with an `index.md` of every field, an empty `assets/` folder and the title art. The project starts as a draft: it shows under `npm run dev` at `/projects/<slug>/`, with any missing file marked on the page, and stays off the built site.
-2. Put the project's images, clips, slides and PDFs in `assets/`; fields name them relative to it (`demo.mp4`, `slides/`). Clips and videos are committed, so compress them first (a short loop should be well under 1 MB), then run `npm run media` and commit the `.poster.webp` it makes beside each one.
-3. For a slide deck, put the `.pptx` in `assets/` and run `npm run slides <slug> deck.pptx`: it exports every slide through PowerPoint into `assets/slides/` and the deck's PDF beside it (from WSL on the Windows machine with Office; it works on a copy, so the deck can stay open). A slide with a GIF or video becomes a clip, unless it would be over 12 MB.
-4. Fill in `index.md`: `highlights` picks what Media shows (in that order, the first large) and `screen` what the top card plays; `achievement` and `statement` are the line leading into Media.
-5. Delete `draft: true` and run `npm run build`. Once published, a missing file stops the build and names it.
+### Adding a project
 
-Renamed a project? Rename its folder too (it's the page's address), then run `npm run art` to redraw its title.
+Every field and the write-up's syntax are explained in [`src/content/projects/guide.md`](src/content/projects/guide.md).
+
+**1. Create it**
+
+```sh
+npm run new-project "Project Title"
+```
+
+- Makes `src/content/projects/<slug>/` with `index.md`, an `assets/` folder and the title art
+- Starts as a draft: visible in `npm run dev` at `/projects/<slug>/`, hidden from the built site
+
+**2. Add its files** to `assets/`
+
+- Images, clips, slides, PDFs; fields name them relative to `assets/` (`demo.mp4`, `slides/`)
+- Compress clips and videos first (a short loop: under 1 MB); they're committed
+- Run `npm run media`, then commit the `.poster.webp` it makes beside each clip
+
+**3. Slides** (optional)
+
+```sh
+npm run slides <slug> deck.pptx
+```
+
+- Put the `.pptx` in `assets/` first; needs PowerPoint (run from WSL on the Windows machine)
+- Exports `assets/slides/` and the deck's PDF; a slide with a GIF or video becomes a clip (under 12 MB)
+
+**4. Fill in `index.md`**
+
+| Field | What it does |
+|---|---|
+| `highlights` | what Media shows, in order; the first is large |
+| `screen` | which highlight plays on the top card |
+| `statement` | the hook above Media, `*one phrase*` in amber |
+| `achievement` | the grey line under it: the best result |
+
+**5. Publish**
+
+- Delete `draft: true`, then run `npm run build`
+- A published project with a missing file stops the build and names the file
+
+**Renamed a project?** Rename its folder too (it's the page's address), then run `npm run art`.
