@@ -2,7 +2,7 @@
 title: "Asteroid Kalman Filter"
 number: 3
 status: in-orbit
-summary: A Kalman filter for every asteroid, predicting where each one moves next so a stranded ship can hop-scotch home.
+summary: A Kalman filter for every asteroid, predicting where each one moves next so a stranded ship can hopscotch home.
 stack: [Python, Kalman Filter, State Estimation]
 
 display:
@@ -38,7 +38,7 @@ statement: Our stranded crew has a broken engine and *400 days* to get back to E
 
 While traveling through the solar system, the engine in our ship sputters out.
 
-Luckily, an asteroid field is approaching, and we realize the ship can hop-scotch from asteroid to asteroid to get back to Earth, at the top edge of the field. Asteroid hopping is a tricky operation, though. The ship can only jump so far, and **a jump out of range sends us flying into deep space, castaways forever.** Even a good jump isn't safe. If the asteroid we land on drifts out of the field, we suffer the same fate.
+Luckily, an asteroid field is approaching, and we realize the ship can hopscotch from asteroid to asteroid to get back to Earth, at the top edge of the field. Asteroid hopping is a tricky operation, though. The ship can only jump so far, and **a jump out of range sends us flying into deep space, castaways forever.** Even a good jump isn't safe. If the asteroid we land on drifts out of the field, we suffer the same fate.
 
 To top it all off, we only have **400 days of supplies**.
 
@@ -48,7 +48,7 @@ I gave every asteroid its own Kalman filter.
 
 At every timestep, we're given a noisy (x, y) measurement of every asteroid in the field. Each asteroid also has an unknown velocity and acceleration that the measurements never tell us directly. A Kalman filter is uniquely equipped for this job, as it can **estimate those hidden values from position alone**, while deciding how much to trust its own prediction versus each new noisy measurement.
 
-A particle filter could do this too, but it would be overkill. There's only ever **one likely position to track**, as we are provided the measurements (however nosiy) at every timestep. A Kalman filter follows it with a single estimate and its uncertainty, where a particle filter would need thousands of particles to do the same.
+A particle filter could do this too, but it would be overkill. There's only ever **one likely position to track**, as we are provided the measurements (however noisy) at every timestep. A Kalman filter follows it with a single estimate and its uncertainty, where a particle filter would need thousands of particles to do the same.
 
 In Part A, our goal was predicting where each asteroid would be one timestep in the future. Each filter needs a few timesteps to converge, then its predictions stay roughly within the match range.
 
@@ -98,7 +98,7 @@ My biggest bug was hopping around just short of the finish line.
 
 Every time the ship got close to home, it would keep jumping between asteroids that were closer to the top-middle point in 5 timesteps, but it would never actually want to cross the finish line. To fix this, I used a **moving finish line**. Once the ship got close enough, the target moved past the boundary, so crossing it became the best option.
 
-Some runs also failed simply from **running out of supplies before reaching home**. In this run, the algorithm got unlucky with its field of asteroids. They were pretty sparse, and a lot of the ones that fell into the ship's jump window had downward momentum. Despite this, the ship was still making progress, and it most likely would have made it home given a bit more supplies.
+Some runs also failed simply from **running out of supplies before reaching home**. In this run, the algorithm got unlucky with its field of asteroids. They were pretty sparse, and a lot of the ones that fell into the ship's jump window had downward momentum. Despite this, the ship was still making progress, and it most likely would have made it home given a few more days of supplies.
 
 ![](failed_too_slow.mp4 "A failed run: out of supplies")
 

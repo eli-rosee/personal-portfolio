@@ -38,9 +38,9 @@ statement: I had *12 days* to build a secure server that starts with one command
 
 The prompt was to create a web server that hosts a page over a secure port, and can deploy in a single command.
 
-I was interviewing with EVT (Enterprise Vision Technologies), who creates and sells IT infrastructure for enterprises. This challenge was a microcosm of their world, and challenged me to expose myself to backend tooling technologies I had previously never been exposed to.
+I was interviewing with EVT (Enterprise Vision Technologies), which creates and sells IT infrastructure for enterprises. This challenge was a microcosm of their world, and pushed me into backend tools I'd never used.
 
-A large part of the project was explaining the reasoning behind the tooling I chose. Because of this, the first major part of this project was research into what is the current standard in the world of backend web design.
+A large part of the project was explaining the reasoning behind the tooling I chose. Because of this, the first major part of this project was research into the current standard in the world of backend web development.
 
 ## Approach
 
@@ -50,11 +50,11 @@ With this setup, **the only thing you need installed is Docker**. A virtual mach
 
 Nginx is the lightest, fastest choice for serving a static page, and its configuration is far simpler than Apache's. I first got HTTPS working with Nginx installed straight on my machine, then moved it into **the official nginx image** from Docker Hub, which comes with Nginx ready to run.
 
-With Docker handling every dependency, what was left to automate it. I did so with **four Bash scripts**. The one to set up and deploy the server was required, but the other three I made to expirement. For the last three, I made one to test the server, one for nginx logs, and one to shut the server down.
+With Docker handling every dependency, what was left was to automate it. I did so with **four Bash scripts**. The one to set up and deploy the server was required, but the other three I made to experiment. For the last three, I made one to test the server, one for Nginx logs, and one to shut the server down.
 
-Initially, I wanted to register for a real certificate from the CA; however, this proved too complicated. To do this, you need a registered domain, and it would have slowed down every run, and fully broken the one-command deployment rule. **A self-signed certificate for localhost** worked well for this project, and made much more sense given the scope.
+Initially, I wanted to register for a real certificate from a CA; however, this proved too complicated. That requires a registered domain, and it would have slowed down every run and fully broken the one-command deployment rule. **A self-signed certificate for localhost** worked well for this project, and made much more sense given the scope.
 
-The prompt only asked for a secure port, but I also added a **redirect from HTTP to HTTPS** in the nginx config file. That way, all insecure connections would simply be transformed into a secure connection.
+The prompt only asked for a secure port, but I also added a **redirect from HTTP to HTTPS** in the Nginx config file. That way, all insecure connections would simply be transformed into a secure connection.
 
 ```nginx file=configs/nginx.conf lines=35-55
 # HTTP server block - configured to redirect all traffic to HTTPS
@@ -85,7 +85,7 @@ server {
 setup.sh goes from a fresh clone to a running server in four steps.
 
 1. **Check Docker:** If Docker isn't reachable, it stops the build.
-2. **Make the certificate:** A self-signed key and certificate for localhost which can be reused on later runs.
+2. **Make the certificate:** A self-signed key and certificate for localhost, which can be reused on later runs.
 3. **Build:** The Dockerfile copies the page, config file, and certificate into the correct directories in nginx:stable.
 4. **Run:** The container starts on ports 80 and 443.
 
@@ -111,11 +111,11 @@ EXPOSE 80 443
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-The doom.mp4 was a callback to the joke that you can run Doom on anything, even my webserver (even though it wasn't technically running on the server).
+doom.mp4 was a callback to the joke that you can run Doom on anything, even my web server (though it wasn't technically running on the server).
 
 ![](success_page.mp4 "The success page, served over HTTPS")
 
-test.sh then checks **the redirect, the page and the TLS handshake** with curl.
+test.sh then checks **the redirect, the page, and the TLS handshake** with curl.
 
 ![](setup.mp4 "setup.sh, then test.sh")
 
@@ -123,15 +123,15 @@ test.sh then checks **the redirect, the page and the TLS handshake** with curl.
 
 The one step I couldn't automate was Docker permissions.
 
-Joining the docker group takes sudo and a fresh login, which **a script shouldn't do on its own**. setup.sh checks for access first, and the README points out how to fix it.
+Joining the docker group takes sudo and a fresh login, which **a script shouldn't do on its own**. setup.sh checks for access first, and the README explains how to fix it.
 
 Two things I'd change if I could go back:
 
 1. **The key is in the image.** Anyone with the image has it. Mounting it at runtime or using a secrets manager keeps it out.
-2. **The last test fails.** curl rejects the self-signed certificate, as the clip shows, as it is not in the certificate authority list, but self-signed. `--cacert` would verify it instead.
+2. **The last test fails.** As the clip shows, curl rejects the certificate because it's self-signed rather than issued by a trusted certificate authority. `--cacert` would verify it instead.
 
 ## What I took from it
 
 It came down to me and one other candidate, and they got the offer.
 
-However, I am still really glad I got to undertake this project. In under two weeks, I went from brand new to these tools to **a one-command secure server**, with a reason for every choice. Even today, I use the tools I learned in that interview to serve this site and my [capstone project](https://f1.elirose.dev "The live dashboard") from a mini PC at home.
+However, I am still really glad I got to undertake this project. In under two weeks, I went from brand new to these tools to **a one-command secure server**, with reasoning behind every choice. I learned a lot and expanded my backend toolkit substantially.

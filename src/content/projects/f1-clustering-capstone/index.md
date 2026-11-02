@@ -63,7 +63,7 @@ statement: Is there a *best way* to drive a Formula 1 car?
 A year-long capstone for General Motors where we set out to define "driving styles" amongst F1 drivers.
 
 - **Awards:** 1st place for the CSCE Undergraduate Enrichment Fund, 1st place at the College of Engineering Expo (CSCE), and an invitation to present at the CSCE Alumni Conference.
-- **My part:** I built the scraper, the database and the preprocessing pipeline, and made 78 of the team's 167 commits.
+- **My part:** I built the scraper, the database, and the preprocessing pipeline, and made 78 of the team's 167 commits.
 - **Scale:** 26,692 laps and over 18 million telemetry samples from all 24 races of the 2025 F1 season.
 - **Live:** [f1.elirose.dev](https://f1.elirose.dev "The live dashboard")
 
@@ -100,19 +100,19 @@ frontend/                     (teammate) the dashboard
 
 All 26,692 laps of the 2025 season, loaded into PostgreSQL after three failed overnight runs.
 
-The scraper uses FastF1 (a python library) for each driver's lap count and requests each lap's JSON from [Tracing Insights on GitHub](https://github.com/tracinginsights). At the beginning of the project, we were given the choice between the two open source F1 data sources. The reason we ultimately chose Tracing Insight's data was due to its data being in nested JSON files, which we found much easier to fetch. TI also had built in fuel correction that adjusted driver statistics based on the weight of the car. However, the FastF1 module was good for getting metadata, so we used it to help build the github links to download from.
+The scraper uses FastF1 (a Python library) for each driver's lap count and requests each lap's JSON from [Tracing Insights on GitHub](https://github.com/tracinginsights). At the beginning of the project, we were given the choice between the two open-source F1 data sources. We ultimately chose Tracing Insights because its data came in nested JSON files, which we found much easier to fetch. TI also had built-in fuel correction that adjusted driver statistics based on the weight of the car. However, the FastF1 module was good for getting metadata, so we used it to help build the GitHub links to download from.
 
-![](lap-data.mp4 "One lap, One driver, One race."){values=10914}
+![](lap-data.mp4 "One lap, one driver, one race."){values=10914}
 
 ## postgresql_db.py and query_db.py
 
-Our database 2 tables per race (a metadata table and a telemetry entry table) and Binary-tree indexing cut pulling the whole season's data from over 10 minutes to 15–20 seconds.
+Our database has 2 tables per race (a metadata table and a telemetry entry table), and B-tree indexing cut the time to pull the whole season's data from over 10 minutes to 15–20 seconds.
 
-Our metadata table was built so we wouldn't have to search massive telemetry rows during lookups. Each metadata row points to its sample in the telemetry table by a foreign key, so with the index on driver and lap, any one lap is **a single lookup**.
+Our metadata table was built so we wouldn't have to search massive telemetry tables during lookups. Each metadata row points to its sample in the telemetry table by a foreign key, so with the index on driver and lap, any one lap is **a single lookup**.
 
 ![](db_telemetry_schema.png "One race's telemetry table")
 
-Keep in mind that telemetry is measured 10s of times a second, and each of these measurements needs an invidual entry in our database (again, totaling over 18 million records in the entirety of our DB).
+Keep in mind that telemetry is measured tens of times a second, and each of these measurements needs an individual entry in our database (again, totaling over 18 million records in the entirety of our DB).
 
 ![](db_meta_schema.png "Its metadata table and index")
 
@@ -121,10 +121,10 @@ Keep in mind that telemetry is measured 10s of times a second, and each of these
 RaceData turns a race's raw laps into clean and comparable data.
 
 1. **Load.** Every lap for every driver is fetched from the database in lap order.
-2. **Aligned by distance, not time.** Each lap is interpolated onto the same **500 distance points** along the track for clean comparisons.
+2. **Align by distance, not time.** Each lap is interpolated onto the same **500 distance points** along the track for clean comparisons.
 3. **Normalize per driver.** Each of the eight metrics is scaled 0–1 against the driver's own **2nd to 98th percentile** over a block of five laps, so one spike can't stretch the scale, and tire wear is accounted for.
 4. **Drop outlying laps.** The first lap always gets dropped, and so does any lap more than **1.5 × IQR** slower than the driver's norm (catches safety cars and pit stops).
-5. **Reduce with PCA.** The eight metrics at each point compress to ~4-5 components that account for 95% of the variance, taking a lap from **4,000 values to about 2,000 - 2,500**. We found much better cluster results with this mechanism.
+5. **Reduce with PCA.** The eight metrics at each point compress to ~4–5 components that account for 95% of the variance, taking a lap from **4,000 values to about 2,000–2,500**. We found much better cluster results with this mechanism.
 
 Here's step 2, the alignment, in code:
 
@@ -147,7 +147,9 @@ def _reindex_df_operations(self, df):
 
 Each individual lap is sorted into one of five clusters, and a driver's style is represented by a distribution across the different clusters.
 
-Besides K-means, we tested hierarchical clustering (its O(n^2) memory had difficulties evaluating an entire season), Gaussian mixtures (no different than k-means without soft assignments, which went against our hard lap classifcation strategy) and DBSCAN (F1 laps are too alike for density to separate). Adding PCA lowered the silhouette / DBI scores, yet it was **the first run where drivers' distributions actually differed**, so we judged every run by its distributions as well as its scores.
+Besides K-means, we looked at three other algorithms. Hierarchical clustering needs O(n^2) memory, which made evaluating an entire season difficult, and the distributions it did produce were much worse. Gaussian mixtures gave the same results as K-means when using hard labels, and their real advantage, soft assignments, went against our strategy of classifying each lap into one cluster. DBSCAN never made it past planning, since it separates clusters by density and F1 laps are too alike for that to work.
+
+Adding PCA lowered the silhouette and Davies-Bouldin scores, yet it was **the first run where drivers' distributions actually differed**, so we judged every run by its distributions as well as its scores.
 
 ![](without_pca.png "Without PCA")
 
@@ -157,19 +159,19 @@ We left the clusters unlabeled. A cluster's meaning changes from track to track,
 
 ## Architecture
 
-Our pipelin was three layers, This diagram displays the path from raw telemetry to the dashboard.
+Our pipeline had three layers. This diagram displays the path from raw telemetry to the dashboard.
 
 ![](architecture.png "Architecture Diagram")
 
-We hosted this on a EC2 instance during the capstone, but now I [self-host](https://f1.elirose.dev) it.
+We hosted this on an EC2 instance during the capstone, but now I [self-host](https://f1.elirose.dev) it.
 
 
 ## What I'd do next
 
 Three things I would add if we had more time.
 
-1. **More seasons.** Our tool being 2025 alone limits race to race comparisons. More years would show how a track evolves over time, and give us more data to compare drivers by.
-2. **Style beside performance.** Adding performance metrics like lap time, pace and finishing position to each cluster would let a user compare how a style was driven versus how well it actually did, without leaving the dashboard.
+1. **More seasons.** Covering 2025 alone limits race-to-race comparisons. More years would show how a track evolves over time, and give us more data to compare drivers by.
+2. **Style beside performance.** Adding performance metrics like lap time, pace, and finishing position to each cluster would let a user compare how a style was driven versus how well it actually did, without leaving the dashboard.
 3. **Findings from the tool.** Building it took the whole year, and none of us were data scientists, so we never used it to answer any style questions ourselves. The next step is the analysis, such as which styles are fastest, how a style changes as tires wear, and what separates two drivers in the same car.
 
 ## Awards
