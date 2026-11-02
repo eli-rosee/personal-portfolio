@@ -7,7 +7,7 @@ poster: /files/climb.jpg
 label: Bouldering Moondye Stand (V5) at Horseshoe Canyon Ranch # read by screen readers
 cam: HCR Crag Cam 01 # label on the viewport glass
 sent: true # green SENT tab on the card
-sentNote: 25+ attempts # the SENT tab's tooltip
+sentNote: 20+ attempts # the SENT tab's tooltip
 title: Moondye Stand
 summary: V5 Boulder at Horseshoe Canyon Ranch
 tags: [Sandstone, Dyno, V5]
