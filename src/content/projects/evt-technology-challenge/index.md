@@ -1,47 +1,19 @@
 ---
-# project
-#   status:
-#     liftoff
-#     in-orbit
-#     decommissioned
-
 title: "EVT Technology Challenge"
 number: 4
 status: in-orbit
 summary: A secure web server in Docker that starts with one command, built for EVT's technical interview.
 stack: [Docker, Nginx, Bash, OpenSSL]
 
-# display (delete for no signal)
-#   fit:
-#     crop (default)
-#     whole
-#   crop:
-#     center (default)
-#     top
-#     bottom
-#     left
-#     right
-#     top left
-#     top right
-#     bottom left
-#     bottom right
-#     x% y%
-#   effects:
-#     true (default)
-#     false
-#   zoom: 1 and up
-
 display:
   image: project_image.png
 
-# code (one or neither)
-#   repo: <url> (default)
-#   private: <tooltip>
+highlights:
+  - setup.mp4
+  - success_page.mp4
+screen: success_page.mp4
 
 repo: https://github.com/eli-rosee/evt-technology-challenge
-
-# readouts (up to 4)
-#   note
 
 readouts:
   - label: Technical Interview
@@ -51,84 +23,14 @@ readouts:
   - label: When
     value: Apr 2026
 
-# media (in order)
-#   type:
-#     video
-#       thumbnail
-#       sound:
-#         true (default)
-#         false
-#     clip
-#       file:
-#         .mp4
-#         .webm
-#         .gif
-#       shape:
-#         landscape (default)
-#         portrait
-#     image
-#       shape:
-#         landscape (default)
-#         portrait
-#       fit, crop, zoom: as in display
-#     slides
-#       npm run slides <slug> deck.pptx makes the folder and the PDF
-#       folder
-#       pdf
-#     link
-#       href or file
-#       live:
-#         false (default)
-#         true
-#       label
-#   every card
-#     caption
-#     wide:
-#       false (default)
-#       true
-#   image, clip, video, slides
-#     effects:
-#       false (default)
-#       true
-
 media:
   - type: link
     file: EVT_Technology_Challenge_2026.pdf
     title: Challenge Prompt
 
-# draft
-#   delete to publish
-
 draft: false
 
-# write-up (files go in assets/)
-#   ## Heading
-#   **bold**
-#   [text](url "tooltip")
-#   - list
-#   1. steps in order (numbered 01, 02, …)
-#   - **Label:** text (the gap after the colon is set by the site)
-#   blank line = new paragraph; extra blank lines or spaces add nothing
-#   &ensp; or &emsp; = a one-off wider space
-#   line\ (line break)
-#   ![alt](file "caption") on its own line
-#     2–3 in a row sit side by side
-#     {effects=true} right after it adds the image effects
-#     {values=N} right after a clip adds a count of N values and a progress bar
-#   ```math … ``` = equations, one a line
-#     Label:  x = F x    (note)
-#     v_x  F^T  S^{-1}
-
-# order
-#   Background (opt)
-#   The problem · The prompt
-#   Approach · What we built
-#   The core algorithm (opt)
-#   My role (team projects)
-#   Where I went wrong
-#   Results
-#   Awards (opt)
-
+achievement: In just under two weeks, I went from brand new to these tools to a one-command secure server.
 statement: I had *12 days* to build a secure server that starts with one command.
 ---
 
@@ -136,21 +38,21 @@ statement: I had *12 days* to build a secure server that starts with one command
 
 The prompt was to create a web server that hosts a page over a secure port, and can deploy in a single command.
 
-EVT (Enterprise Vision Technologies) creates and sells IT infrastructure for enterprises, and this challenge was a microcosm of their world. Beyond a secure port and a single command, the only rule was that I had to write a README explaining how to run it and the design decisions behind it.
+I was interviewing with EVT (Enterprise Vision Technologies), who creates and sells IT infrastructure for enterprises. This challenge was a microcosm of their world, and challenged me to expose myself to backend tooling technologies I had previously never been exposed to.
 
-Everything else was up to me. The prompt (linked below) listed over a dozen tools, from Vagrant to Kubernetes to Ansible, and backend tooling was fairly new to me.
+A large part of the project was explaining the reasoning behind the tooling I chose. Because of this, the first major part of this project was research into what is the current standard in the world of backend web design.
 
 ## Approach
 
-After hours of research, I settled on Nginx inside a Docker container, started by Bash scripts.
+After hours of research, I chose Nginx inside a Docker container, initiated and supported by Bash scripts.
 
-With Docker, **the only thing you need installed is Docker**. A virtual machine would have been much heavier to set up and run, and containers are the much more common way to host a server. Kubernetes is needed when running multiple containers, which was overkill for a single server.
+With this setup, **the only thing you need installed is Docker**. A virtual machine would have been much heavier to set up and run, and containers are the much more standard way to host a server. Kubernetes is needed when running multiple containers, which was overkill for the scope of this project.
 
 Nginx is the lightest, fastest choice for serving a static page, and its configuration is far simpler than Apache's. I first got HTTPS working with Nginx installed straight on my machine, then moved it into **the official nginx image** from Docker Hub, which comes with Nginx ready to run.
 
-With Docker handling every dependency, what was left to automate fit in **four Bash scripts**. The one to set up and deploy the server was required, but the other three I made to stand out. One to test the server, one for nginx logs, and one to shut the server down.
+With Docker handling every dependency, what was left to automate it. I did so with **four Bash scripts**. The one to set up and deploy the server was required, but the other three I made to expirement. For the last three, I made one to test the server, one for nginx logs, and one to shut the server down.
 
-Initially, I wanted to register for a real certificate from the CA; however, this proved too complicated. To do this, you need a registered domain, and it would have slowed down every run, and fully broken the one-command tenet. **A self-signed certificate for localhost** worked well for this project, and made much more sense given the scope.
+Initially, I wanted to register for a real certificate from the CA; however, this proved too complicated. To do this, you need a registered domain, and it would have slowed down every run, and fully broken the one-command deployment rule. **A self-signed certificate for localhost** worked well for this project, and made much more sense given the scope.
 
 The prompt only asked for a secure port, but I also added a **redirect from HTTP to HTTPS** in the nginx config file. That way, all insecure connections would simply be transformed into a secure connection.
 

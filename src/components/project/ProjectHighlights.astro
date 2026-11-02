@@ -1,0 +1,187 @@
+---
+/*
+ * A project's highlights, in its Media section: the feature full width, the rest in one row under it (one
+ * to a row on phones), each a screen opening the theater on its item. Each shows a still (a video's or
+ * clip's first frame); its name runs along a lower third across the picture's foot, led by the section
+ * headings' amber slant, on one line ("…" if it's too long). What plays (a video or clip) has a square
+ * play button in the middle. A screen the full width (the feature, or both of two) gets the larger
+ * lower third and play button.
+ */
+import Screen from "../Screen.astro";
+import Visual from "./Visual.astro";
+import { plainText, textHtml } from "../../scripts/markdown";
+import type { Highlight } from "../../scripts/project-files";
+
+interface Props {
+	highlights: Highlight[]; // in order, the first shown large
+}
+
+const { highlights } = Astro.props;
+const rest = Math.max(highlights.length - 1, 1);
+---
+
+{
+	highlights.length > 0 && (
+		<ul class="highlights" aria-label="Highlights" style={`--cols: ${rest}`}>
+			{highlights.map((h, i) => (
+				<li class:list={{ feature: i === 0, large: i === 0 || highlights.length === 2 }}>
+					<button type="button" class:list={["highlight", { plays: h.kind === "video" || h.kind === "clip" }]} data-theater={h.id} aria-label={`Open ${plainText(h.title)}`}>
+						<Screen plain>
+							<span class="pic">
+								<Visual asset={h.still} width={i === 0 ? 1200 : 640} position={h.kind === "image" ? "50% 0%" : undefined} />
+								{(h.kind === "video" || h.kind === "clip") && (
+									<span class="play" aria-hidden="true">
+										<svg viewBox="0 0 10 12">
+											<path d="M0 0 10 6 0 12Z" />
+										</svg>
+									</span>
+								)}
+								<span class="name label" set:html={textHtml(h.title)} />
+							</span>
+						</Screen>
+					</button>
+				</li>
+			))}
+		</ul>
+	)
+}
+
+<style>
+	.highlights {
+		display: grid;
+		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+		gap: 2rem 1.75rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.feature {
+		grid-column: 1 / -1;
+	}
+
+	.highlight {
+		all: unset;
+		display: block;
+		width: 100%;
+		cursor: zoom-in;
+	}
+
+	/* What plays has its play button to say so; the zoom cursor is for stills */
+	.highlight.plays {
+		cursor: pointer;
+	}
+
+	.highlight:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 4px;
+	}
+
+	.pic {
+		position: relative;
+		display: block;
+		aspect-ratio: 16 / 9;
+		overflow: hidden;
+	}
+
+	.pic > :global(.visual) {
+		position: absolute;
+		inset: 0;
+		object-fit: cover;
+	}
+
+	.highlight:is(:hover, :focus-visible) :global(.visual) {
+		filter: brightness(1.08);
+	}
+
+	/* The lower third: solid enough to read over busy footage */
+	.name {
+		position: absolute;
+		inset: auto 0 0;
+		z-index: 3;
+		overflow: hidden;
+		padding: 0.6rem 0.9rem;
+		border-top: var(--border-width) solid var(--frame-line-lit);
+		background: rgb(11 14 20 / 0.88);
+		color: var(--text);
+		font-size: 0.66rem;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	.name::before {
+		content: "";
+		display: inline-block;
+		width: 0.5rem;
+		height: 0.75rem;
+		margin-right: 0.65rem;
+		background: var(--accent);
+		clip-path: polygon(40% 0, 100% 0, 60% 100%, 0 100%);
+		vertical-align: -0.12rem;
+	}
+
+	.large .name {
+		padding: 0.85rem 1.25rem;
+		font-size: 0.78rem;
+	}
+
+	/* The play button: a square frame, centered over the picture above the lower third */
+	.play {
+		position: absolute;
+		inset: calc(50% - 1.1rem) auto auto 50%;
+		z-index: 3;
+		display: grid;
+		place-items: center;
+		width: 3.25rem;
+		height: 3.25rem;
+		translate: -50% -50%;
+		border: var(--border-width) solid var(--frame-line-lit);
+		background: rgb(11 14 20 / 0.8);
+	}
+
+	.large .play {
+		inset-block-start: calc(50% - 1.4rem);
+		width: 4.5rem;
+		height: 4.5rem;
+	}
+
+	.play svg {
+		width: 0.85rem;
+		fill: var(--accent);
+		translate: 8% 0;
+	}
+
+	.large .play svg {
+		width: 1.2rem;
+	}
+
+	.highlight:is(:hover, :focus-visible) .play {
+		border-color: var(--text);
+	}
+
+	/* Phones: one to a row, the play button and lower third smaller */
+	@media (max-width: 39.99rem) {
+		.highlights {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 1.25rem;
+		}
+
+		.large .name,
+		.name {
+			padding: 0.55rem 0.8rem;
+			font-size: 0.62rem;
+		}
+
+		.large .play,
+		.play {
+			inset-block-start: calc(50% - 1rem);
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+
+		.large .play svg,
+		.play svg {
+			width: 0.75rem;
+		}
+	}
+</style>

@@ -82,13 +82,20 @@ const projects = defineCollection({
 					effects: effects.default(true),
 				})
 				.optional(),
+			// Up to four files from Media or the write-up ("demo.mp4", "slides/"): Media's screens in this order,
+			// the first shown large, each opening the theater
+			highlights: z.array(file).max(4).optional(),
+			// The highlight playing on the top card's screen in place of the display (default: the first)
+			screen: file.optional(),
 			// The readouts under the top card, like the footer's telemetry (up to four)
 			readouts: z
 				.array(z.object({ label: z.string(), value: z.string(), note: z.string().optional() }))
 				.max(4)
 				.optional(),
-			// The line that opens About; a *phrase* in asterisks is amber
+			// The hook between the readouts and Media; a *phrase* in asterisks is amber
 			statement: z.string().optional(),
+			// One grey line under the statement: the project's best result
+			achievement: z.string().optional(),
 			// The Media section's cards, in order
 			media: z
 				.array(

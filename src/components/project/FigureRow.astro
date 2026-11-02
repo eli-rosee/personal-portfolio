@@ -3,12 +3,13 @@
  * Figures in a project's write-up: one, or two or three side by side. Each takes one of two shapes from
  * its image: landscape (16:9), portrait (3:4) or square (1:1), filled (the edges cut if its shape is in between). Side by
  * side they share one height. Each is a plain screen (the grade and glass only with {effects=true}) with its caption on a plate
- * under it, joined to the screen by a leader line and numbered (Fig 01, counted in ProjectAbout), and opens in the theater (the
- * zoom cursor says so). A clip with {values=N} gets a count of its N values climbing as it plays, and a
+ * under it, joined to the screen by a leader line and numbered (Fig 01, counted in ProjectAbout). They stay in the
+ * write-up: the theater holds only Media's items. A clip with {values=N} gets a count of its N values climbing as it plays, and a
  * progress bar along its bottom (src/scripts/clip-hud.ts).
  */
 import Screen from "../Screen.astro";
 import Visual from "./Visual.astro";
+import { textHtml } from "../../scripts/markdown";
 import { shapeOf, type Figure } from "../../scripts/project-files";
 
 interface Props {
@@ -26,22 +27,20 @@ const single = figures.length === 1;
 			const shape = shapeOf(f.asset);
 			return (
 				<figure class:list={["figure", shape]} style={`--ar: ${ratio[shape].toFixed(4)}`}>
-					<button type="button" class="open" data-theater={f.id} aria-label={`Open ${f.caption ?? f.alt ?? "figure"} larger`}>
-						<Screen plain={!f.effects} class="figure-screen">
-							<div class="frame">
-								<Visual asset={f.asset} alt={f.alt} width={single ? 900 : 600} />
-								{f.values && f.asset.kind === "clip" && (
-									<div class="clip-hud" data-values={f.values} aria-hidden="true">
-										<span class="label chip count">
-											<span class="dim">Values</span> <span class="n">0</span> <span class="dim">/ {f.values.toLocaleString("en-US")}</span>
-										</span>
-										<span class="bar"><span class="fill" /></span>
-									</div>
-								)}
-							</div>
-						</Screen>
-					</button>
-					{f.caption && <figcaption class="label"><span>{f.caption}</span></figcaption>}
+					<Screen plain={!f.effects} class="figure-screen">
+						<div class="frame">
+							<Visual asset={f.asset} alt={f.alt} width={single ? 900 : 600} />
+							{f.values && f.asset.kind === "clip" && (
+								<div class="clip-hud" data-values={f.values} aria-hidden="true">
+									<span class="label chip count">
+										<span class="dim">Values</span> <span class="n">0</span> <span class="dim">/ {f.values.toLocaleString("en-US")}</span>
+									</span>
+									<span class="bar"><span class="fill" /></span>
+								</div>
+							)}
+						</div>
+					</Screen>
+					{f.caption && <figcaption class="label"><span set:html={textHtml(f.caption)} /></figcaption>}
 				</figure>
 			);
 		})
@@ -66,18 +65,6 @@ const single = figures.length === 1;
 	.single .figure.portrait {
 		flex: none;
 		width: min(100%, 22rem);
-	}
-
-	.open {
-		all: unset;
-		display: block;
-		width: 100%;
-		cursor: zoom-in;
-	}
-
-	.open:focus-visible {
-		outline: 2px solid var(--accent);
-		outline-offset: 3px;
 	}
 
 	.figures :global(.figure-screen) {

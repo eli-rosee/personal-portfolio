@@ -1,47 +1,19 @@
 ---
-# project
-#   status:
-#     liftoff
-#     in-orbit
-#     decommissioned
-
 title: "Asteroid Kalman Filter"
 number: 3
 status: in-orbit
 summary: A Kalman filter for every asteroid, predicting where each one moves next so a stranded ship can hop-scotch home.
 stack: [Python, Kalman Filter, State Estimation]
 
-# display (delete for no signal)
-#   fit:
-#     crop (default)
-#     whole
-#   crop:
-#     center (default)
-#     top
-#     bottom
-#     left
-#     right
-#     top left
-#     top right
-#     bottom left
-#     bottom right
-#     x% y%
-#   effects:
-#     true (default)
-#     false
-#   zoom: 1 and up
-
 display:
   image: project_image.png
 
-# code (one or neither)
-#   repo: <url> (default)
-#   private: <tooltip>
+highlights:
+  - part_a_success.mp4
+  - part_b_success.mp4
+  - failed_too_slow.mp4
 
 private: Private per course policy
-
-# readouts (up to 4)
-#   note
 
 readouts:
   - label: OMSCS Course Project
@@ -51,84 +23,14 @@ readouts:
   - label: When
     value: Sept 2026
 
-# media (in order)
-#   type:
-#     video
-#       thumbnail
-#       sound:
-#         true (default)
-#         false
-#     clip
-#       file:
-#         .mp4
-#         .webm
-#         .gif
-#       shape:
-#         landscape (default)
-#         portrait
-#     image
-#       shape:
-#         landscape (default)
-#         portrait
-#       fit, crop, zoom: as in display
-#     slides
-#       npm run slides <slug> deck.pptx makes the folder and the PDF
-#       folder
-#       pdf
-#     link
-#       href or file
-#       live:
-#         false (default)
-#         true
-#       label
-#   every card
-#     caption
-#     wide:
-#       false (default)
-#       true
-#   image, clip, video, slides
-#     effects:
-#       false (default)
-#       true
-
 media:
   - type: link
     file: project_outline.pdf
     title: Project Outline
 
-# draft
-#   delete to publish
-
 draft: false
 
-# write-up (files go in assets/)
-#   ## Heading
-#   **bold**
-#   [text](url "tooltip")
-#   - list
-#   1. steps in order (numbered 01, 02, …)
-#   - **Label:** text (the gap after the colon is set by the site)
-#   blank line = new paragraph; extra blank lines or spaces add nothing
-#   &ensp; or &emsp; = a one-off wider space
-#   line\ (line break)
-#   ![alt](file "caption") on its own line
-#     2–3 in a row sit side by side
-#     {effects=true} right after it adds the image effects
-#     {values=N} right after a clip adds a count of N values and a progress bar
-#   ```math … ``` = equations, one a line
-#     Label:  x = F x    (note)
-#     v_x  F^T  S^{-1}
-
-# order
-#   Background (opt)
-#   The problem · The prompt
-#   Approach · What we built
-#   The core algorithm (opt)
-#   My role (team projects)
-#   Where I went wrong
-#   Results
-#   Awards (opt)
-
+achievement: My filters scored 30 out of 32 on test cases, earning a 100% on the assignment.
 statement: Our stranded crew has a broken engine and *400 days* to get back to Earth.
 ---
 
@@ -163,18 +65,18 @@ The whole filter comes down to a few lines of linear algebra.
 Each asteroid's state is its position, velocity, and acceleration in each axis:
 
 ```math
-x = [x, v_x, a_x, y, v_y, a_y]ᵀ
+x = [x, v_x, a_x, y, v_y, a_y]^T
 ```
 
-Movement follows constant-acceleration kinematics (**x + vΔt + ½aΔt²**), which gets packed into a state transition matrix **F**. Since we only ever measure position, the measurement matrix **H** just pulls x and y out of the state.
+Movement follows constant-acceleration kinematics (**x + vΔt + {1/2}aΔt^2**), which gets packed into a state transition matrix **F**. Since we only ever measure position, the measurement matrix **H** just pulls x and y out of the state.
 
 ```math
 Predict:  x = F x
-          P = F P Fᵀ
+          P = F P F^T
 
 Update:   y = z − H x
-          S = H P Hᵀ + R
-          K = P Hᵀ S⁻¹
+          S = H P H^T + R
+          K = P H^T S^-1
           x = x + K y
           P = (I − K H) P
 ```

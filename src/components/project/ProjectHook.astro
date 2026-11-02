@@ -1,0 +1,59 @@
+---
+/*
+ * The bridge from the top card to Media: the statement (its *phrase* in amber), the hook, and under it in
+ * grey the project's best result (`achievement`), with no heading of its own.
+ */
+import { statementHtml, textHtml } from "../../scripts/markdown";
+
+interface Props {
+	statement?: string;
+	achievement?: string;
+}
+
+const { statement, achievement } = Astro.props;
+---
+
+{
+	(statement || achievement) && (
+		<div class="hook">
+			{statement && <p class="statement" set:html={statementHtml(statement)} />}
+			{achievement && <p class="achievement" set:html={textHtml(achievement)} />}
+		</div>
+	)
+}
+
+<style>
+	/* The page's full width, so a line wraps only when it must; when it does, the lines come out even */
+	.hook {
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	.hook p {
+		margin: 0;
+		font-family: var(--font-label);
+		letter-spacing: -0.01em;
+		text-wrap: balance;
+	}
+
+	.statement {
+		font-size: 1.2rem;
+		line-height: 1.45;
+		color: var(--text);
+	}
+
+	.statement :global(em) {
+		font-style: normal;
+		color: var(--accent);
+	}
+
+	.statement :global(.nowrap) {
+		white-space: nowrap;
+	}
+
+	.achievement {
+		font-size: 0.95rem;
+		line-height: 1.6;
+		color: #9aa1af;
+	}
+</style>

@@ -22,7 +22,7 @@
 import type { CollectionEntry } from "astro:content";
 import { readFileSync } from "node:fs";
 import { createSatteriMarkdownProcessor } from "@astrojs/markdown-satteri";
-import { linkTooltips, listLabels, mathBlock } from "./markdown";
+import { linkTooltips, listLabels, mathBlock, plainText, typedScripts } from "./markdown";
 
 type Project = CollectionEntry<"projects">;
 
@@ -150,6 +150,7 @@ export const display = (project: Project): Display | undefined => {
 
 export interface Figure {
 	id: string; // for the theater
+	file: string; // its path in assets/, for highlights
 	alt: string;
 	caption?: string;
 	asset: Asset;
@@ -196,7 +197,7 @@ const render = async (text: string, repo?: string) => {
 		const link = href ? `<a class="code-link" href="${escape(href)}" target="_blank" rel="noopener">GitHub ${ARROW}</a>` : "";
 		codes.push(`<div class="code-panel"><div class="code-bar label"><span>${escape(title)}</span>${link}</div>${pre}</div>`);
 	}
-	const html = listLabels(linkTooltips((await markdown.render(marked)).code));
+	const html = typedScripts(listLabels(linkTooltips((await markdown.render(marked)).code)));
 	return html
 		.replace(/<p>MATHBLOCK(\d+)<\/p>/g, (_, i) => maths[Number(i)])
 		.replace(/<p>CODEBLOCK(\d+)<\/p>/g, (_, i) => codes[Number(i)]);
@@ -237,7 +238,8 @@ export async function writeUp(project: Project): Promise<Section[]> {
 						const o = options(m![4]);
 						return {
 							id: `fig-${++figureCount}`,
-							alt: m![1] || m![3] || "", // without its own alt text, a figure is described by its caption
+							file: clean(m![2]),
+							alt: m![1] || plainText(m![3] ?? ""), // without its own alt text, a figure is described by its caption
 							caption: m![3],
 							asset: find(project, m![2], "in the write-up", "visual"),
 							effects: o.effects === "true",
@@ -263,6 +265,7 @@ export async function writeUp(project: Project): Promise<Section[]> {
 
 export type MediaItem = {
 	id: string;
+	file?: string; // its path in assets/ (a deck's folder), for highlights
 	title: string;
 	caption?: string;
 	wide: boolean;
@@ -278,7 +281,8 @@ export type MediaItem = {
 export function media(project: Project): MediaItem[] {
 	const slug = project.id;
 	return (project.data.media ?? []).map((m, i): MediaItem => {
-		const base = { id: `media-${i + 1}`, title: m.title, caption: m.caption, wide: m.wide };
+		const path = m.type === "slides" ? m.folder : m.type === "link" ? m.file : m.file;
+		const base = { id: `media-${i + 1}`, file: path && clean(path).replace(/\/$/, ""), title: m.title, caption: m.caption, wide: m.wide };
 		const where = `media: "${m.title}"`;
 		switch (m.type) {
 			case "image":
@@ -339,5 +343,46 @@ export function media(project: Project): MediaItem[] {
 				};
 			}
 		}
+	});
+}
+
+/* ---------- Highlights ---------- */
+
+// A highlight: a Media card or write-up figure picked out for Media. `asset` is what plays on the top card's
+// screen (for the `screen` highlight), `still` its picture in Media.
+export interface Highlight {
+	id: string; // the theater item it opens
+	file: string; // as `highlights` names it
+	title: string;
+	kind: "video" | "clip" | "image" | "slides";
+	asset: Asset;
+	still: Asset;
+}
+
+// The highlights in Media's order, as listed (the first shown large), and `screen`, the one on the top card's
+// screen (default: the first). A `screen` that isn't a highlight stops a published project's build.
+export function highlights(project: Project, sections: Section[], items: MediaItem[]): { list: Highlight[]; screen?: Highlight } {
+	const list = resolve(project, sections, items);
+	const path = project.data.screen;
+	const named = path ? list.find((h) => h.file === clean(path).replace(/\/$/, "")) : undefined;
+	if (path && !named && !project.data.draft) throw new Error(`Project "${project.id}": screen "${path}" isn't one of its highlights.`);
+	return { list, screen: named ?? list[0] };
+}
+
+function resolve(project: Project, sections: Section[], items: MediaItem[]): Highlight[] {
+	const still = (a: Asset): Asset => (a.kind === "clip" && a.poster ? { kind: "image", image: a.poster } : a);
+	const figures = sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === "figures" ? b.figures : [])));
+	return (project.data.highlights ?? []).flatMap((path): Highlight[] => {
+		const file = clean(path).replace(/\/$/, "");
+		const item = items.find((it) => it.file === file && it.type !== "link");
+		if (item?.type === "video") return [{ id: item.id, file, title: item.title, kind: "video", asset: item.asset, still: item.poster ?? still(item.asset) }];
+		if (item?.type === "slides") return [{ id: item.id, file, title: item.title, kind: "slides", asset: item.slides[0], still: still(item.slides[0]) }];
+		if (item?.type === "image" || item?.type === "clip")
+			return [{ id: item.id, file, title: item.title, kind: item.asset.kind === "image" ? "image" : "clip", asset: item.asset, still: still(item.asset) }];
+		const figure = figures.find((f) => f.file === file);
+		if (figure)
+			return [{ id: figure.id, file, title: figure.caption ?? figure.alt, kind: figure.asset.kind === "image" ? "image" : "clip", asset: figure.asset, still: still(figure.asset) }];
+		if (!project.data.draft) throw new Error(`Project "${project.id}": highlight "${path}" isn't a Media card or a figure in the write-up.`);
+		return [];
 	});
 }

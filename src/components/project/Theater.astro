@@ -1,18 +1,19 @@
 ---
 /*
- * The theater: a project's figures and media, large, over the dimmed page. Anything with
+ * The theater: a project's highlights (what its Media section shows), large, over the dimmed page. Anything with
  * data-theater="<id>" opens that item. One job per corner of the screen: where you are (top left), Close
  * (top right), title and caption (bottom left), a hint (bottom right). Under it a strip of every item,
- * held still and centered, in two groups: About (the write-up's figures) and Media (the cards).
+ * held still and centered.
  * Images take one of three screen shapes (landscape 16:9, portrait 3:4, square 1:1), tall clips 9:16 (phone video);
  * everything is shown whole. Arrow keys, the strip, or a swipe move between items; with a mouse, a click
  * zooms an image; a click pauses or resumes a clip; a video's player (Player.astro) is carried over
- * from its card, paused at the same moment, and back again (paused) on close. A deck shows its counter ‹ 03 / 15 › and PDF in the
+ * from its place on the page, paused at the same moment, and back again (paused) on close. A deck shows its counter ‹ 03 / 15 › and PDF in the
  * hint's corner; a click on a slide's left or right half steps it, looping (a tap moves forward). Each thumbnail says what it is. Esc, Close or a click
  * outside closes it. src/scripts/theater.ts runs it.
  */
 import Screen from "../Screen.astro";
 import Visual from "./Visual.astro";
+import { plainText, textHtml } from "../../scripts/markdown";
 import { shapeOf, type Asset } from "../../scripts/project-files";
 
 export type Pane = { id: string; group: "About" | "Media"; title: string; caption?: string; alt?: string } & (
@@ -39,7 +40,7 @@ const typeOf = (p: Pane) =>
 	p.kind === "video" ? "Video" : p.kind === "slides" ? "Slides" : p.asset.kind === "clip" || p.asset.kind === "gif" ? "Clip" : "Image";
 const thumbOf = (p: Pane): Asset | undefined =>
 	p.kind === "visual" ? p.asset : p.kind === "video" ? (p.poster ?? p.asset) : p.slides[0];
-const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.group === g));
+const groups = (["Media", "About"] as const).filter((g) => panes.some((p) => p.group === g));
 ---
 
 {
@@ -63,8 +64,8 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 								class:list={["pane", { zoomable: zoomable(p), clip: isClip(p) }]}
 								data-pane={p.id}
 								data-group={p.group}
-								data-title={p.title}
-								data-caption={p.caption ?? ""}
+								data-title={textHtml(p.title)}
+								data-caption={textHtml(p.caption ?? "")}
 								data-shape={shape(p)}
 								data-hint={hint(p)}
 								data-deck-pdf={p.kind === "slides" && p.pdf?.kind === "file" ? p.pdf.src : undefined}
@@ -128,7 +129,7 @@ const groups = (["About", "Media"] as const).filter((g) => panes.some((p) => p.g
 								.map((p) => {
 									const t = thumbOf(p);
 									return (
-										<button type="button" class="thumb" data-go={p.id} aria-label={p.title}>
+										<button type="button" class="thumb" data-go={p.id} aria-label={plainText(p.title)}>
 											<Screen plain class="thumb-screen">
 												{/* A clip's thumbnail is its poster (its first frame); without one, the clip itself */}
 												{t && t.kind === "clip" ? (

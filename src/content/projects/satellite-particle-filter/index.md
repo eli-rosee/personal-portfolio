@@ -1,48 +1,21 @@
 ---
-# project
-#   status:
-#     liftoff
-#     in-orbit
-#     decommissioned
-
 title: "Satellite Particle Filter"
 number: 2
 status: in-orbit
 summary: A particle filter that finds a lost satellite within 0.01 AU from noisy gravity and light readings.
 stack: [Python, Particle Filter, Localization]
 
-# display (delete for no signal)
-#   fit:
-#     crop (default)
-#     whole
-#   crop:
-#     center (default)
-#     top
-#     bottom
-#     left
-#     right
-#     top left
-#     top right
-#     bottom left
-#     bottom right
-#     x% y%
-#   effects:
-#     true (default)
-#     false
-
 display:
   image: project_image.png
   crop: right
   zoom: 1.3
 
-# code (one or neither)
-#   repo: <url> (default)
-#   private: <tooltip>
+highlights:
+  - part_a_success_1.mp4
+  - part_b_success_2.mp4
+  - failed_convergence.mp4
 
 private: Private per course policy
-
-# readouts (up to 4)
-#   note
 
 readouts:
   - label: OMSCS Course Project
@@ -52,80 +25,15 @@ readouts:
   - label: When
     value: Oct 2026
 
-# media (in order)
-#   type:
-#     video
-#       thumbnail
-#       sound:
-#         true (default)
-#         false
-#     clip
-#       file:
-#         .mp4
-#         .webm
-#         .gif
-#       shape:
-#         landscape (default)
-#         portrait
-#     image
-#       shape:
-#         landscape (default)
-#         portrait
-#       fit, crop, zoom: as in display
-#     slides
-#       npm run slides <slug> deck.pptx makes the folder and the PDF
-#       pdf
-#     link
-#       live:
-#         false (default)
-#         true
-#       label
-#   every card
-#     caption
-#     wide:
-#       false (default)
-#       true
-#   image, clip, video, slides
-#     effects:
-#       false (default)
-#       true
-
 media:
 
   - type: link
     file: project_outline.pdf
     title: Project Outline
 
-# draft
-#   delete to publish
-
 draft: false
 
-# write-up (files go in assets/)
-#   ## Heading
-#   **bold**
-#   [text](url "tooltip")
-#   - list
-#   1. steps in order (numbered 01, 02, …)
-#   - **Label:** text (the gap after the colon is set by the site)
-#   blank line = new paragraph; extra blank lines or spaces add nothing
-#   &ensp; or &emsp; = a one-off wider space
-#   line\ (line break)
-#   ![alt](file "caption") on its own line
-#     2–3 in a row sit side by side
-#     {effects=true} right after it adds the image effects
-#     {values=N} right after a clip adds a count of N values and a progress bar
-
-# order
-#   Background (opt)
-#   The problem · The prompt
-#   Approach · What we built
-#   The core algorithm (opt)
-#   My role (team projects)
-#   Where I went wrong
-#   Results
-#   Awards (opt)
-
+achievement: My filter scored an 18 out of 20 on test cases, earning a 100% on the assignment.
 statement: We have just *300 days* to find ourselves and make it home.
 ---
 
@@ -168,7 +76,7 @@ The filter sets up its particles once, then runs the same five steps with every 
 
 My initial variance values were set incorrectly.
 
-For Part A, they were roughly **5 orders of magnitude too high** (10⁻⁸), and after I determined the variance value was the reason there was no convergence, I managed to decrease it to a workable value (10⁻¹³). For Part B, the readings switched to a standard percentage scale (0–100), which also caused issues until I corrected my variance to 10.
+For Part A, they were roughly **5 orders of magnitude too high** (10^-8), and after I determined the variance value was the reason there was no convergence, I managed to decrease it to a workable value (10^-13). For Part B, the readings switched to a standard percentage scale (0–100), which also caused issues until I corrected my variance to 10.
 
 I also spent most of the CPU budget early. I started with 2,000 particles and cut 100 every timestep until 250 remained. Doing this allowed me to pass the CPU constraint comfortably, while taking longer on earlier timesteps. The risk is that if the particle count is low before they're close to the ship, **the filter can sometimes fail**, and this did happen on a few of the test cases.
 

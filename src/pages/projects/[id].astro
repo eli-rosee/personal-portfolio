@@ -6,12 +6,14 @@ import Footer from "../../components/Footer.astro";
 import Starfield from "../../components/Starfield.astro";
 import ProjectHero from "../../components/project/ProjectHero.astro";
 import ProjectReadouts from "../../components/project/ProjectReadouts.astro";
+import ProjectHook from "../../components/project/ProjectHook.astro";
 import ProjectAbout from "../../components/project/ProjectAbout.astro";
 import ProjectMedia from "../../components/project/ProjectMedia.astro";
 import Theater, { type Pane } from "../../components/project/Theater.astro";
 import NextProject from "../../components/project/NextProject.astro";
 import { getProjects } from "../../scripts/projects";
-import { media, writeUp } from "../../scripts/project-files";
+import { plainText } from "../../scripts/markdown";
+import { highlights, media, writeUp } from "../../scripts/project-files";
 
 export async function getStaticPaths() {
 	const projects = await getProjects();
@@ -20,26 +22,26 @@ export async function getStaticPaths() {
 }
 
 const { project, next } = Astro.props;
-const { title, summary, readouts, statement } = project.data;
+const { title, summary, readouts, statement, achievement } = project.data;
 const sections = await writeUp(project);
 const items = media(project);
-// The theater's items, in page order: the write-up's figures (About), then the Media cards
-const panes: Pane[] = [
-	...sections
-		.flatMap((s) => s.blocks.flatMap((b) => (b.kind === "figures" ? b.figures : [])))
-		.map((f): Pane => ({ id: f.id, group: "About", title: f.caption ?? f.alt, alt: f.alt, kind: "visual", asset: f.asset })),
-	...items.flatMap((it): Pane[] => {
-		const card = { id: it.id, group: "Media" as const, title: it.title, caption: it.caption };
-		if (it.type === "image") return [{ ...card, kind: "visual", asset: it.asset, alt: it.alt }];
-		if (it.type === "clip") return [{ ...card, kind: "visual", asset: it.asset }];
-		if (it.type === "video") return [{ ...card, kind: "video", asset: it.asset, poster: it.poster }];
-		if (it.type === "slides") return [{ ...card, kind: "slides", slides: it.slides, pdf: it.pdf }];
-		return [];
-	}),
-];
+const { list: picks, screen } = highlights(project, sections, items);
+// The theater holds only what Media shows: the highlights, in order (a highlight is a Media card or a
+// write-up figure)
+const figures = sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === "figures" ? b.figures : [])));
+const panes: Pane[] = picks.flatMap((h): Pane[] => {
+	const card = { id: h.id, group: "Media" as const, title: h.title };
+	const it = items.find((i) => i.id === h.id);
+	if (it?.type === "image") return [{ ...card, caption: it.caption, kind: "visual", asset: it.asset, alt: it.alt }];
+	if (it?.type === "clip") return [{ ...card, caption: it.caption, kind: "visual", asset: it.asset }];
+	if (it?.type === "video") return [{ ...card, caption: it.caption, kind: "video", asset: it.asset, poster: it.poster }];
+	if (it?.type === "slides") return [{ ...card, caption: it.caption, kind: "slides", slides: it.slides, pdf: it.pdf }];
+	const f = figures.find((f) => f.id === h.id);
+	return f ? [{ ...card, kind: "visual", asset: f.asset, alt: f.alt }] : [];
+});
 ---
 
-<Layout title={`${title} · Eli Rose`} description={summary}>
+<Layout title={`${title} · Eli Rose`} description={plainText(summary)}>
 	<Starfield />
 	<Nav />
 	<main class="project">
@@ -48,10 +50,11 @@ const panes: Pane[] = [
 			<svg viewBox="0 0 60 34" aria-hidden="true"><path class="dash" d="M54 26 H 20 Q 8 26, 8 14 V 6" pathLength="57" /><path d="M3.5 9.5 8 4 12.5 9.5" /></svg>
 			<span>[ER] returns home</span>
 		</p>
-		<ProjectHero project={project} />
+		<ProjectHero project={project} featured={screen} />
 		<ProjectReadouts readouts={readouts} />
-		<ProjectAbout statement={statement} sections={sections} />
-		<ProjectMedia items={items} />
+		<ProjectHook statement={statement} achievement={achievement} />
+		<ProjectMedia highlights={picks} items={items} />
+		<ProjectAbout sections={sections} />
 		<NextProject next={next} />
 		<Theater panes={panes} />
 	</main>
@@ -136,5 +139,14 @@ const panes: Pane[] = [
 
 	.project > :global(:is(.about, .media)) {
 		margin-top: 6rem;
+	}
+
+	/* The hook under the readouts, Media close under it */
+	.project > :global(.hook) {
+		margin-top: 5rem;
+	}
+
+	.project > :global(.hook + .media) {
+		margin-top: 3rem;
 	}
 </style>

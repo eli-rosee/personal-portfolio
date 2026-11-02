@@ -3,22 +3,25 @@
  * The top of a project page: the console card laid out sideways (ConsoleCard's side layout). The
  * title (in the display font, an image) across the top; the display screen on the left; the summary,
  * the code button and the live site's (a media link with `live: true`) on the right; the stack in the
- * band along the bottom.
+ * band along the bottom. With highlights, the screen plays the first one (silent, looping) in place of
+ * the display, and a click opens it in the theater, with sound for a video.
  */
 import type { CollectionEntry } from "astro:content";
 import ConsoleCard from "../ConsoleCard.astro";
 import ProjectDisplay from "../ProjectDisplay.astro";
 import Button from "../Button.astro";
 import ProjectTitle from "./ProjectTitle.astro";
+import Visual from "./Visual.astro";
 import { STATUS } from "../../scripts/projects";
-import { display } from "../../scripts/project-files";
+import { display, type Highlight } from "../../scripts/project-files";
 import { site } from "../../content/site";
 
 interface Props {
 	project: CollectionEntry<"projects">;
+	featured?: Highlight;
 }
 
-const { project } = Astro.props;
+const { project, featured } = Astro.props;
 const { title, status, summary, stack, repo, private: privateCode, media } = project.data;
 const live = media?.find((m) => m.type === "link" && m.live && m.href);
 const liveHref = live?.type === "link" ? live.href : undefined;
@@ -29,6 +32,7 @@ const shown = display(project);
 const titles = import.meta.glob<{ default: ImageMetadata }>("../../assets/brand/titles/*.png", { eager: true });
 const titleArt = titles[`../../assets/brand/titles/${project.id}.png`]?.default;
 const titleTwo = titles[`../../assets/brand/titles/${project.id}-two.png`]?.default;
+const watch = featured && { video: "Watch with sound", clip: "Watch full size", image: "View full size", slides: "View the slides" }[featured.kind];
 const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request: ${title}`)}`;
 ---
 
@@ -42,7 +46,20 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 	status={{ label: status.replace("-", " "), ...STATUS[status], tipId: "hero-status-tip" }}
 	plain={shown?.effects === false}
 >
-	<ProjectDisplay display={shown} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />
+	{
+		featured ? (
+			<div class="featured">
+				<Visual asset={featured.asset} alt={featured.title} width={960} eager />
+				<span class="plate label" aria-hidden="true">
+					<svg viewBox="0 0 10 12"><path d="M0 0 10 6 0 12Z" /></svg>
+					{watch}
+				</span>
+				<button type="button" class="open" data-theater={featured.id} aria-label={`${watch}: ${featured.title}`} />
+			</div>
+		) : (
+			<ProjectDisplay display={shown} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />
+		)
+	}
 	{titleArt && <ProjectTitle slot="title" title={title} id={project.id} one={titleArt} two={titleTwo} />}
 	{
 		(repo || privateCode || liveHref) && (
@@ -68,6 +85,55 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 </ConsoleCard>
 
 <style>
+	/* The first highlight on the screen, the display's shape; the plate says what a click does */
+	.featured {
+		position: relative;
+		aspect-ratio: 16 / 10;
+	}
+
+	.featured > :global(.visual) {
+		position: absolute;
+		inset: 0;
+		object-fit: cover;
+	}
+
+	.plate {
+		position: absolute;
+		left: 1rem;
+		bottom: 0.9rem;
+		z-index: 3; /* over the glass */
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.45rem 0.7rem;
+		border: var(--border-width) solid var(--border);
+		background: rgb(11 14 20 / 0.85);
+		color: var(--text);
+		font-size: 0.72rem;
+	}
+
+	.plate svg {
+		width: 0.6rem;
+		fill: var(--accent);
+	}
+
+	.featured:hover .plate {
+		border-color: var(--muted);
+	}
+
+	.open {
+		all: unset;
+		position: absolute;
+		inset: 0;
+		z-index: 4;
+		cursor: pointer;
+	}
+
+	.open:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -4px;
+	}
+
 	/* One row of buttons whenever they fit: fit-text.ts tightens them a step at a time (.fit-1 to
 	   .fit-3) when they don't, and lets them wrap only if even the tightest don't fit */
 	.actions {

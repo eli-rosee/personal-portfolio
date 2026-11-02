@@ -1,29 +1,26 @@
 ---
 /*
- * A project's About: the statement (its *phrase* in amber), then the write-up's sections, each heading
- * in a label column beside its text and figures (src/scripts/project-files.ts splits the Markdown). A
- * section's first paragraph is its takeaway, in the home About lead's Space Mono, with the heading level
- * with it; the rest is dim, so heading > takeaway > detail (matching About.astro).
+ * A project's About: the write-up's sections, each heading in a label column beside its text and figures
+ * (src/scripts/project-files.ts splits the Markdown). A section's first paragraph is its takeaway, in the
+ * home About lead's Space Mono, with the heading level with it; the rest is dim, so heading > takeaway >
+ * detail (matching About.astro). The statement is ProjectHook's, above Media.
  */
 import SectionHeading from "../SectionHeading.astro";
 import Prose from "../Prose.astro";
 import FigureRow from "./FigureRow.astro";
 import type { Section } from "../../scripts/project-files";
-import { statementHtml } from "../../scripts/markdown";
 
 interface Props {
-	statement?: string;
 	sections: Section[];
 }
 
-const { statement, sections } = Astro.props;
+const { sections } = Astro.props;
 ---
 
 {
-	(statement || sections.length > 0) && (
+	sections.length > 0 && (
 		<section class="about" aria-labelledby="about-heading">
 			<SectionHeading id="about-heading" text="About" />
-			{statement && <p class="statement" set:html={statementHtml(statement)} />}
 			<div class="sections">
 				{sections.map((s) => (
 					<>
@@ -39,25 +36,6 @@ const { statement, sections } = Astro.props;
 }
 
 <style>
-	.statement {
-		max-width: 44rem;
-		margin-bottom: 3.5rem;
-		font-family: var(--font-label);
-		font-size: 1.2rem;
-		line-height: 1.45;
-		letter-spacing: -0.01em;
-		color: var(--text);
-	}
-
-	.statement :global(em) {
-		font-style: normal;
-		color: var(--accent);
-	}
-
-	.statement :global(.nowrap) {
-		white-space: nowrap;
-	}
-
 	/* Headings in a label column beside their sections, with plenty of air between sections */
 	.sections {
 		--prompt-size: 0.875rem;
