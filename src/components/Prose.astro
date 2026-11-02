@@ -180,6 +180,46 @@ const { html, class: className } = Astro.props;
 		font-family: inherit;
 	}
 
+	/* A file tree (```tree): names bright, their comments dim in a column of their own; on phones each
+	   comment goes under its name */
+	.prose :global(.code-panel pre.tree code) {
+		display: grid;
+		grid-template-columns: max-content minmax(0, 1fr);
+		column-gap: 3.5rem;
+	}
+
+	.prose :global(.tree-row) {
+		display: contents;
+	}
+
+	.prose :global(.code-panel pre.tree .tree-name) {
+		color: var(--text) !important;
+	}
+
+	.prose :global(.code-panel pre.tree :is(.tree-branch, .tree-note)) {
+		color: #7c8494 !important;
+	}
+
+	.prose :global(.code-panel pre.tree .dir .tree-name) {
+		color: #c9c4b9 !important;
+	}
+
+	@media (max-width: 39.99rem) {
+		.prose :global(.code-panel pre.tree code) {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.prose :global(.tree-note) {
+			padding-left: 3ch;
+			margin-bottom: 0.2rem;
+			white-space: normal;
+		}
+
+		.prose :global(.tree-note:empty) {
+			display: none;
+		}
+	}
+
 	/* Equations: Plex Mono beside a 1px rule, like a quoted aside; a group's label (Predict:) in its own
 	   column, notes dimmed after them */
 	.prose :global(.math) {

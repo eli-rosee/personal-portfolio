@@ -76,6 +76,8 @@ Everything after the second `---`.
 - `![alt](file "caption")` on its own line is a figure; two or three in a row sit side by side
   - `{effects=true}` right after it adds the screen effects
   - `{values=N}` right after a clip adds a count of N values and a progress bar
+- Code in a fenced block, with options after the language: `title="backend"`, `file=path/in/repo.py lines=151-162` (links to it on GitHub), or `link=repo`
+- A file tree in a ` ```tree ` block, one file a line: its branch drawing (`├─ `, `└─ `, `│  `), the name, then two or more spaces and a short comment (a few words; it sits in its own column, and under the name on phones)
 - Equations in a ` ```math ` block, one a line: `Label:  x = F x    (note)`
 - Exponents, subscripts and fractions: `n^2`, `10^-8`, `n_2`, `v_x`, `{1/2}`
   - Braces for anything longer: `x^{n+1}`, `S_{xy}`, `{n+1/2}`

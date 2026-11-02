@@ -172,6 +172,18 @@ let markdown: Awaited<ReturnType<typeof createSatteriMarkdownProcessor>> | undef
 const fenceOptions = (text: string) =>
 	Object.fromEntries([...text.matchAll(/(\w+)=(?:"([^"]*)"|(\S+))/g)].map(([, k, quoted, bare]) => [k, quoted ?? bare]));
 const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+// A ```tree block, a file tree: each line its branch drawing, a name, then (after two or more spaces) a short
+// comment. Names bright, comments dim in a column of their own; a folder's name ends in "/".
+const treeBlock = (source: string) =>
+	`<pre class="tree"><code>${source
+		.split("\n")
+		.map((line) => {
+			const [, branch = "", name = "", note = ""] = line.match(/^([│├└─\s]*)(\S+)(?:\s{2,}(.*))?$/) ?? [];
+			return `<span class="tree-row${name.endsWith("/") ? " dir" : ""}"><span class="tree-name"><span class="tree-branch">${escape(branch)}</span>${escape(name)}</span><span class="tree-note">${escape(note.trim())}</span></span>`;
+		})
+		.join("")}</code></pre>`;
+
 const ARROW = '<svg width="0.75em" height="0.75em" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" aria-hidden="true"><path d="M3 9 9 3M4 3h5v5"></path></svg>';
 
 // `repo` is the project's repository: a code block naming a file links to it there, at its lines
@@ -189,7 +201,7 @@ const render = async (text: string, repo?: string) => {
 		return `CODEBLOCK${fences.length - 1}`;
 	});
 	for (const { lang, opts, source } of fences) {
-		const pre = (await markdown.render("```" + lang + "\n" + source + "\n```")).code;
+		const pre = lang === "tree" ? treeBlock(source) : (await markdown.render("```" + lang + "\n" + source + "\n```")).code;
 		// Its title: the file it's from, or its language
 		const title = opts.title ?? opts.file?.split("/").pop() ?? lang;
 		const lines = opts.lines?.match(/^(\d+)-(\d+)$/);

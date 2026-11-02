@@ -79,21 +79,21 @@ Capstone at the University of Arkansas is two semesters. In the fall, we were ma
 
 I wrote nearly all of `data_ingestion/` and the core of `data_analysis/`.
 
-```text title="backend" link=repo
+```tree title="backend" link=repo
 data_ingestion/
-├─ scrape.py                  downloads every lap's JSON from Tracing Insights
-├─ postgresql_db.py           creates the 48 tables, a pair for each race
-├─ database_intake.py         validates every lap and loads it into PostgreSQL
-├─ psql_index_creation.py     indexes driver and lap so reads are fast
-└─ query_db.py                early query helpers for checking the load
+├─ scrape.py                    downloads every lap
+├─ postgresql_db.py             creates the 48 tables
+├─ database_intake.py           validates and loads laps
+├─ psql_index_creation.py       indexes driver and lap
+└─ query_db.py                  checks the load
 data_analysis/
 ├─ cache/
-│  └─ build_metadata_cache.py records each race's tables and lap counts
-├─ query_db.py                fetches one driver's lap, sorted by distance
-├─ race_data.py               aligns, normalizes, filters and reduces a race
-├─ export_library.py          (teammate) logs dropped laps for the dashboard
-└─ kmeans_clustering.py       (shared) clusters a race into the dashboard's JSON
-frontend/                     (teammate) the dashboard
+│  └─ build_metadata_cache.py   lap counts per race
+├─ query_db.py                  fetches one lap
+├─ race_data.py                 cleans a race
+├─ export_library.py            (teammate) logs dropped laps
+└─ kmeans_clustering.py         (shared) clusters a race
+frontend/                       (teammate) the dashboard
 ```
 
 ## scrape.py and database_intake.py
