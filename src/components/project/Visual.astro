@@ -5,7 +5,7 @@
  * A clip's file is attached only as it comes near the screen, showing its poster (its first frame) until
  * then; it plays only while on screen and holds still with reduced motion (src/scripts/clips.ts).
  */
-import { Image } from "astro:assets";
+import { Image, getImage } from "astro:assets";
 import type { Asset } from "../../scripts/project-files";
 
 interface Props {
@@ -20,6 +20,13 @@ interface Props {
 
 const { asset, alt = "", width = 900, position = "50% 50%", zoom = 1, fit = "cover", eager = false } = Astro.props;
 const style = `object-fit: ${fit}; object-position: ${position}; scale: ${zoom}; transform-origin: ${position}`;
+// A clip's poster, sized like an image here (2x for sharp screens) rather than served as `npm run media`
+// saved it (lossless, at the clip's full size). High quality, so it hands over to the first frame unseen.
+// Except on an eager clip, it waits in data-poster for clips.ts: a poster attribute loads at once.
+const poster =
+	asset.kind === "clip" && asset.poster
+		? (await getImage({ src: asset.poster, width: Math.min(width * 2, asset.poster.width), format: "webp", quality: 90 })).src
+		: undefined;
 ---
 
 {asset.kind === "image" && <Image class="visual" src={asset.image} alt={alt} width={width} densities={[1, 2]} loading={eager ? "eager" : "lazy"} style={style} />}
@@ -30,7 +37,8 @@ const style = `object-fit: ${fit}; object-position: ${position}; scale: ${zoom};
 			class="visual"
 			data-clip
 			data-src={asset.src}
-			poster={asset.poster?.src}
+			poster={eager ? poster : undefined}
+			data-poster={eager ? undefined : poster}
 			width={asset.width}
 			height={asset.height}
 			muted

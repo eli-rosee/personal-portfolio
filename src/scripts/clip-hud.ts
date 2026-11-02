@@ -17,11 +17,14 @@ export function initClipHuds(root: ParentNode, signal?: AbortSignal) {
 			figure.style.setProperty("--progress", progress.toFixed(4));
 			count.textContent = Math.round(progress * total).toLocaleString("en-US");
 		};
+		// One frame loop at a time (a pause and play within a frame would start a second)
+		let tracking = false;
 		const track = () => {
 			show();
-			if (!video.paused) requestAnimationFrame(track);
+			tracking = !video.paused;
+			if (tracking) requestAnimationFrame(track);
 		};
-		video.addEventListener("play", track, { signal });
+		video.addEventListener("play", () => tracking || track(), { signal });
 		video.addEventListener("seeked", show, { signal });
 	});
 }

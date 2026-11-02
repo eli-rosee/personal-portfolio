@@ -33,9 +33,13 @@ export function initTheater(root: ParentNode = document, signal?: AbortSignal) {
 		const slides = [...pane.querySelectorAll<HTMLElement>(".slide")];
 		return { slides, now: slides.findIndex((s) => !s.hidden) };
 	};
+	// Only the slide on show plays (a slide that moves is a clip)
 	const showSlide = (pane: HTMLElement, n: number) => {
 		const { slides } = slideOf(pane);
-		slides.forEach((s, i) => (s.hidden = i !== n));
+		slides.forEach((s, i) => {
+			s.hidden = i !== n;
+			s.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => (i === n ? v.play().catch(() => {}) : v.pause()));
+		});
 		field("slide-count").textContent = `${pad(n + 1)} / ${pad(slides.length)}`;
 	};
 
@@ -80,14 +84,12 @@ export function initTheater(root: ParentNode = document, signal?: AbortSignal) {
 			t.classList.toggle("on", on);
 			if (on) t.scrollIntoView({ inline: "nearest", block: "nearest" });
 		});
-		if (pane.querySelector(".slide")) showSlide(pane, fromEnd ? slideOf(pane).slides.length - 1 : 0);
-		// Everything in the item loads now (a deck's slides too), so nothing shows up blank
+		// Everything in the item loads now (a deck's slides and their posters too), so nothing shows up blank
 		pane.querySelectorAll<HTMLImageElement>("img[loading=lazy]").forEach((img) => (img.loading = "eager"));
 		pane.classList.remove("is-paused");
-		pane.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => {
-			attach(v);
-			v.play().catch(() => {});
-		});
+		pane.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => attach(v));
+		if (pane.querySelector(".slide")) showSlide(pane, fromEnd ? slideOf(pane).slides.length - 1 : 0);
+		else pane.querySelectorAll<HTMLVideoElement>("video[data-clip]").forEach((v) => v.play().catch(() => {}));
 		// A video's player comes over from its card at the same moment, paused (▶ Play or a click starts it)
 		const player = playerOf(pane);
 		if (player) {

@@ -192,9 +192,12 @@ const place = (incoming: HTMLElement, old: HTMLElement) => {
 
 async function build(url: string): Promise<Staged> {
 	const doc = await load(url);
-	const have = new Set([...document.querySelectorAll("style[data-vite-dev-id]")].map((s) => s.getAttribute("data-vite-dev-id")));
-	doc.querySelectorAll("style[data-vite-dev-id]").forEach((s) => {
-		if (!have.has(s.getAttribute("data-vite-dev-id"))) document.head.append(s.cloneNode(true));
+	// Its styles this page lacks: by file while developing, and by content once built (the build inlines a
+	// small stylesheet in the page, so a component only the next page has brings its styles that way)
+	const key = (s: Element) => s.getAttribute("data-vite-dev-id") ?? s.textContent;
+	const have = new Set([...document.head.querySelectorAll("style")].map(key));
+	doc.head.querySelectorAll("style").forEach((s) => {
+		if (!have.has(key(s))) document.head.append(s.cloneNode(true));
 	});
 	const sheets = new Set([...document.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")].map((l) => l.href));
 	doc.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]").forEach((l) => {

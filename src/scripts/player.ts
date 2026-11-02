@@ -56,18 +56,27 @@ export function initPlayers(root: ParentNode = document, signal?: AbortSignal) {
 			}
 			draw(t);
 		};
+		// One frame loop at a time (a pause and play within a frame would start a second)
+		let gliding = false;
 		const glide = (now: number) => {
-			if (video.paused) return line();
+			gliding = !video.paused;
+			if (!gliding) return line();
 			line(now);
 			requestAnimationFrame(glide);
 		};
-		video.addEventListener("play", () => requestAnimationFrame(glide));
+		video.addEventListener("play", () => {
+			if (gliding) return;
+			gliding = true;
+			requestAnimationFrame(glide);
+		});
 
 		const paint = () => {
 			// While it plays the frame loop moves the line, and while it's dragged the mouse does
 			if (video.paused && !scrubbing) line();
 			track.setAttribute("aria-valuenow", String(Math.round(video.currentTime)));
 			if (known()) track.setAttribute("aria-valuemax", String(Math.round(video.duration)));
+			// Read out as a time, not a count of seconds
+			track.setAttribute("aria-valuetext", `${time(video.currentTime)}${known() ? ` of ${time(video.duration)}` : ""}`);
 			player.classList.toggle("paused", video.paused);
 			player.classList.toggle("playing", !video.paused);
 			player.classList.toggle("muted", video.muted);

@@ -13,6 +13,7 @@ import Button from "../Button.astro";
 import ProjectTitle from "./ProjectTitle.astro";
 import Visual from "./Visual.astro";
 import { STATUS } from "../../scripts/projects";
+import { plainText } from "../../scripts/markdown";
 import { display, type Highlight } from "../../scripts/project-files";
 import { site } from "../../content/site";
 
@@ -49,12 +50,12 @@ const request = `mailto:${site.email}?subject=${encodeURIComponent(`Code request
 	{
 		featured ? (
 			<div class="featured">
-				<Visual asset={featured.asset} alt={featured.title} width={960} eager />
+				<Visual asset={featured.asset} alt={plainText(featured.title)} width={960} eager />
 				<span class="plate label" aria-hidden="true">
 					<svg viewBox="0 0 10 12"><path d="M0 0 10 6 0 12Z" /></svg>
 					{watch}
 				</span>
-				<button type="button" class="open" data-theater={featured.id} aria-label={`${watch}: ${featured.title}`} />
+				<button type="button" class="open" data-theater={featured.id} aria-label={`${watch}: ${plainText(featured.title)}`} />
 			</div>
 		) : (
 			<ProjectDisplay display={shown} eager widths={[640, 960, 1400]} sizes="(max-width: 48rem) 100vw, 40rem" />

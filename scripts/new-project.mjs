@@ -15,6 +15,7 @@ if (!title) {
 const slug = title
 	.toLowerCase()
 	.normalize("NFKD")
+	.replace(/[\u0300-\u036f]/g, "") // accents off their letters: "Résumé" -> "resume", not "re-sume"
 	.replace(/[^a-z0-9]+/g, "-")
 	.replace(/^-|-$/g, "");
 const root = "src/content/projects";

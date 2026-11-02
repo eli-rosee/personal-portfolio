@@ -1,6 +1,6 @@
 ---
 # The climbing clip in the About section, shown on a console card like the projects. Its video
-# files live in public/assets/ (gitignored, mounted at deploy). Checked against the "clip" schema
+# files live in public/files/ (gitignored, copied to the server by hand). Checked against the "clip" schema
 # in src/content.config.ts. Both files have the card's lit color grade baked in (see ClipCard.astro).
 src: /files/climb.mp4
 poster: /files/climb.jpg

@@ -153,13 +153,16 @@ const { clip } = Astro.props;
 			{ rootMargin: "200px" },
 		).observe(video);
 
-		// Altimeter: the marker tracks how far through the clip it is, every frame while playing
+		// Altimeter: the marker tracks how far through the clip it is, every frame while playing. One frame
+		// loop at a time: each lap of the loop is a seek, and a second loop per lap would pile up.
+		let tracking = false;
 		const track = () => {
 			if (video.duration) card.style.setProperty("--alt", String(video.currentTime / video.duration));
-			if (!video.paused) requestAnimationFrame(track);
+			tracking = !video.paused;
+			if (tracking) requestAnimationFrame(track);
 		};
-		video.addEventListener("play", track);
-		video.addEventListener("seeked", track);
+		video.addEventListener("play", () => tracking || track());
+		video.addEventListener("seeked", () => tracking || track());
 	}
 </script>
 

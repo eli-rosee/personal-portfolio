@@ -35,3 +35,6 @@ public/files/
 
 # written by the server (scripts/rebuild.sh); the local copy is a fake for development
 public/assets/status.json
+
+# the server build, before it replaces dist/ (scripts/rebuild.sh)
+.dist-next/

@@ -158,8 +158,8 @@ def two_lines(text, color):
 title_scale = 60 / glyphs("E", TEXT).height
 for old in (ROOT / "src/assets/brand/titles").glob("*.png"):  # drop titles of projects that are gone
     old.unlink()
-for md in sorted((ROOT / "src/content/projects").glob("**/*.md")):
-    project_id = md.parent.name if md.stem == "index" else md.stem
+for md in sorted((ROOT / "src/content/projects").glob("*/index.md")):  # the projects, as the site reads them
+    project_id = md.parent.name
     match = re.search(r'^title:\s*"?(.+?)"?\s*$', md.read_text(), re.M)
     if match:
         art = glyphs(match.group(1).upper(), TEXT)

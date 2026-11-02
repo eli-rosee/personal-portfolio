@@ -1,8 +1,8 @@
 #!/bin/bash
 # Server jobs, run from cron (which starts jobs in $HOME; this works from any directory):
 #   rebuild.sh           at boot: writes status.json, installs dependencies if the lockfile changed,
-#                        then rebuilds the site. status.json comes first, so the build copies the
-#                        new one into dist/.
+#                        then rebuilds the site (needs rsync). status.json comes first, so the
+#                        build copies the new one into dist/.
 #   rebuild.sh --status  every 5 minutes: rewrites status.json in public/ and the live dist/, no
 #                        rebuild. Right after boot the clock can be hours off until it syncs, so the
 #                        boot run's value can be wrong; this corrects it.
@@ -50,5 +50,13 @@ if [ "$(cat node_modules/.lock-hash 2>/dev/null)" != "$lock_hash" ]; then
 	echo "$lock_hash" > node_modules/.lock-hash
 fi
 
+# Built beside the live site, then copied over it: Astro empties its output folder first, so a build
+# that fails (a published project missing a file) would otherwise leave nothing to serve. On failure
+# set -e stops here and the previous dist/ stays live. Copied into dist/, not moved over it, so a
+# container that mounts dist/ keeps seeing it.
 echo "Rebuilding website"
-npm run build
+rm -rf .dist-next
+npm run build -- --outDir .dist-next
+mkdir -p dist
+rsync -a --delete .dist-next/ dist/
+rm -rf .dist-next
