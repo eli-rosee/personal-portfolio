@@ -45,7 +45,7 @@ const proseHtml = typedScripts(listLabels(leadSentences(linkTooltips(await compi
 
 	.statement {
 		max-width: 30rem; /* so the statement stays on two lines */
-		margin-bottom: calc(3.5rem - var(--space-6)); /* 3.5rem to the text, counting the row gap */
+		margin-bottom: calc(var(--part-gap) - var(--space-6)); /* --part-gap to the text, counting the row gap */
 		font-family: var(--font-label);
 		font-size: 1.35rem;
 		line-height: 1.45;
@@ -77,13 +77,8 @@ const proseHtml = typedScripts(listLabels(leadSentences(linkTooltips(await compi
 		color: inherit;
 	}
 
-	/* Phones: the clip card comes right after the statement, with clear sky above the rocket for
-	   its flight; the text follows */
+	/* Phones: the clip card comes right after the statement, the text after it */
 	@media (max-width: 47.99rem) {
-		.has-clip .statement {
-			margin-bottom: 7rem; /* plus the row gap: 10rem above the card */
-		}
-
 		/* Capped so the portrait clip doesn't grow ~1000px tall on large phones and small tablets;
 		   phones up to ~430px wide still fill the width */
 		.has-clip :global(.clip-card) {
@@ -121,7 +116,7 @@ const proseHtml = typedScripts(listLabels(leadSentences(linkTooltips(await compi
 		.has-clip > :global(.about-prose) {
 			grid-column: 1;
 			grid-row: 5;
-			margin-top: 3.5rem;
+			margin-top: var(--part-gap);
 		}
 
 		.has-clip :global(.clip-card) {

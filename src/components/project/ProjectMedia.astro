@@ -61,7 +61,7 @@ const rows = items.flatMap((it) => (it.type === "link" && !it.live ? [it] : []))
 		display: grid;
 		grid-auto-rows: 1fr;
 		gap: 0.75rem;
-		margin: 2.5rem 0 0;
+		margin: var(--content-gap) 0 0;
 		padding: 0;
 		list-style: none;
 	}

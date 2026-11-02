@@ -73,8 +73,17 @@ const href = `/projects/${next.id}/`;
 </section>
 
 <style>
+	/* Its gap above comes from the page; below it, a section's padding before the footer, as on the home page,
+	   plus the launchpad brackets' overhang below the row (--overhang), so the visible gap matches */
 	.next {
-		padding: 6rem 0 2rem;
+		--overhang: 6px;
+		padding-bottom: calc(var(--section-pad) + var(--overhang));
+	}
+
+	@media (max-width: 47.99rem) {
+		.next {
+			--overhang: 12px;
+		}
 	}
 
 	.row {

@@ -9,8 +9,7 @@
  * grade exactly: rest ∘ lit⁻¹ = saturate(0.75/0.85) contrast(1/1.09) brightness(0.8/0.9)
  * contrast(1.1). The grades are linear, so this inverts cleanly and still fades on hover.
  *
- * Clicking the card plays or pauses the clip; clicking the rocket launches it
- * (src/scripts/launch.ts). Content comes from src/content/clip.md.
+ * Clicking the card plays or pauses the clip. Content comes from src/content/clip.md.
  */
 import type { CollectionEntry } from "astro:content";
 import ConsoleCard from "./ConsoleCard.astro";
@@ -35,13 +34,11 @@ const { clip } = Astro.props;
 	style="--tab-w: 8.5rem; --tab-h: 1.6rem; --slant: 0.6rem; --cut: 10px; --status-inset: 0.55rem; --screen-cut: 2rem; --bezel-pad: 0.625rem; --screen-tint: rgb(40 70 130 / 0.14); --grade: saturate(0.882353) contrast(0.917431) brightness(0.888889) contrast(1.1); --grade-lit: none"
 >
 	{/* The logo's rocket (geometry from scripts/render-art.py), standing on its fins beside a green
-	    flag: the summit, like SENT. The flame burns only in flight: a layer of its own over the rocket's
-	    box, flying with it, so its glow and flicker run on the compositor like the flight. */}
+	    flag: the summit, like SENT */}
 	<div slot="on-top" class="landing" aria-hidden="true">
 		<svg class="rocket" viewBox="0 0 100 124">
 			<path class="hull" fill-rule="evenodd" d={rocket.hull} />
 		</svg>
-		<span class="rocket-flame"><svg viewBox="0 0 100 124"><path class="flame" d={rocket.flame} /></svg></span>
 		<svg class="flag" viewBox="0 0 34 60">
 			<line x1="4" y1="60" x2="4" y2="3" />
 			<path d="M5 5 C 12 2, 18 9, 30 5 L 30 21 C 18 25, 12 18, 5 21 Z" />
@@ -68,7 +65,6 @@ const { clip } = Astro.props;
 </ConsoleCard>
 
 <script>
-	import { initLaunch } from "../scripts/launch";
 
 	const card = document.querySelector<HTMLElement>("#about-clip");
 	const video = card?.querySelector<HTMLVideoElement>("video[data-clip]");
@@ -165,14 +161,6 @@ const { clip } = Astro.props;
 		video.addEventListener("play", track);
 		video.addEventListener("seeked", track);
 	}
-
-	// A click on the rocket launches it: a small extra, so it stays out of the tab order
-	const landing = card?.querySelector<HTMLElement>(".landing");
-	const ship = landing?.querySelector(".rocket");
-	if (landing && ship) {
-		const statement = document.querySelector("#about .statement");
-		initLaunch(ship, landing, document.querySelector("#about-heading"), statement ? [statement] : []);
-	}
 </script>
 
 <style>
@@ -230,7 +218,7 @@ const { clip } = Astro.props;
 		pointer-events: none;
 	}
 
-	/* A soft shadow under the rocket's feet, fading while it's off the ground */
+	/* A soft shadow under the rocket's feet */
 	.landing::before {
 		content: "";
 		position: absolute;
@@ -240,52 +228,15 @@ const { clip } = Astro.props;
 		height: 6px;
 		translate: -50% 0;
 		background: radial-gradient(closest-side, rgb(0 0 0 / 0.55), transparent);
-		transition: opacity 0.4s;
 	}
 
-	.landing.flying::before {
-		opacity: 0.35;
-	}
-
-	/* Clickable: a click on the rocket launches it; it brightens on hover */
 	.rocket {
 		display: block;
 		width: 25px; /* the same size as the logo's rocket */
-		overflow: visible; /* the flame hangs below the viewBox */
-		transform-box: fill-box;
-		transform-origin: 50% 60%;
-		pointer-events: auto;
-		cursor: pointer;
 	}
 
 	.rocket .hull {
 		fill: var(--text);
-		transition: fill 0.15s;
-	}
-
-	.rocket:hover .hull {
-		fill: #fff;
-	}
-
-	/* The engine (the logo's amber flame): off at rest, lit and flickering while the rocket flies
-	   (launch.ts). Its layer covers the rocket's box and turns about the same point, over the ground
-	   shadow like the flying rocket. The flicker pivots on the top middle of the flame (50, 116 in the
-	   drawing). */
-	.rocket-flame {
-		position: absolute;
-		left: 0;
-		bottom: 0;
-		width: 25px;
-		transform-origin: 50% 60%;
-	}
-
-	.rocket-flame svg {
-		display: block;
-		width: 100%;
-		overflow: visible;
-		fill: var(--accent);
-		opacity: 0;
-		transform-origin: 50% calc(116 / 124 * 100%);
 	}
 
 	.flag {

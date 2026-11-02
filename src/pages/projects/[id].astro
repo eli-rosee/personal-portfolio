@@ -137,16 +137,12 @@ const panes: Pane[] = picks.flatMap((h): Pane[] => {
 		stroke-dasharray: 3 3;
 	}
 
-	.project > :global(:is(.about, .media)) {
-		margin-top: 6rem;
-	}
-
-	/* The hook under the readouts, Media close under it */
-	.project > :global(.hook) {
-		margin-top: 5rem;
+	/* The home page's gap between sections; Media joins the hook above it as content joins its heading */
+	.project > :global(:is(.hook, .media, .about, .next)) {
+		margin-top: var(--section-gap);
 	}
 
 	.project > :global(.hook + .media) {
-		margin-top: 3rem;
+		margin-top: var(--content-gap);
 	}
 </style>

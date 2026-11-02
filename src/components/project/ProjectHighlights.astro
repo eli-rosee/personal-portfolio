@@ -50,7 +50,7 @@ const rest = Math.max(highlights.length - 1, 1);
 	.highlights {
 		display: grid;
 		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-		gap: 2rem 1.75rem;
+		gap: var(--grid-gap);
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -163,7 +163,6 @@ const rest = Math.max(highlights.length - 1, 1);
 	@media (max-width: 39.99rem) {
 		.highlights {
 			grid-template-columns: minmax(0, 1fr);
-			gap: 1.25rem;
 		}
 
 		.large .name,

@@ -42,10 +42,9 @@ const scripts = (text: string) =>
 export const typedScripts = (html: string) =>
 	html.replace(/<(pre|code)\b[\s\S]*?<\/\1>|<[^>]+>|[^<]+/g, (part) => (part[0] === "<" ? part : scripts(part)));
 
-// A statement line with its *phrase* in amber. `phrase` wraps it (the home page makes it the launch
-// button); punctuation right after the phrase stays on its line, next to it.
-export const statementHtml = (statement: string, phrase = (text: string) => `<em>${text}</em>`) =>
-	scripts(escapeHtml(statement)).replace(/\*([^*]+)\*([.,!?;:]?)/g, (_, text, punct) => `<span class="nowrap">${phrase(text)}${punct}</span>`);
+// A statement line with its *phrase* in amber; punctuation right after the phrase stays on its line, next to it
+export const statementHtml = (statement: string) =>
+	scripts(escapeHtml(statement)).replace(/\*([^*]+)\*([.,!?;:]?)/g, (_, text, punct) => `<span class="nowrap"><em>${text}</em>${punct}</span>`);
 
 // A plain line of text with its exponents, subscripts and fractions set
 export const textHtml = (text: string) => scripts(escapeHtml(text));

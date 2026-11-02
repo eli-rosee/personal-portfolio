@@ -308,8 +308,12 @@ const { telemetry = true } = Astro.props;
 		justify-content: center;
 		align-items: center;
 		row-gap: var(--space-1);
-		margin-top: clamp(var(--space-6), 8vw, var(--space-12));
 		text-align: center;
+	}
+
+	/* Without telemetry (the project pages) the credit takes just the gap between sections */
+	.telemetry + .credit {
+		margin-top: clamp(var(--space-6), 8vw, var(--space-12));
 	}
 
 	.dot {

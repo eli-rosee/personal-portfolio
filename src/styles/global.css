@@ -46,6 +46,16 @@
 	/* Short space that joins two blocks on the home page: under the hero, and above a section
 	   that follows another, so the gaps above and below the mission cards match */
 	--section-seam: clamp(0.75rem, 2.25vw, 1.75rem);
+	/* A section's top and bottom padding; the gap between two sections (one's padding plus the seam),
+	   on every page; and the gap from a heading to its content, which also joins a block to the one it
+	   introduces (the project pages' hook to Media) */
+	--section-pad: clamp(2.75rem, 6.5vw, 4.5rem);
+	--section-gap: calc(var(--section-pad) + var(--section-seam));
+	--content-gap: var(--space-6);
+	/* Between cards and screens in a grid (the home page's projects, a project's Media) */
+	--grid-gap: clamp(1.25rem, 2.5vw, 2rem);
+	/* Between the parts of an About (home and project pages) */
+	--part-gap: 3.5rem;
 	--border-width: 1px;
 }
 
@@ -146,7 +156,7 @@ a:hover {
 .section {
 	max-width: var(--page-max);
 	margin: 0 auto;
-	padding: clamp(2.75rem, 6.5vw, 4.5rem) var(--gutter);
+	padding: var(--section-pad) var(--gutter);
 	scroll-margin-top: var(--space-2);
 }
 
@@ -160,7 +170,7 @@ a:hover {
 	display: flex;
 	align-items: center;
 	gap: 1.5rem; /* room on both sides of the word: from the slant, and before the waves */
-	margin-bottom: var(--space-6);
+	margin-bottom: var(--content-gap);
 	font-family: var(--font-label);
 	font-size: 0.95rem;
 	font-weight: 700;
@@ -197,9 +207,12 @@ a:hover {
 
 /* Phones: like desktop, more room above a heading (the gap between sections) than below it */
 @media (max-width: 47.99rem) {
+	:root {
+		--content-gap: 1.75rem;
+	}
+
 	.section-title {
 		gap: 1rem;
-		margin-bottom: 1.75rem;
 	}
 }
 
