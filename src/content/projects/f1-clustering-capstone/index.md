@@ -114,11 +114,11 @@ All 26,692 laps of the 2025 season, loaded into PostgreSQL after three failed ov
 
 All 26,692 laps of the 2025 season, loaded into PostgreSQL after three failed overnight runs.
 
-None of the failures came from the data. The first run filled the disk. The second crashed at the Austrian Grand Prix, which was missing from the race-code lookup. The third collided with rows already loaded, because the script restarted its IDs at 1. After some hot fixes, the fourth run loaded everything.
+**None of the failures came from the data.** The first run filled the disk. The second crashed at the Austrian Grand Prix, which was missing from the race-code lookup. The third collided with rows already loaded, because the script restarted its IDs at 1. After some hot fixes, the fourth run loaded everything.
 
-The data does have sensor spikes (throttle above 100%, a stopped car in 67th gear) that break the database's CHECK constraints, so `database_intake.py` sets out-of-range values to NULL before inserting them.
+The data does have sensor spikes (throttle above 100%, a stopped car in 67th gear) that break the database's CHECK constraints, so `database_intake.py` **sets out-of-range values to NULL** before inserting them.
 
-The scraper uses FastF1 (a Python library) for each driver's lap count and requests each lap's JSON from [Tracing Insights on GitHub](https://github.com/tracinginsights). At the beginning of the project, we were given the choice between the two open-source F1 data sources. We ultimately chose Tracing Insights because its data came in nested JSON files, which we found much easier to fetch. TI also had built-in fuel correction that adjusted driver statistics based on the weight of the car. However, the FastF1 module was good for getting metadata, so we used it to help build the GitHub links to download from.
+The scraper uses FastF1 (a Python library) for each driver's lap count and requests each lap's JSON from [Tracing Insights on GitHub](https://github.com/tracinginsights). At the beginning of the project, we were given the choice between the two open-source F1 data sources. We ultimately chose Tracing Insights because its data came in **nested JSON files**, which we found much easier to fetch. TI also had **built-in fuel correction** that adjusted driver statistics based on the weight of the car. However, the FastF1 module was good for getting metadata, so we used it to help build the GitHub links to download from.
 
 ![](lap-data.mp4 "One lap, one driver, one race."){values=10914}
 
