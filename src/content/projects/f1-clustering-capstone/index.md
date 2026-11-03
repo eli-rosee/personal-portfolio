@@ -126,13 +126,13 @@ The scraper uses FastF1 (a Python library) for each driver's lap count and reque
 
 Our database has 2 tables per race (a metadata table and a telemetry entry table).
 
-Splitting the original 2 tables into 48 cut the rows each lookup had to scan by 24x, and a B-tree index on driver and lap then made lap queries roughly 10x faster (based on my notes at the time rather than a formal benchmark).
+Splitting the original **2 tables into 48** cut the rows each lookup had to scan by 24x, and a B-tree index on driver and lap then made lap queries **roughly 10x faster** (based on my notes at the time rather than a formal benchmark).
 
 Our metadata table was built so we wouldn't have to search massive telemetry tables during lookups. Each metadata row points to its sample in the telemetry table by a foreign key, so with the index on driver and lap, any one lap is **a single indexed query**.
 
 ![](db_telemetry_schema.png "One race's telemetry table")
 
-Keep in mind that telemetry is measured tens of times a second, and each of these measurements needs its own telemetry row and metadata row (over 18 million samples, so over 36 million rows across the database).
+Keep in mind that telemetry is measured tens of times a second, and each of these measurements needs its own telemetry row and metadata row (over 18 million samples, so **over 36 million rows** across the database).
 
 ![](db_meta_schema.png "Its metadata table and index")
 
@@ -141,10 +141,10 @@ Keep in mind that telemetry is measured tens of times a second, and each of thes
 RaceData turns a race's raw laps into clean and comparable data.
 
 1. **Load.** Every lap for every driver is fetched from the database in lap order.
-2. **Align by distance, not time.** Each lap is interpolated onto the same **500 distance points** along the track for clean comparisons.
-3. **Normalize per driver.** Each of the eight metrics is scaled 0–1 against the driver's own **2nd to 98th percentile** over a block of five laps, so one spike can't stretch the scale, and tire wear is accounted for.
-4. **Drop outlying laps.** The first lap always gets dropped, and so does any lap more than **1.5 × IQR** slower than the driver's norm (catches safety cars and pit stops).
-5. **Reduce with PCA.** The eight metrics at each point compress to ~4–5 components that account for 95% of the variance, taking a lap from **4,000 values to about 2,000–2,500**. We found much better cluster results with this mechanism.
+2. **Align by distance, not time.** Each lap is interpolated onto the same 500 distance points along the track for clean comparisons.
+3. **Normalize per driver.** Each of the eight metrics is scaled 0–1 against the driver's own 2nd to 98th percentile over a block of five laps, so one spike can't stretch the scale, and tire wear is accounted for.
+4. **Drop outlying laps.** The first lap always gets dropped, and so does any lap more than 1.5 × IQR slower than the driver's norm (catches safety cars and pit stops).
+5. **Reduce with PCA.** The eight metrics at each point compress to ~4–5 components that account for 95% of the variance, taking a lap from 4,000 values to about 2,000–2,500. We found much better cluster results with this mechanism.
 
 Here's step 2, the alignment, in code:
 
@@ -167,7 +167,7 @@ def _reindex_df_operations(self, df):
 
 Each individual lap is sorted into one of five clusters, and a driver's style is represented by a distribution across the different clusters.
 
-Besides K-means, we looked at three other algorithms. Hierarchical clustering needs O(n^2) memory, which made evaluating an entire season difficult, and the distributions it did produce were much worse. Gaussian mixtures gave the same results as K-means when using hard labels, and their real advantage, soft assignments, went against our strategy of classifying each lap into one cluster. DBSCAN never made it past planning, since it separates clusters by density and F1 laps are too alike for that to work.
+Besides K-means, we looked at **three other algorithms**. Hierarchical clustering needs O(n^2) memory, which made evaluating an entire season difficult, and the distributions it did produce were much worse. Gaussian mixtures gave the same results as K-means when using hard labels, and their real advantage, soft assignments, went against our strategy of classifying each lap into one cluster. DBSCAN never made it past planning, since it separates clusters by density and F1 laps are too alike for that to work.
 
 Adding PCA lowered the silhouette and Davies-Bouldin scores, yet it was **the first run where drivers' distributions actually differed**, so we judged every run by its distributions as well as its scores.
 
