@@ -108,7 +108,9 @@ The scraper uses FastF1 (a Python library) for each driver's lap count and reque
 
 ## postgresql_db.py and query_db.py
 
-Our database has 2 tables per race (a metadata table and a telemetry entry table). Splitting the original 2 tables into 48 cut the rows each lookup had to scan by 24x, and a B-tree index on driver and lap then made lap queries roughly 10x faster (based on my notes at the time rather than a formal benchmark).
+Our database has 2 tables per race (a metadata table and a telemetry entry table).
+
+Splitting the original 2 tables into 48 cut the rows each lookup had to scan by 24x, and a B-tree index on driver and lap then made lap queries roughly 10x faster (based on my notes at the time rather than a formal benchmark).
 
 Our metadata table was built so we wouldn't have to search massive telemetry tables during lookups. Each metadata row points to its sample in the telemetry table by a foreign key, so with the index on driver and lap, any one lap is **a single indexed query**.
 
