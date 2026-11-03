@@ -100,6 +100,8 @@ frontend/                       (teammate) the dashboard
 
 All 26,692 laps of the 2025 season, loaded into PostgreSQL after three failed overnight runs.
 
+Getting the data in took four tries. The first three overnight loads failed, so I added two safeguards to `database_intake.py`. Every row is **validated against the database's checks**, and the **telemetry and metadata row counts are reconciled** to confirm both tables match.
+
 The scraper uses FastF1 (a Python library) for each driver's lap count and requests each lap's JSON from [Tracing Insights on GitHub](https://github.com/tracinginsights). At the beginning of the project, we were given the choice between the two open-source F1 data sources. We ultimately chose Tracing Insights because its data came in nested JSON files, which we found much easier to fetch. TI also had built-in fuel correction that adjusted driver statistics based on the weight of the car. However, the FastF1 module was good for getting metadata, so we used it to help build the GitHub links to download from.
 
 ![](lap-data.mp4 "One lap, one driver, one race."){values=10914}
