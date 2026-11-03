@@ -63,8 +63,8 @@ statement: Is there a *best way* to drive a Formula 1 car?
 A year-long capstone for General Motors where we set out to define "driving styles" amongst F1 drivers.
 
 - **Awards:** 1st place for the CSCE Undergraduate Enrichment Fund, 1st place at the College of Engineering Expo (CSCE), and an invitation to present at the CSCE Alumni Conference.
-- **My part:** I built the scraper, the database, and the preprocessing pipeline, and made 78 of the team's 167 commits.
-- **Scale:** 26,692 laps and over 18 million telemetry samples from all 24 races of the 2025 F1 season.
+- **My part:** I was the main developer of the scraper, database, and preprocessing pipeline, and made 78 of the team’s 167 commits.
+- **Scale:** 26,692 laps from all 24 races of the 2025 F1 season. Over 18 million telemetry samples, stored as over 36 million database rows.
 - **Live:** [f1.elirose.dev](https://f1.elirose.dev "The live dashboard")
 
 ## The prompt
@@ -106,13 +106,13 @@ The scraper uses FastF1 (a Python library) for each driver's lap count and reque
 
 ## postgresql_db.py and query_db.py
 
-Our database has 2 tables per race (a metadata table and a telemetry entry table), and B-tree indexing cut the time to pull the whole season's data from over 10 minutes to 15–20 seconds.
+Our database has 2 tables per race (a metadata table and a telemetry entry table). Splitting the original 2 tables into 48 cut the rows each lookup had to scan by 24x, and a B-tree index on driver and lap then made lap queries roughly 10x faster (based on my notes at the time rather than a formal benchmark).
 
-Our metadata table was built so we wouldn't have to search massive telemetry tables during lookups. Each metadata row points to its sample in the telemetry table by a foreign key, so with the index on driver and lap, any one lap is **a single lookup**.
+Our metadata table was built so we wouldn't have to search massive telemetry tables during lookups. Each metadata row points to its sample in the telemetry table by a foreign key, so with the index on driver and lap, any one lap is **a single indexed query**.
 
 ![](db_telemetry_schema.png "One race's telemetry table")
 
-Keep in mind that telemetry is measured tens of times a second, and each of these measurements needs an individual entry in our database (again, totaling over 18 million records in the entirety of our DB).
+Keep in mind that telemetry is measured tens of times a second, and each of these measurements needs its own telemetry row and metadata row (over 18 million samples, so over 36 million rows across the database).
 
 ![](db_meta_schema.png "Its metadata table and index")
 
